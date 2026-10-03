@@ -1,0 +1,50 @@
+{
+  "checked": "2026-10-03",
+  "method": "Opened the public Orphanet directory. Did not use api.orphacode.org. api.orphanet.com did not respond.",
+  "caveat": "The CLN3 directory says 0 specific results and 182 results including the selected disease. These rows are name matches inside that list, not a CLN3-only certification.",
+  "directory": "https://www.orpha.net/en/patient-organisations?orphaCode=228346&diseaseName=CLN3%20disease",
+  "registry_directory": "https://www.orpha.net/en/research-trials/registries?orphaCode=228346&diseaseName=CLN3%20disease",
+  "groups": [
+    {
+      "id": "ORPHA-ORG:91211",
+      "name": "BDFA UK - Batten Disease Family Association",
+      "country": "United Kingdom",
+      "orpha_url": "https://www.orpha.net/en/patient-organisations/patient/91211",
+      "website": "http://www.bdfa-uk.org.uk",
+      "demo": true
+    },
+    {
+      "id": "ORPHA-ORG:45762",
+      "name": "NCL-Gruppe Deutschland e.V.",
+      "country": "Germany",
+      "orpha_url": "https://www.orpha.net/en/patient-organisations/patient/45762"
+    },
+    {
+      "id": "ORPHA-ORG:392089",
+      "name": "A-NCL - Associazione Nazionale Ceroidolipofuscinosi",
+      "country": "Italy",
+      "orpha_url": "https://www.orpha.net/en/patient-organisations/patient/392089"
+    },
+    {
+      "id": "ORPHA-ORG:586367",
+      "name": "Norsk NCL-forening",
+      "country": "Norway",
+      "orpha_url": "https://www.orpha.net/en/patient-organisations/patient/586367"
+    },
+    {
+      "id": "ORPHA-ORG:610594",
+      "name": "Svenska NCL föreningen",
+      "country": "Sweden",
+      "orpha_url": "https://www.orpha.net/en/patient-organisations/patient/610594"
+    }
+  ],
+  "registries": [
+    {
+      "id": "ORPHA-REG:311059",
+      "name": "Batten Disease Neuronal Ceroid Lipofuscinosis (NCL) Patient Registry",
+      "orpha_url": "https://www.orpha.net/en/research-trials/registry/311059",
+      "website": "https://www.ucl.ac.uk/drupal/site_ncl-disease/mutation-and-patient-database",
+      "held_by": "http://www.ucl.ac.uk/lmcb/"
+    }
+  ]
+}

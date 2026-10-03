@@ -994,17 +994,57 @@
       "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968608/"
     },
     {
-      "id": "GAP:patient-group",
-      "type": "gap",
-      "name": "No verified patient group in this seed",
-      "missing": "patient organization and registry",
-      "looked_in": [
-        "https://api.orphacode.org returned 401 without an API key",
-        "https://www.orpha.net/en/disease/detail/228346 has no organization list in the public HTML",
-        "Orphadata free XML products downloaded were classification and HPO, not groups"
-      ],
-      "next_question": "Which verified group site, opened and checked, covers CLN3 and already has a registry?",
-      "do_not": "Do not infer a group from a disease name. Do not suggest a shared trial from this gap."
+      "id": "ORPHA-ORG:91211",
+      "type": "patient_group",
+      "name": "BDFA UK - Batten Disease Family Association",
+      "country": "United Kingdom",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/91211",
+      "website": "http://www.bdfa-uk.org.uk",
+      "checked": "2026-10-03"
+    },
+    {
+      "id": "ORPHA-ORG:45762",
+      "type": "patient_group",
+      "name": "NCL-Gruppe Deutschland e.V.",
+      "country": "Germany",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/45762",
+      "website": null,
+      "checked": "2026-10-03"
+    },
+    {
+      "id": "ORPHA-ORG:392089",
+      "type": "patient_group",
+      "name": "A-NCL - Associazione Nazionale Ceroidolipofuscinosi",
+      "country": "Italy",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/392089",
+      "website": null,
+      "checked": "2026-10-03"
+    },
+    {
+      "id": "ORPHA-ORG:586367",
+      "type": "patient_group",
+      "name": "Norsk NCL-forening",
+      "country": "Norway",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/586367",
+      "website": null,
+      "checked": "2026-10-03"
+    },
+    {
+      "id": "ORPHA-ORG:610594",
+      "type": "patient_group",
+      "name": "Svenska NCL f\u00f6reningen",
+      "country": "Sweden",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/610594",
+      "website": null,
+      "checked": "2026-10-03"
+    },
+    {
+      "id": "ORPHA-REG:311059",
+      "type": "registry",
+      "name": "Batten Disease Neuronal Ceroid Lipofuscinosis (NCL) Patient Registry",
+      "source_url": "https://www.orpha.net/en/research-trials/registry/311059",
+      "website": "https://www.ucl.ac.uk/drupal/site_ncl-disease/mutation-and-patient-database",
+      "checked": "2026-10-03"
     }
   ],
   "edges": [
@@ -2455,52 +2495,59 @@
       "note": "Pathogenic ClinVar hit for MFSD8. Does not by itself link this variant to another disease."
     },
     {
-      "id": "e-MONDO:0009744-GAP:patient-group",
-      "source": "MONDO:0009744",
-      "target": "GAP:patient-group",
-      "relation": "missing_group",
-      "status": "gap",
-      "evidence_url": "https://api.orphacode.org/",
-      "note": "Searched. No supported patient-organization edge."
+      "id": "e-ORPHA-ORG:91211-mech",
+      "source": "ORPHA-ORG:91211",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "curated",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/91211",
+      "note": "The CLN3 directory says 0 specific results and 182 results including the selected disease. These rows are name matches inside that list, not a CLN3-only certification."
     },
     {
-      "id": "e-MONDO:0008769-GAP:patient-group",
-      "source": "MONDO:0008769",
-      "target": "GAP:patient-group",
-      "relation": "missing_group",
-      "status": "gap",
-      "evidence_url": "https://api.orphacode.org/",
-      "note": "Searched. No supported patient-organization edge."
+      "id": "e-ORPHA-ORG:45762-mech",
+      "source": "ORPHA-ORG:45762",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "curated",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/45762",
+      "note": "The CLN3 directory says 0 specific results and 182 results including the selected disease. These rows are name matches inside that list, not a CLN3-only certification."
     },
     {
-      "id": "e-MONDO:0008767-GAP:patient-group",
-      "source": "MONDO:0008767",
-      "target": "GAP:patient-group",
-      "relation": "missing_group",
-      "status": "gap",
-      "evidence_url": "https://api.orphacode.org/",
-      "note": "Searched. No supported patient-organization edge."
+      "id": "e-ORPHA-ORG:392089-mech",
+      "source": "ORPHA-ORG:392089",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "curated",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/392089",
+      "note": "The CLN3 directory says 0 specific results and 182 results including the selected disease. These rows are name matches inside that list, not a CLN3-only certification."
     },
     {
-      "id": "e-MONDO:0011144-GAP:patient-group",
-      "source": "MONDO:0011144",
-      "target": "GAP:patient-group",
-      "relation": "missing_group",
-      "status": "gap",
-      "evidence_url": "https://api.orphacode.org/",
-      "note": "Searched. No supported patient-organization edge."
+      "id": "e-ORPHA-ORG:586367-mech",
+      "source": "ORPHA-ORG:586367",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "curated",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/586367",
+      "note": "The CLN3 directory says 0 specific results and 182 results including the selected disease. These rows are name matches inside that list, not a CLN3-only certification."
     },
     {
-      "id": "e-MONDO:0012588-GAP:patient-group",
-      "source": "MONDO:0012588",
-      "target": "GAP:patient-group",
-      "relation": "missing_group",
-      "status": "gap",
-      "evidence_url": "https://api.orphacode.org/",
-      "note": "Searched. No supported patient-organization edge."
+      "id": "e-ORPHA-ORG:610594-mech",
+      "source": "ORPHA-ORG:610594",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "curated",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/610594",
+      "note": "The CLN3 directory says 0 specific results and 182 results including the selected disease. These rows are name matches inside that list, not a CLN3-only certification."
+    },
+    {
+      "id": "e-ORPHA-REG:311059-mech",
+      "source": "ORPHA-REG:311059",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "registers",
+      "status": "curated",
+      "evidence_url": "https://www.orpha.net/en/research-trials/registry/311059",
+      "note": "The CLN3 directory says 0 specific results and 182 results including the selected disease. These rows are name matches inside that list, not a CLN3-only certification."
     }
   ],
-  "not_fetched": [
-    "verified patient-group page"
-  ]
+  "not_fetched": []
 }
