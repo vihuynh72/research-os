@@ -37,8 +37,17 @@ export interface KnowledgeGraphProps {
 const W = 1200;
 const H = 840;
 const CONSTELLATION_PAD = 70;
+// Text keeps a readable size on screen however small the map is drawn: a 12-unit label renders at
+// about LABEL_PX pixels, never smaller than designed and never more than MAX_TEXT_SCALE times it.
+const LABEL_PX = 10.5;
+const MAX_TEXT_SCALE = 2.4;
 
 type Pt = [number, number];
+type Box = [number, number, number, number]; // left, top, right, bottom
+type Anchor = { x: number; y: number; anchor: "start" | "middle" | "end" };
+
+const overlaps = (a: Box, b: Box) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+const overlapArea = (a: Box, b: Box) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
 
 interface Hover {
   kind: "node" | "edge";
@@ -128,6 +137,22 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
   const [hover, setHover] = useState<Hover | null>(null);
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
+
+  // How large the map is drawn, so labels can keep a readable size on screen (ts = text scale).
+  const [drawn, setDrawn] = useState(0.7);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect();
+      if (width > 0 && height > 0) setDrawn(Math.min(width / W, height / H));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const ts = Math.round(Math.min(MAX_TEXT_SCALE, Math.max(1, LABEL_PX / (12 * drawn))) * 20) / 20;
 
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
   const edgeById = useMemo(() => new Map(graph.edges.map((e) => [e.id, e])), [graph]);
