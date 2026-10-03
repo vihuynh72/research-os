@@ -8,5 +8,4 @@ playwright-report/
 test-results/
 next-env.d.ts
 attached_assets/
-data/raw/hpo/
-data/raw/reactome/
+data/raw/
