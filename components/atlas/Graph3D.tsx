@@ -56,9 +56,11 @@ export interface Graph3DProps {
   links: Graph3DLink[];
   focusId: string;
   selectedId: string | null;
+  layout?: "disc" | "cloud";
   onSelect(id: string): void;
   onFocus(id: string): void;
   ariaLabel: string;
+  caption?: string;
   className?: string;
 }
 
@@ -1385,7 +1387,7 @@ const CENTER_BUTTON: CSSProperties = {
   color: "var(--accent, #0071e3)",
 };
 
-export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, onFocus, ariaLabel, className }: Graph3DProps) {
+export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, onFocus, ariaLabel, caption, className }: Graph3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -1533,7 +1535,7 @@ export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, o
         ) : null}
       </div>
       <p className="mt-2 text-xs leading-4" style={MUTED}>
-        {CAPTION}
+        {caption ?? CAPTION}
       </p>
       <p id={hintId} style={VISUALLY_HIDDEN}>
         Arrow keys rotate the view, plus and minus zoom, and 0 resets it. Press Tab to reach the list of highlighted
