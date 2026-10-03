@@ -1,13 +1,17 @@
 "use client";
 
-// Right column: the evidence. With nothing selected it describes the focus disease; with a
-// neighbor selected it explains the pair. Every claim links to its source and says whether it
-// is observed (stated by a curated source) or inferred (derived by the pipeline).
+// Right column: the evidence. It explains whatever is selected, in this order of precedence: a
+// line on the map, a related disease (the pair's grades and why), any other node; with nothing
+// selected, what is in the center. The next step closes every view. Every claim links to its
+// source and says whether it is observed (stated by a curated source) or inferred.
 import { useState, type ReactNode } from "react";
 import type { GraphEdge, GraphNode, NodeType } from "@/lib/graph/types";
 import type { Dimension, DimensionResult, DimensionStatus, PairGrade, SharedItem } from "@/lib/grading/types";
 import { DIMENSIONS, DIMENSION_LABEL } from "@/lib/grading/types";
 import { VARIANT_EFFECT_LABEL } from "@/lib/grading/variants";
+import type { HoodEdge, HoodNode, Neighborhood, ThresholdResult } from "@/lib/graph/neighborhood";
+import { symptomWhy } from "@/lib/graph/neighborhood";
+import { nextSteps, type NextStep } from "@/lib/graph/nextStep";
 import { sentenceLabel, shortLabel } from "@/lib/graph/labels";
 import { TYPE_NAME, countLabel } from "@/lib/graph/vocab";
 import { ICON_PATH } from "@/lib/viz/icons";
@@ -27,7 +31,7 @@ import {
   formatPercent,
   formatScore,
   isRecruiting,
-  neighborRows,
+  nodeName,
   nodeOf,
   pairOf,
   sharedEdges,
@@ -38,25 +42,46 @@ import {
   type Kind,
   type LinkedItem,
   type Mode,
+  type Selection,
 } from "./format";
-import NeighborList, { ClinicalBadge, Dot, TierBadge } from "./NeighborList";
+import { KIND_OF, KIND_STYLE } from "./kinds";
+import DiseaseRows, { ClinicalBadge, Dot, TierBadge, type DiseaseRow } from "./NeighborList";
 
 interface Props {
   model: AtlasModel;
+  hood: Neighborhood;
+  filtered: ThresholdResult;
   focusId: string;
-  selectedId: string | null;
+  selection: Selection | null;
+  threshold: number;
   mode: Mode;
   onSelect(id: string | null): void;
   onFocus(id: string): void;
+  onThreshold(value: number): void;
 }
 
 export default function DetailPanel(props: Props) {
-  const { model, focusId, selectedId } = props;
-  const pair = selectedId ? pairOf(model, focusId, selectedId) : undefined;
-  const other = selectedId ? nodeOf(model, selectedId) : undefined;
-  // Keyed so expanded lists start folded again for every new disease or pair.
-  if (pair && other) return <PairView key={`${focusId}|${other.id}`} {...props} pair={pair} other={other} />;
-  return <FocusView key={focusId} {...props} />;
+  const { model, hood, focusId, selection, mode } = props;
+  const focus = nodeOf(model, focusId);
+  if (!focus) return null;
+  // Keyed so expanded lists start folded again for every new subject.
+  let body: ReactNode;
+  if (selection?.kind === "edge") body = <EdgeView key={selection.id} {...props} edge={selection.edge} />;
+  else if (selection?.kind === "pair") body = <PairView key={selection.id} {...props} pair={selection.pair} other={selection.node} anchorId={selection.anchor} />;
+  else if (selection?.kind === "node") body = <NodeView key={selection.id} {...props} node={selection.node} hoodNode={selection.hoodNode} />;
+  else if (focus.type === "Disease") body = <DiseaseView key={focusId} {...props} />;
+  else body = <CenterView key={focusId} {...props} focus={focus} />;
+
+  // Next steps are for the disease in the center (or the first disease a gene or symptom belongs
+  // to); a selected related disease narrows them to what spans both.
+  const stepsFor = selection?.kind === "pair" ? selection.anchor : hood.anchors[0];
+  const narrowTo = selection?.kind === "pair" ? selection.node.id : null;
+  return (
+    <div className="space-y-6">
+      {body}
+      {stepsFor && <NextSteps model={model} diseaseId={stepsFor} relatedId={narrowTo} mode={mode} />}
+    </div>
+  );
 }
 
 // ---------- small shared pieces ----------
@@ -123,6 +148,17 @@ function TypeIcon({ type, className = "size-4" }: { type: NodeType; className?: 
   );
 }
 
+// The node's kind as on the map: a pale disk with its icon, or the cluster color for a disease.
+function KindIcon({ model, node }: { model: AtlasModel; node: GraphNode }) {
+  if (node.type === "Disease") return <Dot color={diseaseColor(model, node.id)} size={14} />;
+  const style = KIND_STYLE[KIND_OF[node.type]];
+  return (
+    <span className="grid size-6 shrink-0 place-items-center rounded-full border" style={{ background: style.fill, borderColor: style.ink, color: style.ink }}>
+      <TypeIcon type={node.type} className="size-3.5" />
+    </span>
+  );
+}
+
 // Status is shape plus a hidden word, never color alone.
 function StatusIcon({ status }: { status: DimensionStatus }) {
   return (
@@ -158,10 +194,12 @@ function StatusIcon({ status }: { status: DimensionStatus }) {
   );
 }
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+function Section({ title, hint, children, id }: { title: string; hint?: string; children: ReactNode; id?: string }) {
   return (
-    <section className="border-t border-line pt-4">
-      <h3 className="text-[0.9375rem] font-semibold text-ink">{title}</h3>
+    <section className="border-t border-line pt-4" aria-labelledby={id}>
+      <h3 id={id} className="text-[0.9375rem] font-semibold text-ink">
+        {title}
+      </h3>
       {hint && <p className="mt-0.5 text-xs text-ink-2 text-pretty">{hint}</p>}
       <div className="mt-2">{children}</div>
     </section>
@@ -209,6 +247,10 @@ function itemMeta(node: GraphNode): string[] {
     const parts = [a.journal, a.year].filter((x) => typeof x === "string" || typeof x === "number");
     if (parts.length) out.push(parts.join(", "));
   }
+  if (node.type === "Trial") {
+    const status = trialStatus(node);
+    if (status) out.push(status);
+  }
   return out;
 }
 
@@ -229,7 +271,7 @@ function ItemRow({
 }) {
   const edge = itemEdge(item);
   const website = typeof item.node.attributes?.website === "string" ? item.node.attributes.website : null;
-  const meta = itemMeta(item.node);
+  const meta = item.node.type === "Trial" ? [] : itemMeta(item.node);
   const via = ownVia ? item.via : undefined;
   const linkOnly = !ownSource && ownLink && edge && edge.url !== item.node.url;
   const details = extra || meta.length > 0 || ownSource || linkOnly || via || website;
@@ -244,17 +286,11 @@ function ItemRow({
           {meta.map((m) => (
             <span key={m}>{m}</span>
           ))}
-          {ownSource && edge && (
+          {ownSource &&
+            edge &&
             // The item link already opens the record when the edge cites the same page.
-            edge.url === item.node.url ? (
-              <SourceName source={edge.source} />
-            ) : (
-              <SourceLink href={edge.url} source={edge.source} />
-            )
-          )}
-          {linkOnly && (
-            <SourceLink href={edge.url} source={edge.source} />
-          )}
+            (edge.url === item.node.url ? <SourceName source={edge.source} /> : <SourceLink href={edge.url} source={edge.source} />)}
+          {linkOnly && <SourceLink href={edge.url} source={edge.source} />}
           {ownSource && <KindTag kind={item.kind} />}
           {via && (
             <span>
@@ -286,8 +322,7 @@ interface SourceLine {
 
 // One source line for a whole list when every item rests on the same kind of record (same
 // source, provenance and caveat), instead of repeating "HPO (via Monarch) · observed" on every
-// row. The route ("through mechanism X") joins the line only when every item shares it. Lists
-// that mix sources keep a source on each row.
+// row. Lists that mix sources keep a source on each row.
 function commonSource(items: LinkedItem[]): SourceLine | null {
   const edges = items.map(itemEdge);
   const first = edges[0];
@@ -301,7 +336,6 @@ function commonSource(items: LinkedItem[]): SourceLine | null {
   const line = { source: first.source, kind: items[0].kind, evidence: first.evidence, via: sameVia ? items[0].via : undefined };
   if (items.every((item, i) => edges[i]!.url === item.node.url)) return { ...line, url: null, rowLinks: false };
   if (edges.every((e) => e!.url === first.url)) return { ...line, url: first.url, rowLinks: false };
-  // Same kind of record, different pages: each row keeps its own link, the line says the rest.
   return { ...line, url: null, rowLinks: true };
 }
 
@@ -309,14 +343,7 @@ function SourceFooter({ line }: { line: SourceLine }) {
   return (
     <div className="mt-1 text-xs text-ink-2">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span>
-          Source:{" "}
-          {line.url ? (
-            <SourceLink href={line.url} source={line.source} />
-          ) : (
-            <SourceName source={line.source} />
-          )}
-        </span>
+        <span>Source: {line.url ? <SourceLink href={line.url} source={line.source} /> : <SourceName source={line.source} />}</span>
         <KindTag kind={line.kind} />
         {line.via && (
           <span>
@@ -361,45 +388,227 @@ function SubHeading({ children }: { children: ReactNode }) {
   return <h4 className="text-[0.8125rem] font-medium text-ink">{children}</h4>;
 }
 
-// ---------- focus disease ----------
+function BackButton({ name, onClick }: { name: string; onClick(): void }) {
+  return (
+    <button type="button" onClick={onClick} className="text-[0.8125rem] font-medium text-accent-ink hover:underline">
+      ‹ Back to {name}
+    </button>
+  );
+}
 
-function FocusView({ model, focusId, selectedId, mode, onSelect }: Props) {
+function Actions({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap gap-2 border-t border-line pt-4">{children}</div>;
+}
+
+function PrimaryButton({ onClick, children }: { onClick(): void; children: ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} className="min-h-9 rounded-full bg-accent px-4 text-sm font-medium text-white hover:brightness-110">
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({ onClick, children }: { onClick(): void; children: ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} className="min-h-9 rounded-full border border-line px-4 text-sm font-medium text-ink hover:bg-surface-2">
+      {children}
+    </button>
+  );
+}
+
+// Every graph edge behind a claim, read as a sentence with its source, date and provenance. One
+// statement backed by several records is one sentence with several links; a caveat or quote is
+// printed once, under the first statement that carries it.
+function Statements({ model, edges, mode, limit = 6 }: { model: AtlasModel; edges: GraphEdge[]; mode: Mode; limit?: number }) {
+  const [all, setAll] = useState(false);
+  const statements: GraphEdge[][] = [];
+  const byKey = new Map<string, GraphEdge[]>();
+  for (const edge of edges) {
+    const key = [edge.type, edge.subject, edge.object, edge.source, edge.kind, edge.evidence ?? ""].join("|");
+    const group = byKey.get(key);
+    if (group) group.push(edge);
+    else {
+      const fresh = [edge];
+      byKey.set(key, fresh);
+      statements.push(fresh);
+    }
+  }
+  const shown = all ? statements : statements.slice(0, limit);
+  return (
+    <>
+      <ul role="list" className="space-y-2.5 text-xs">
+        {shown.map((group, i) => {
+          const [edge] = group;
+          return (
+            <li key={edge.id}>
+              <p className="text-[0.8125rem] text-pretty text-ink">{edgeSentence(model, edge)}</p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-ink-2">
+                {group.map((e, j) =>
+                  j === 0 ? (
+                    <SourceLink key={e.id} href={e.url} source={e.source} />
+                  ) : (
+                    <ExternalLink key={e.id} href={e.url} className="hover:underline">
+                      record {j + 1}
+                    </ExternalLink>
+                  ),
+                )}
+                {edge.date && <span className="tabular-nums">{edge.date}</span>}
+                <KindTag kind={edge.kind} />
+                {mode === "researcher" && (
+                  <span className="font-mono text-[0.6875rem] break-all">
+                    {group.map((e) => e.id).join(", ")} · confidence {edge.confidence}
+                  </span>
+                )}
+              </div>
+              {edge.evidence && edge.evidence !== shown[i - 1]?.[0].evidence && <p className="mt-0.5 text-ink-2 text-pretty">“{edge.evidence}”</p>}
+            </li>
+          );
+        })}
+      </ul>
+      {!all && statements.length > limit && (
+        <button type="button" onClick={() => setAll(true)} className="mt-2 text-xs font-medium text-accent-ink hover:underline">
+          Show all {statements.length}
+        </button>
+      )}
+    </>
+  );
+}
+
+function Disclosure({ summary, children }: { summary: string; children: ReactNode }) {
+  return (
+    <details className="group mt-2">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded text-xs font-medium text-accent-ink hover:underline [&::-webkit-details-marker]:hidden">
+        <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" className="transition-transform group-open:rotate-90 motion-reduce:transition-none">
+          <path d="M4.5 2.5L8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {summary}
+      </summary>
+      <div className="mt-2 border-l-2 border-line pl-3">{children}</div>
+    </details>
+  );
+}
+
+const pct = (x: number) => formatPercent(x);
+
+// "85% relevant to CLN3", with a note when it sits under the current filter.
+function relevanceText(relevance: number, centerName: string, threshold: number): string {
+  return `${pct(relevance)} relevant to ${centerName}${relevance < threshold - 1e-9 ? `, under your ${pct(threshold)} filter` : ""}`;
+}
+
+// ---------- the related-disease lists ----------
+
+function biologyRows(model: AtlasModel, anchorId: string, ids: { id: string; relevance?: number }[]): DiseaseRow[] {
+  return ids.flatMap(({ id, relevance }) => {
+    const node = nodeOf(model, id);
+    const pair = pairOf(model, anchorId, id);
+    if (!node || !pair) return [];
+    return [
+      {
+        id,
+        short: shortLabel(node),
+        full: sentenceLabel(node.label),
+        color: diseaseColor(model, id),
+        badge: <TierBadge tier={pair.tier} value={relevance ?? pair.relevance} />,
+        reason: pair.tier_reason,
+      },
+    ];
+  });
+}
+
+function clinicalRows(model: AtlasModel, anchorId: string, ids: string[]): DiseaseRow[] {
+  return ids.flatMap((id) => {
+    const node = nodeOf(model, id);
+    const pair = pairOf(model, anchorId, id);
+    if (!node || !pair || !pair.clinical_tier) return [];
+    return [
+      {
+        id,
+        short: shortLabel(node),
+        full: sentenceLabel(node.label),
+        color: diseaseColor(model, id),
+        badge: <ClinicalBadge tier={pair.clinical_tier} value={pair.clinical} />,
+        reason: pair.clinical_reason,
+      },
+    ];
+  });
+}
+
+// ---------- a disease in the center ----------
+
+function DiseaseView({ model, focusId, selection, mode, onSelect }: Props) {
   const focus = nodeOf(model, focusId);
   const entry = model.relevance.diseases[focusId];
-  if (!focus || !entry) return null;
+  if (!focus) return null;
   const profile = diseaseProfile(model, focusId);
   const cluster = clusterOf(model, focusId);
-  const rows = neighborRows(model, focusId);
   const short = shortLabel(focus);
   const synonyms = (focus.synonyms ?? []).filter((s) => s !== focus.label).slice(0, 3);
   const recruiting = profile.trials.filter((t) => isRecruiting(t.node)).length;
   const info = model.relevance.node_info ?? {};
   const researcher = mode === "researcher";
-  // Clinical look-alikes that are not already on the map (grade files from engine 0.2.0 on).
-  const onMap = new Set(entry.neighbors.map((n) => n.id));
-  const lookAlikes = (entry.clinical_neighbors ?? []).flatMap((n) => {
-    const node = nodeOf(model, n.id);
-    const pair = pairOf(model, focusId, n.id);
-    return node && pair && !onMap.has(n.id) ? [{ id: n.id, node, pair }] : [];
-  });
+  const selectedId = selection?.id ?? null;
+
+  const neighbors = entry?.neighbors ?? [];
+  const biology = biologyRows(model, focusId, neighbors);
+  const clinical = clinicalRows(
+    model,
+    focusId,
+    (entry?.clinical_neighbors ?? []).map((n) => n.id),
+  );
+  // When every biology link runs only through a shared gene (or there is none), how alike the
+  // diseases look says more, so that list comes first.
+  const geneOnly =
+    biology.length > 0 &&
+    neighbors.every((n) => {
+      const p = pairOf(model, focusId, n.id);
+      return !!p && p.dimensions.gene?.status === "match" && p.dimensions.mechanism?.status !== "match" && p.dimensions.mechanism?.status !== "partial";
+    });
+  const clinicalFirst = clinical.length > 0 && (biology.length === 0 || geneOnly);
+  const sharedGene = geneOnly ? (pairOf(model, focusId, neighbors[0].id)?.dimensions.gene.shared[0]?.label ?? null) : null;
+
+  const biologySection = (
+    <Section key="bio" title="Shares biology with" hint="Same gene, same type of gene change or the same disrupted process. This sets the distance on the map." id="shares-biology">
+      <DiseaseRows rows={biology} selectedId={selectedId} onSelect={onSelect} empty={`No disease in this atlas shares biology with ${short} yet.`} />
+      {(entry?.hidden ?? 0) > 0 && <p className="mt-2 text-xs text-ink-2">+{entry!.hidden} weaker links not listed</p>}
+    </Section>
+  );
+  const clinicalSection = (
+    <Section
+      key="clin"
+      title="Looks similar clinically"
+      hint={
+        clinicalFirst
+          ? biology.length
+            ? `Its biology links run only through a shared gene${sharedGene ? ` (${sharedGene})` : ""}, so symptoms, onset and inheritance say more about who is alike.`
+            : `Nothing here shares its biology yet, but these look alike in symptoms, onset and inheritance.`
+          : "Similar symptoms, onset and inheritance. Shown beside the biology, never used for distance on the map."
+      }
+      id="looks-similar"
+    >
+      <DiseaseRows rows={clinical} selectedId={selectedId} onSelect={onSelect} empty="No disease here looks similar enough clinically." />
+    </Section>
+  );
 
   return (
     <article aria-labelledby="detail-title" className="space-y-5">
       <header>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-ink">
-            <Dot color={clusterColor(cluster?.color_slot)} size={8} />
-            {cluster ? cluster.label : "Not in a mechanism cluster"}
-          </span>
-          {entry.bridge && <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-ink">Links two clusters</span>}
+          <span className="text-xs font-medium tracking-wide text-ink-2 uppercase">In the center · disease</span>
         </div>
-        <h2 id="detail-title" className="mt-2 text-xl leading-snug font-semibold text-balance">
+        <h2 id="detail-title" className="mt-1.5 text-xl leading-snug font-semibold text-balance">
           {sentenceLabel(focus.label)}
         </h2>
         {synonyms.length > 0 && <p className="mt-1 text-sm text-ink-2 text-pretty">Also called {synonyms.join(", ")}</p>}
-        <p className="mt-1 text-xs text-ink-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-ink">
+            <Dot color={clusterColor(cluster?.color_slot)} size={8} />
+            {cluster ? cluster.label : "Not in a cluster"}
+          </span>
+          {entry?.bridge && <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-ink">Links two clusters</span>}
+        </div>
+        <p className="mt-2 text-xs text-ink-2">
           <SourceLink href={focus.url} source={focus.source} />
-          {researcher && (
+          {researcher && entry && (
             <span className="ml-2 font-mono">
               {focus.id} · centrality {formatScore(entry.centrality)}
             </span>
@@ -407,7 +616,9 @@ function FocusView({ model, focusId, selectedId, mode, onSelect }: Props) {
         </p>
       </header>
 
-      {!rows.length && <NoConnection model={model} focusId={focusId} />}
+      {!biology.length && !clinical.length && <NoConnection model={model} focusId={focusId} />}
+
+      {clinicalFirst ? [clinicalSection, biologySection] : [biologySection, clinicalSection]}
 
       <Section title="Biology">
         <Fact type="Gene" items={profile.genes.length} empty="No gene on record.">
@@ -424,8 +635,8 @@ function FocusView({ model, focusId, selectedId, mode, onSelect }: Props) {
             extra={(item) => {
               // How many diseases here share it: a process every disease has cannot tell them apart.
               const reach = info[item.node.id]?.diseases;
-              // The source caveat often repeats the description; say it once.
               const description = item.node.description && !(itemEdge(item)?.evidence ?? "").includes(item.node.description) ? item.node.description : null;
+              const specificity = info[item.node.id]?.specificity;
               return (
                 <>
                   {description && <span className="basis-full text-pretty">{description}</span>}
@@ -434,6 +645,7 @@ function FocusView({ model, focusId, selectedId, mode, onSelect }: Props) {
                       {reach >= model.diseaseCount ? `Shared by all ${model.diseaseCount} diseases here` : `Shared by ${reach} of ${model.diseaseCount} diseases here`}
                     </span>
                   )}
+                  {researcher && typeof specificity === "number" && <span className="tabular-nums">specificity {formatScore(specificity)}</span>}
                 </>
               );
             }}
@@ -450,9 +662,18 @@ function FocusView({ model, focusId, selectedId, mode, onSelect }: Props) {
             mode={mode}
             limit={5}
             what="symptoms"
-            extra={(item) =>
-              researcher && info[item.node.id]?.ic !== undefined ? <span className="tabular-nums">IC {formatScore(info[item.node.id]!.ic!)}</span> : null
-            }
+            extra={(item) => {
+              const meta = info[item.node.id];
+              if (!meta) return null;
+              return researcher ? (
+                <span className="tabular-nums">
+                  {meta.specificity !== undefined && `more specific than ${pct(meta.specificity)} of symptoms`}
+                  {meta.ic !== undefined && ` · IC ${formatScore(meta.ic)}`}
+                </span>
+              ) : meta.specificity !== undefined && meta.specificity >= 0.85 ? (
+                <span>Rare symptom</span>
+              ) : null;
+            }}
           />
         </Fact>
         {profile.context.length > 0 && (
@@ -519,44 +740,11 @@ function FocusView({ model, focusId, selectedId, mode, onSelect }: Props) {
           </ul>
         </Section>
       )}
-
-      <Section title="Closest diseases" hint="By shared biology. Select one to see why.">
-        <NeighborList rows={rows} focusShort={short} selectedId={selectedId} mode={mode} onSelect={onSelect} compact />
-        {entry.hidden > 0 && <p className="mt-2 text-xs text-ink-2">+{entry.hidden} weaker links not shown</p>}
-      </Section>
-
-      {lookAlikes.length > 0 && (
-        <Section title="Look alike, different biology" hint="Similar symptoms, onset or inheritance, but little shared biology. Not on the map.">
-          <ul className="-mx-2">
-            {lookAlikes.map(({ id, node, pair }) => (
-              <li key={id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(id)}
-                  aria-current={id === selectedId ? "true" : undefined}
-                  className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left hover:bg-surface-2 aria-[current=true]:bg-surface-2"
-                >
-                  <span className="mt-1.5">
-                    <Dot color={diseaseColor(model, id)} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="truncate text-sm font-medium">{shortLabel(node)}</span>
-                      {pair.clinical_tier && <ClinicalBadge tier={pair.clinical_tier} />}
-                    </span>
-                    {pair.clinical_reason && <span className="mt-0.5 block text-xs text-ink-2 text-pretty">{pair.clinical_reason}</span>}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
     </article>
   );
 }
 
-// No neighbor at all: say so, and show what was compared and what is missing.
+// No graded link at all: say so, and show what was compared and what is missing.
 function NoConnection({ model, focusId }: { model: AtlasModel; focusId: string }) {
   const coverage = coverageOf(diseaseProfile(model, focusId));
   const type: Record<Dimension, NodeType> = {
@@ -580,7 +768,9 @@ function NoConnection({ model, focusId }: { model: AtlasModel; focusId: string }
     <div className="rounded-xl border border-dashed border-ink-3 p-4">
       <p className="font-semibold">No supported connection in this atlas yet.</p>
       <p className="mt-1 text-sm text-ink-2 text-pretty">
-        {searched.length ? `We compared ${searched.join(", ")} with every other disease here. None was shared closely enough to count.` : "Nothing is on record for this disease yet, so there was nothing to compare."}
+        {searched.length
+          ? `We compared ${searched.join(", ")} with every other disease here. None was shared closely enough to count.`
+          : "Nothing is on record for this disease yet, so there was nothing to compare."}
       </p>
       {missing.length > 0 && <p className="mt-1 text-sm text-ink-2 text-pretty">Not on record: {missing.join(", ")}.</p>}
       <p className="mt-2 text-sm text-pretty">A curated gene, mechanism or patient-group link for this disease is what would change the answer.</p>
@@ -588,7 +778,269 @@ function NoConnection({ model, focusId }: { model: AtlasModel; focusId: string }
   );
 }
 
-// ---------- a selected pair ----------
+// ---------- a gene, symptom, group, study or paper in the center ----------
+
+function nodeFacts(model: AtlasModel, node: GraphNode, mode: Mode): ReactNode {
+  const info = model.relevance.node_info?.[node.id];
+  const meta = itemMeta(node);
+  const website = typeof node.attributes?.website === "string" ? node.attributes.website : null;
+  const reach = info?.diseases;
+  return (
+    <>
+      {node.description && <p className="mt-2 text-sm text-pretty">{node.description}</p>}
+      {node.type === "Phenotype" && info && <p className="mt-2 text-sm text-pretty">{symptomWhy(info.specificity ?? info.ic)}</p>}
+      {node.type === "Mechanism" && typeof reach === "number" && (
+        <p className="mt-2 text-sm text-pretty">
+          {reach >= model.diseaseCount
+            ? `Shared by all ${model.diseaseCount} diseases here, so on its own it does not tell them apart.`
+            : `Shared by ${reach} of the ${model.diseaseCount} diseases here.`}
+        </p>
+      )}
+      <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
+        <SourceLink href={node.url} source={node.source} />
+        {meta.map((m) => (
+          <span key={m}>{m}</span>
+        ))}
+        {website && (
+          <ExternalLink href={website} className="hover:underline">
+            Website
+          </ExternalLink>
+        )}
+      </p>
+      {mode === "researcher" && (
+        <p className="mt-1 font-mono text-[0.6875rem] break-all text-ink-2">
+          {node.id}
+          {info?.specificity !== undefined && ` · specificity ${formatScore(info.specificity)}`}
+          {info?.ic !== undefined && ` · IC ${formatScore(info.ic)}`}
+          {info?.aspect && ` · aspect ${info.aspect}`}
+          {typeof reach === "number" && ` · reaches ${reach} diseases`}
+        </p>
+      )}
+    </>
+  );
+}
+
+function CenterView({ model, hood, focus, mode, selection, onSelect }: Props & { focus: GraphNode }) {
+  const selectedId = selection?.id ?? null;
+  const anchors = hood.anchors.flatMap((id) => {
+    const node = nodeOf(model, id);
+    const hoodNode = hood.nodes.find((n) => n.id === id);
+    return node ? [{ node, hoodNode }] : [];
+  });
+  const anchorRows: DiseaseRow[] = anchors.map(({ node, hoodNode }) => ({
+    id: node.id,
+    short: shortLabel(node),
+    full: sentenceLabel(node.label),
+    color: diseaseColor(model, node.id),
+    badge: <span className="text-xs text-ink-2 tabular-nums">{pct(hoodNode?.relevance ?? 1)}</span>,
+    reason: hoodNode?.why ?? "",
+  }));
+  // Related diseases, each graded against the disease it is linked through.
+  const related: DiseaseRow[] = hood.related.flatMap((r) => {
+    let best: { anchor: string; pair: PairGrade } | null = null;
+    for (const a of hood.anchors) {
+      const pair = pairOf(model, a, r.id);
+      if (pair && (!best || pair.relevance > best.pair.relevance)) best = { anchor: a, pair };
+    }
+    const node = nodeOf(model, r.id);
+    if (!node || !best) return [];
+    const through = hood.anchors.length > 1 ? ` Through ${shortLabel(nodeOf(model, best.anchor) ?? { label: best.anchor })}.` : "";
+    return [
+      {
+        id: r.id,
+        short: shortLabel(node),
+        full: sentenceLabel(node.label),
+        color: diseaseColor(model, r.id),
+        badge: <TierBadge tier={r.tier} value={r.relevance} />,
+        reason: `${best.pair.tier_reason}${through}`,
+      },
+    ];
+  });
+  const name = nodeName(focus, 40);
+  const linkedWhat = focus.type === "Phenotype" ? "Diseases with this symptom" : focus.type === "Gene" ? "Diseases this gene is behind" : "Diseases it belongs to";
+  return (
+    <article aria-labelledby="detail-title" className="space-y-5">
+      <header>
+        <div className="flex items-center gap-2">
+          <KindIcon model={model} node={focus} />
+          <span className="text-xs font-medium tracking-wide text-ink-2 uppercase">In the center · {TYPE_WORD[focus.type].toLowerCase()}</span>
+        </div>
+        <h2 id="detail-title" className="mt-1.5 text-xl leading-snug font-semibold text-balance">
+          {sentenceLabel(focus.label)}
+        </h2>
+        {(focus.synonyms ?? []).length > 0 && <p className="mt-1 text-sm text-ink-2 text-pretty">Also called {(focus.synonyms ?? []).slice(0, 3).join(", ")}</p>}
+        {nodeFacts(model, focus, mode)}
+      </header>
+
+      <Section title={`${linkedWhat} (${anchors.length})`} hint={anchors.length ? "Each sits on the inner ring of the map. Select one for its evidence." : undefined}>
+        <DiseaseRows rows={anchorRows} selectedId={selectedId} onSelect={onSelect} empty={`${sentenceLabel(name)} is not linked to any disease in this atlas yet.`} />
+      </Section>
+
+      {anchors.length > 0 && (
+        <Section title="Shares biology with them" hint="Diseases graded against the ones above. Their relevance to what you searched is carried through that link.">
+          <DiseaseRows rows={related} selectedId={selectedId} onSelect={onSelect} empty="No other disease here shares their biology yet." />
+        </Section>
+      )}
+
+      <Section title="Linked in the atlas" hint="Every sourced link of this item.">
+        <Statements model={model} edges={model.index.edgesOf(focus.id)} mode={mode} />
+      </Section>
+    </article>
+  );
+}
+
+// ---------- any other node selected ----------
+
+function NodeView({ model, focusId, node, hoodNode, threshold, mode, onSelect, onFocus }: Props & { node: GraphNode; hoodNode?: HoodNode }) {
+  const focus = nodeOf(model, focusId)!;
+  const center = nodeName(focus, 32);
+  const diseases = model.index.diseasesFor(node.id).filter((id) => id !== node.id);
+  return (
+    <article aria-labelledby="detail-title" className="space-y-5">
+      <header>
+        <BackButton name={center} onClick={() => onSelect(null)} />
+        <div className="mt-3 flex items-center gap-2">
+          <KindIcon model={model} node={node} />
+          <span className="text-xs font-medium tracking-wide text-ink-2 uppercase">{TYPE_WORD[node.type]}</span>
+        </div>
+        <h2 id="detail-title" className="mt-1.5 text-xl leading-snug font-semibold text-balance">
+          {sentenceLabel(node.label)}
+        </h2>
+        {hoodNode ? (
+          <p className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-ink-2">
+            <span className="font-medium text-ink">{relevanceText(hoodNode.relevance, center, threshold)}</span>
+            {hoodNode.kind && <KindTag kind={hoodNode.kind} />}
+          </p>
+        ) : (
+          <p className="mt-1.5 text-sm text-ink-2">Not on the map around {center}.</p>
+        )}
+        {hoodNode?.why && <p className="mt-2 text-sm text-pretty">{hoodNode.why}</p>}
+        {nodeFacts(model, node, mode)}
+      </header>
+
+      {node.type !== "Disease" && diseases.length > 0 && (
+        <Section title={`Linked to ${countLabel("Disease", diseases.length)}`}>
+          <ul role="list" className="flex flex-wrap gap-1.5">
+            {diseases.slice(0, 12).map((id) => {
+              const d = nodeOf(model, id)!;
+              return (
+                <li key={id}>
+                  <button
+                    type="button"
+                    onClick={() => onFocus(id)}
+                    title={`Center the map on ${d.label}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-0.5 text-xs text-ink hover:bg-surface-2"
+                  >
+                    <Dot color={diseaseColor(model, id)} size={8} />
+                    {shortLabel(d)}
+                  </button>
+                </li>
+              );
+            })}
+            {diseases.length > 12 && <li className="text-xs text-ink-2">+{diseases.length - 12} more</li>}
+          </ul>
+        </Section>
+      )}
+
+      <Section title="Its links in the atlas" hint="Each one with its source, date and whether a curated source states it.">
+        <Statements model={model} edges={model.index.edgesOf(node.id)} mode={mode} />
+      </Section>
+
+      <Actions>
+        <PrimaryButton onClick={() => onFocus(node.id)}>Center the map here</PrimaryButton>
+        <SecondaryButton onClick={() => onSelect(null)}>Clear selection</SecondaryButton>
+      </Actions>
+    </article>
+  );
+}
+
+// ---------- a line selected ----------
+
+const STRENGTH_MEANS: Record<HoodEdge["role"], string> = {
+  similarity: "how much biology the two diseases share",
+  evidence: "how strong this one link is: 100% for a gene, a mechanism or a direct link, the symptom's specificity for a symptom",
+  bridge: "work already shared by both diseases",
+  bubble: "the strongest link in the folded group",
+};
+
+function EdgeView({ model, focusId, edge, threshold, mode, onSelect, onFocus }: Props & { edge: HoodEdge }) {
+  const focus = nodeOf(model, focusId)!;
+  const center = nodeName(focus, 32);
+  const a = nodeOf(model, edge.a);
+  const b = nodeOf(model, edge.b);
+  const edges = edge.edgeIds.flatMap((id) => {
+    const e = model.edgeById.get(id);
+    return e ? [e] : [];
+  });
+  const nameA = a ? nodeName(a, 40) : edge.a;
+  const nameB = b ? nodeName(b, 40) : edge.b;
+  const diseasePair = a?.type === "Disease" && b?.type === "Disease";
+  const other = diseasePair ? (edge.a === focusId ? b : edge.b === focusId ? a : b) : undefined;
+  const title =
+    edge.role === "similarity"
+      ? `${nameA} and ${nameB} share biology`
+      : edge.role === "bridge"
+        ? `${nameA} and ${nameB} already work together`
+        : edges[0]
+          ? sentenceLabel(edgeSentence(model, edges[0], (n) => nodeName(n, 40)))
+          : `${nameA} and ${nameB}`;
+  const eyebrow = edge.role === "similarity" ? "Line · shared biology" : edge.role === "bridge" ? "Line · existing collaboration" : "Line · evidence";
+  return (
+    <article aria-labelledby="detail-title" className="space-y-5">
+      <header>
+        <BackButton name={center} onClick={() => onSelect(null)} />
+        <p className="mt-3 text-xs font-medium tracking-wide text-ink-2 uppercase">{eyebrow}</p>
+        <h2 id="detail-title" className="mt-1.5 text-xl leading-snug font-semibold text-balance">
+          {title}
+        </h2>
+        {edge.role === "bridge" && <p className="mt-1 text-sm text-ink-2">{edge.label}</p>}
+        <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line">
+          <div className="bg-surface px-3 py-2">
+            <dt className="text-xs text-ink-2">Strength</dt>
+            <dd className="text-lg font-semibold tabular-nums">{pct(edge.strength)}</dd>
+          </div>
+          <div className="bg-surface px-3 py-2">
+            <dt className="text-xs text-ink-2">Relevance to {center}</dt>
+            <dd className="text-lg font-semibold tabular-nums">{pct(edge.relevance)}</dd>
+          </div>
+        </dl>
+        <p className="mt-2 text-xs text-ink-2 text-pretty">
+          Strength is {STRENGTH_MEANS[edge.role]}. Relevance is that strength carried back to {center}
+          {edge.relevance < threshold - 1e-9 ? `; it is under your ${pct(threshold)} filter, so the line is drawn faint.` : "."}
+        </p>
+        <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-2">
+          <KindTag kind={edge.kind} />
+          <span>{edge.kind === "observed" ? "Stated by a curated source." : edge.kind === "mixed" ? "Partly stated by a source, partly inferred." : "Inferred: no curated source states it directly."}</span>
+        </p>
+      </header>
+
+      <Section title="What this line rests on" hint={edges.length ? `${edges.length === 1 ? "One sourced link" : `${edges.length} sourced links`} in the graph, each with its source, date and quote.` : undefined}>
+        {edges.length ? (
+          <Statements model={model} edges={edges} mode={mode} limit={8} />
+        ) : (
+          <p className="text-sm text-ink-2 text-pretty">
+            No single link in the graph states this. The grade combines the evidence shown for the pair; select the disease to read it.
+          </p>
+        )}
+      </Section>
+
+      <Actions>
+        {diseasePair && other && other.id !== focusId && (
+          <PrimaryButton onClick={() => onSelect(other.id)}>Why they&apos;re connected</PrimaryButton>
+        )}
+        {[a, b]
+          .filter((n): n is GraphNode => !!n && n.id !== focusId)
+          .map((n) => (
+            <SecondaryButton key={n.id} onClick={() => onFocus(n.id)}>
+              Center on {nodeName(n, 24)}
+            </SecondaryButton>
+          ))}
+      </Actions>
+    </article>
+  );
+}
+
+// ---------- a related disease selected ----------
 
 function ScoreLine({ dim, cap }: { dim: DimensionResult; cap: number | undefined }) {
   return (
@@ -597,7 +1049,7 @@ function ScoreLine({ dim, cap }: { dim: DimensionResult; cap: number | undefined
         <span className="block h-full rounded-full bg-ink-2" style={{ width: `${Math.round(dim.score * 100)}%` }} />
       </span>
       <span>score {formatScore(dim.score)}</span>
-      {dim.raw !== undefined && <span>raw {formatScore(dim.raw)}</span>}
+      {dim.raw !== undefined && <span>raw SimGIC {formatScore(dim.raw)}</span>}
       {dim.percentile !== undefined && <span>percentile {formatPercent(dim.percentile)}</span>}
       {cap !== undefined && <span>cap {formatScore(cap)}</span>}
       <span>
@@ -611,6 +1063,7 @@ function SharedChips({ model, items, mode, umbrellas }: { model: AtlasModel; ite
   const [all, setAll] = useState(false);
   const limit = 6;
   const shown = all ? items : items.slice(0, limit);
+  const info = model.relevance.node_info ?? {};
   // Only shared work can be an umbrella: a group or registry that covers most diseases here.
   // When every item is one, say it once instead of on every chip.
   const allUmbrella = umbrellas.size > 0 && items.every((i) => umbrellas.has(i.id));
@@ -625,11 +1078,15 @@ function SharedChips({ model, items, mode, umbrellas }: { model: AtlasModel; ite
         {shown.map((item) => {
           const node = nodeOf(model, item.id);
           const umbrella = !allUmbrella && umbrellas.has(item.id);
+          const specificity = info[item.id]?.specificity;
           const cls = `inline-flex max-w-full items-center gap-1 rounded-full border border-ink-3 px-2.5 py-0.5 text-xs whitespace-nowrap text-ink ${item.kind === "observed" ? "" : "border-dashed"}`;
           const chip = (
             <>
               <span className="min-w-0 truncate">{item.label}</span>
               {umbrella && <span className="shrink-0 text-ink-2">· covers most diseases here</span>}
+              {mode === "researcher" && typeof specificity === "number" && item.type !== "Disease" && (
+                <span className="shrink-0 text-ink-2 tabular-nums">· {item.type === "Mechanism" ? "specificity" : "spec."} {formatScore(specificity)}</span>
+              )}
             </>
           );
           return (
@@ -646,21 +1103,13 @@ function SharedChips({ model, items, mode, umbrellas }: { model: AtlasModel; ite
         })}
         {!all && items.length > limit && (
           <li>
-            <button
-              type="button"
-              onClick={() => setAll(true)}
-              className="rounded-full px-2 py-0.5 text-xs font-medium text-accent-ink hover:underline"
-            >
+            <button type="button" onClick={() => setAll(true)} className="rounded-full px-2 py-0.5 text-xs font-medium text-accent-ink hover:underline">
               +{items.length - limit} more
             </button>
           </li>
         )}
       </ul>
-      {mode === "researcher" && (
-        <p className="mt-1.5 font-mono text-[0.6875rem] break-all text-ink-2">
-          {[...new Set(items.flatMap((i) => i.edges))].join(", ")}
-        </p>
-      )}
+      {mode === "researcher" && <p className="mt-1.5 font-mono text-[0.6875rem] break-all text-ink-2">{[...new Set(items.flatMap((i) => i.edges))].join(", ")}</p>}
     </div>
   );
 }
@@ -669,79 +1118,6 @@ function SharedChips({ model, items, mode, umbrellas }: { model: AtlasModel; ite
 function itemsKind(items: SharedItem[]): Kind {
   const kinds = new Set(items.map((i) => i.kind));
   return kinds.size === 1 ? [...kinds][0] : "mixed";
-}
-
-function Disclosure({ summary, children }: { summary: string; children: ReactNode }) {
-  return (
-    <details className="group mt-2">
-      <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded text-xs font-medium text-accent-ink hover:underline [&::-webkit-details-marker]:hidden">
-        <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" className="transition-transform group-open:rotate-90 motion-reduce:transition-none">
-          <path d="M4.5 2.5L8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        {summary}
-      </summary>
-      <div className="mt-2 border-l-2 border-line pl-3 text-xs">{children}</div>
-    </details>
-  );
-}
-
-// Every graph edge behind a line of evidence, read as a sentence with its source, so each claim
-// in the panel can be traced to the record that states it. One statement backed by several
-// records (a consortium grant listed under three projects) is one sentence with several links.
-// A caveat is printed once, under the first statement that carries it.
-function EdgeSources({ model, edges, mode }: { model: AtlasModel; edges: GraphEdge[]; mode: Mode }) {
-  const [all, setAll] = useState(false);
-  const statements: GraphEdge[][] = [];
-  const byKey = new Map<string, GraphEdge[]>();
-  for (const edge of edges) {
-    const key = [edge.type, edge.subject, edge.object, edge.source, edge.kind, edge.evidence ?? ""].join("|");
-    const group = byKey.get(key);
-    if (group) group.push(edge);
-    else {
-      const fresh = [edge];
-      byKey.set(key, fresh);
-      statements.push(fresh);
-    }
-  }
-  const limit = 6;
-  const shown = all ? statements : statements.slice(0, limit);
-  return (
-    <Disclosure summary={`Where this comes from · ${statements.length}`}>
-      <ul role="list" className="space-y-2">
-        {shown.map((group, i) => {
-          const [edge] = group;
-          return (
-            <li key={edge.id}>
-              <p className="text-pretty text-ink">{edgeSentence(model, edge)}</p>
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-ink-2">
-                {group.map((e, j) =>
-                  j === 0 ? (
-                    <SourceLink key={e.id} href={e.url} source={e.source} />
-                  ) : (
-                    <ExternalLink key={e.id} href={e.url} className="hover:underline">
-                      record {j + 1}
-                    </ExternalLink>
-                  ),
-                )}
-                <KindTag kind={edge.kind} />
-                {mode === "researcher" && (
-                  <span className="font-mono text-[0.6875rem] break-all">
-                    {group.map((e) => e.id).join(", ")} · confidence {edge.confidence}
-                  </span>
-                )}
-              </div>
-              {edge.evidence && edge.evidence !== shown[i - 1]?.[0].evidence && <p className="mt-0.5 text-pretty text-ink-2">{edge.evidence}</p>}
-            </li>
-          );
-        })}
-      </ul>
-      {!all && statements.length > limit && (
-        <button type="button" onClick={() => setAll(true)} className="mt-2 font-medium text-accent-ink hover:underline">
-          Show all {statements.length}
-        </button>
-      )}
-    </Disclosure>
-  );
 }
 
 // The variant-type line has no shared item to cite: show the variants it counted, each with its
@@ -756,7 +1132,7 @@ function VariantSources({ model, ids }: { model: AtlasModel; ids: string[] }) {
   const source = sides.find((s) => s.rows.length)!.rows[0].node.source;
   return (
     <Disclosure summary={`Where this comes from · ${total} ${total === 1 ? "variant" : "variants"}`}>
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 text-xs">
         {sides.map((side) => (
           <div key={side.id}>
             <p className="font-medium text-ink">{evidenceName(side.node)}</p>
@@ -803,7 +1179,11 @@ function DimensionRow({ model, dim, mode, pairIds }: { model: AtlasModel; dim: D
         {gloss && <p className="mt-1 text-xs text-ink-2 text-pretty">{gloss}</p>}
         {mode === "researcher" && <ScoreLine dim={dim} cap={model.relevance.meta.caps[dim.dimension]} />}
         {dim.shared.length > 0 && <SharedChips model={model} items={dim.shared} mode={mode} umbrellas={umbrellaIds(model, dim)} />}
-        {edges.length > 0 && <EdgeSources model={model} edges={edges} mode={mode} />}
+        {edges.length > 0 && (
+          <Disclosure summary={`Where this comes from · ${edges.length}`}>
+            <Statements model={model} edges={edges} mode={mode} />
+          </Disclosure>
+        )}
         {dim.dimension === "variant" && dim.status !== "unknown" && <VariantSources model={model} ids={pairIds} />}
       </div>
     </li>
@@ -851,20 +1231,18 @@ function PathView({ model, pair, focusId, otherId, mode }: { model: AtlasModel; 
           </li>
         ))}
       </ol>
-      {path.steps.length < 3 && (
-        <p className="mt-2 text-xs text-ink-2 text-pretty">No single shared gene, mechanism or symptom ties them; the grade comes from overall overlap.</p>
-      )}
+      {path.steps.length < 3 && <p className="mt-2 text-xs text-ink-2 text-pretty">No single shared gene, mechanism or symptom ties them; the grade comes from overall overlap.</p>}
       {!path.sharedGroup && <p className="mt-2 text-xs text-ink-2 text-pretty">No shared patient group or registry on record yet.</p>}
     </>
   );
 }
 
-function PairView({ model, focusId, mode, onSelect, onFocus, pair, other }: Props & { pair: PairGrade; other: GraphNode }) {
+function PairView({ model, focusId, mode, onSelect, onFocus, pair, other, anchorId }: Props & { pair: PairGrade; other: GraphNode; anchorId: string }) {
   const focus = nodeOf(model, focusId);
-  if (!focus) return null;
+  const anchor = nodeOf(model, anchorId);
+  if (!focus || !anchor) return null;
   const researcher = mode === "researcher";
-  // Grouped by the family each result states, so a grade file is shown the way it was graded
-  // (symptoms count as biology before engine 0.2.0 and as clinical resemblance from 0.2.0 on).
+  // Grouped by the family each result states, so a grade file is shown the way it was graded.
   const results = DIMENSIONS.map((d) => pair.dimensions[d]).filter((d): d is DimensionResult => !!d);
   const biology = results.filter((d) => d.family === "biology" && d.status !== "unknown");
   const clinical = results.filter((d) => d.family === "clinical" && d.status !== "unknown");
@@ -876,24 +1254,28 @@ function PairView({ model, focusId, mode, onSelect, onFocus, pair, other }: Prop
     ...(typeof pair.clinical === "number" ? [`clinical ${formatScore(pair.clinical)}`] : []),
     `collaboration ${formatScore(pair.collaboration)}`,
   ];
-  const pairIds = [focusId, other.id];
+  const pairIds = [anchorId, other.id];
+  const through = anchorId !== focusId;
 
   return (
     <article aria-labelledby="detail-title" className="space-y-5">
       <header>
-        <button type="button" onClick={() => onSelect(null)} className="text-[0.8125rem] font-medium text-accent-ink hover:underline">
-          ‹ Back to {shortLabel(focus)}
-        </button>
-        <h2 id="detail-title" className="mt-2 text-xl leading-snug font-semibold text-balance">
-          {shortLabel(focus, 32)} and {shortLabel(other, 32)}
+        <BackButton name={nodeName(focus, 32)} onClick={() => onSelect(null)} />
+        <h2 id="detail-title" className="mt-3 text-xl leading-snug font-semibold text-balance">
+          {shortLabel(anchor, 32)} and {shortLabel(other, 32)}
         </h2>
         <p className="mt-0.5 text-sm text-ink-2 text-pretty">{sentenceLabel(other.label)}</p>
+        {through && (
+          <p className="mt-1 text-xs text-ink-2 text-pretty">
+            Graded against {sentenceLabel(anchor.label)}, which {nodeName(focus, 40)} is linked to.
+          </p>
+        )}
         <dl className="mt-3 divide-y divide-line rounded-xl border border-line">
           <div className="px-3 py-2.5">
             <dt className="text-xs font-medium text-ink-2">Shared biology · sets the distance on the map</dt>
             <dd className="mt-1.5">
               <span className="flex flex-wrap items-center gap-2">
-                <TierBadge tier={pair.tier} className="px-2.5 py-1 text-[0.8125rem]" />
+                <TierBadge tier={pair.tier} value={pair.relevance} className="px-2.5 py-1 text-[0.8125rem]" />
                 {pair.support && <KindTag kind={pair.support} />}
               </span>
               <p className="mt-1.5 text-[0.9375rem] text-pretty">{pair.tier_reason}</p>
@@ -903,7 +1285,7 @@ function PairView({ model, focusId, mode, onSelect, onFocus, pair, other }: Prop
             <div className="px-3 py-2.5">
               <dt className="text-xs font-medium text-ink-2">How alike they look · symptoms, onset, inheritance</dt>
               <dd className="mt-1.5">
-                <ClinicalBadge tier={pair.clinical_tier} className="px-2.5 py-1 text-[0.8125rem]" />
+                <ClinicalBadge tier={pair.clinical_tier} value={pair.clinical} className="px-2.5 py-1 text-[0.8125rem]" />
                 {pair.clinical_reason && <p className="mt-1.5 text-[0.9375rem] text-pretty">{pair.clinical_reason}</p>}
               </dd>
             </div>
@@ -927,17 +1309,18 @@ function PairView({ model, focusId, mode, onSelect, onFocus, pair, other }: Prop
         ) : (
           <p className="text-sm text-ink-2">Nothing biological could be compared for this pair.</p>
         )}
+        {clinical.length > 0 && (
+          <>
+            <h4 className="mt-3 text-[0.8125rem] font-semibold text-ink">How alike they look</h4>
+            <p className="mt-0.5 text-xs text-ink-2 text-pretty">Symptoms, onset and inheritance. Shown beside the biology, never used for distance on the map.</p>
+            <ul role="list" className="divide-y divide-line">
+              {clinical.map((dim) => (
+                <DimensionRow key={dim.dimension} model={model} dim={dim} mode={mode} pairIds={pairIds} />
+              ))}
+            </ul>
+          </>
+        )}
       </Section>
-
-      {clinical.length > 0 && (
-        <Section title="How alike they look" hint="Symptoms, onset and inheritance. Shown beside the biology, never used for distance on the map.">
-          <ul role="list" className="divide-y divide-line">
-            {clinical.map((dim) => (
-              <DimensionRow key={dim.dimension} model={model} dim={dim} mode={mode} pairIds={pairIds} />
-            ))}
-          </ul>
-        </Section>
-      )}
 
       <Section title="Already working together" hint="Groups, studies, grants and people already linked to both.">
         {together.length ? (
@@ -966,7 +1349,7 @@ function PairView({ model, focusId, mode, onSelect, onFocus, pair, other }: Prop
               <li key={flag} className="flex gap-2.5">
                 <span aria-hidden="true" className="mt-[0.45rem] size-1.5 shrink-0 rounded-full bg-ink-2" />
                 <span className="text-ink-2">
-                  {FLAG_TEXT[flag]}
+                  {FLAG_TEXT[flag] ?? flag}
                   {researcher && <span className="ml-1 font-mono text-[0.6875rem]">{flag}</span>}
                 </span>
               </li>
@@ -981,7 +1364,9 @@ function PairView({ model, focusId, mode, onSelect, onFocus, pair, other }: Prop
             {pair.judgments.map((j, i) => (
               <li key={i}>
                 <p className="text-pretty">
-                  <span className="font-medium">{j.verdict === "supports" ? "Supports" : j.verdict === "weakens" ? "Weakens" : j.verdict === "contradicts" ? "Contradicts" : "Not enough evidence"}</span>
+                  <span className="font-medium">
+                    {j.verdict === "supports" ? "Supports" : j.verdict === "weakens" ? "Weakens" : j.verdict === "contradicts" ? "Contradicts" : "Not enough evidence"}
+                  </span>
                   {j.dimension !== "overall" && <span className="text-ink-2"> · {DIMENSION_LABEL[j.dimension].toLowerCase()}</span>}: {j.rationale}
                 </p>
                 {researcher && (
@@ -995,29 +1380,64 @@ function PairView({ model, focusId, mode, onSelect, onFocus, pair, other }: Prop
         </Section>
       )}
 
-      <Section title="Path" hint="Explore connections: how the atlas links them, one sourced step at a time. Solid = observed, dashed = inferred.">
-        <PathView model={model} pair={pair} focusId={focusId} otherId={other.id} mode={mode} />
+      <Section title="Path" hint="How the atlas links them, one sourced step at a time. Solid = observed, dashed = inferred.">
+        <PathView model={model} pair={pair} focusId={anchorId} otherId={other.id} mode={mode} />
       </Section>
 
-      <div className="flex flex-wrap gap-2 border-t border-line pt-4">
-        <button
-          type="button"
-          onClick={() => onFocus(other.id)}
-          className="min-h-9 rounded-full bg-accent px-4 text-sm font-medium text-white hover:brightness-110"
-        >
-          Center the map here
-        </button>
-        <button
-          type="button"
-          onClick={() => onSelect(null)}
-          className="min-h-9 rounded-full border border-line px-4 text-sm font-medium text-ink hover:bg-surface-2"
-        >
-          Clear selection
-        </button>
-      </div>
+      <Actions>
+        <PrimaryButton onClick={() => onFocus(other.id)}>Center the map on {shortLabel(other, 24)}</PrimaryButton>
+        <SecondaryButton onClick={() => onSelect(null)}>Clear selection</SecondaryButton>
+      </Actions>
       <p className="text-xs text-ink-2 text-pretty">
         Shared work is a starting point for a conversation, not medical advice. A scientist has to check eligibility and mechanism.
       </p>
     </article>
+  );
+}
+
+// ---------- the next step ----------
+
+const STEP_ICON: Record<NextStep["kind"], NodeType> = {
+  contact: "Investigator",
+  registry: "Asset",
+  group: "PatientOrg",
+  study: "Trial",
+  gap: "Disease",
+};
+
+function NextSteps({ model, diseaseId, relatedId, mode }: { model: AtlasModel; diseaseId: string; relatedId: string | null; mode: Mode }) {
+  const steps = nextSteps(model.graph, model.relevance, diseaseId, relatedId);
+  const disease = nodeOf(model, diseaseId);
+  const related = relatedId ? nodeOf(model, relatedId) : undefined;
+  if (!steps.length || !disease) return null;
+  const forWhat = related ? `${shortLabel(disease)} and ${shortLabel(related)}` : shortLabel(disease);
+  return (
+    <section aria-labelledby="next-step" className="border-t border-line pt-4">
+      <h3 id="next-step" className="text-[0.9375rem] font-semibold text-ink">
+        Next step for {forWhat}
+      </h3>
+      <p className="mt-0.5 text-xs text-ink-2 text-pretty">Built only from sourced items in the atlas. When nothing supports a step, it says so.</p>
+      <ol role="list" className="mt-3 space-y-3">
+        {steps.map((s, i) => (
+          <li key={i} className={`rounded-xl border p-3 ${s.kind === "gap" ? "border-dashed border-ink-3" : "border-line"}`}>
+            <div className="flex gap-2.5">
+              <span className="mt-0.5 text-ink-2">
+                <TypeIcon type={STEP_ICON[s.kind]} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-pretty">{s.text}</p>
+                <p className="mt-1 text-xs text-ink-2 text-pretty">{s.because}</p>
+                {s.caveat && <p className="mt-1 text-xs text-ink-2 text-pretty">What the source does not show: “{s.caveat}”</p>}
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-ink-2">
+                  {s.target && <SourceLink href={s.target.url} source={s.target.source} />}
+                  {s.evidence && <KindTag kind={s.evidence} />}
+                  {mode === "researcher" && s.edgeIds.length > 0 && <span className="font-mono text-[0.6875rem] break-all">{s.edgeIds.join(", ")}</span>}
+                </div>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
