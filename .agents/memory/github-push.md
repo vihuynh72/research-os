@@ -9,4 +9,4 @@ description: How pushing to origin (vihuynh72/research-os) can and cannot authen
 
 **Why:** found 2026-10-03 while making origin the team's source of truth; cost several attempts.
 
-**How to apply:** for pushes, rely on the user's Replit-GitHub connection, not the integration; never print or store tokens. Pushing `.github/workflows/*` also needs workflow permission on whatever credential is used.
+**How to apply:** connector authorization and shell Git authentication are separate. Do not repeat pushes with a rejected credential expecting it to refresh. If Git-pane reauthentication fails, Replit documents GitHub CLI browser authorization as an alternative; the user must approve it before the CLI can authenticate Git pushes. Never print or store tokens in project files. Pushing `.github/workflows/*` also needs workflow permission on whatever credential is used.

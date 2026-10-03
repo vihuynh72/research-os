@@ -1,2 +1,2 @@
 - [One lane per teammate](scope.md) — owner Vi = app/infra; never build Jaspaal's (data/AI) or Paul's (community/demo) parts of PLAN-16H.md.
-- [GitHub push auth](github-push.md) — push needs the user's Replit↔GitHub link (Git pane); the GitHub integration is read-only here (no app install).
+- [GitHub push auth](github-push.md) — shell Git and connector auth are separate; use GitHub CLI browser authorization if Git-pane reauthentication fails.
