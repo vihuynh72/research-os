@@ -1,6 +1,6 @@
 // Shared wording, colors and graph lookups for the atlas UI. Pure functions only: the
 // components decide what to show, this file decides how it is said and where it comes from.
-import type { AtlasGraph, EdgeKind, GraphEdge, GraphNode, NodeType } from "@/lib/graph/types";
+import type { AtlasGraph, EdgeKind, GraphEdge, GraphNode, NodeType } from "../../lib/graph/types.ts";
 import type {
   ClinicalTier,
   Dimension,
@@ -12,14 +12,14 @@ import type {
   RelevanceDoc,
   SharedItem,
   Tier,
-} from "@/lib/grading/types";
-import { COLLABORATION_DIMENSIONS, pairKey } from "@/lib/grading/types";
-import { UMBRELLA_MIN, UMBRELLA_SHARE } from "@/lib/grading/config";
-import { classifyVariant, type VariantEffect } from "@/lib/grading/variants";
-import { buildGraphIndex, type GraphIndex } from "@/lib/graph/index";
-import type { HoodEdge, HoodNode, Neighborhood } from "@/lib/graph/neighborhood";
-import { shortLabel } from "@/lib/graph/labels";
-import { countLabel, relationLabel } from "@/lib/graph/vocab";
+} from "../../lib/grading/types.ts";
+import { COLLABORATION_DIMENSIONS, pairKey } from "../../lib/grading/types.ts";
+import { UMBRELLA_MIN, UMBRELLA_SHARE } from "../../lib/grading/config.ts";
+import { classifyVariant, type VariantEffect } from "../../lib/grading/variants.ts";
+import { buildGraphIndex, type GraphIndex } from "../../lib/graph/index.ts";
+import type { HoodEdge, HoodNode, Neighborhood } from "../../lib/graph/neighborhood.ts";
+import { shortLabel } from "../../lib/graph/labels.ts";
+import { countLabel, relationLabel } from "../../lib/graph/vocab.ts";
 
 export type Mode = "parent" | "researcher";
 export type View = "2d" | "3d";

@@ -3,15 +3,15 @@
 // place (distance = relevance, direction = kind) and each kind of thing gets its own height
 // (SECTOR_DEPTH), so seen from straight above the disc is the 2D map. Before a search it is the
 // constellation of every disease at its similarity position (coords3d).
-import type { HoodEdge, HoodNode, Neighborhood, ThresholdResult } from "@/lib/graph/neighborhood";
-import { SECTORS, SECTOR_DEPTH, radialLayout, ringRadius, sectorOf, type RadialNode } from "@/lib/viz/radialLayout";
-import { ICON_PATH } from "@/lib/viz/icons";
-import { shortLabel } from "@/lib/graph/labels";
-import { TYPE_NAME } from "@/lib/graph/vocab";
-import type { NodeType } from "@/lib/graph/types";
+import type { HoodEdge, HoodNode, Neighborhood, ThresholdResult } from "../../lib/graph/neighborhood.ts";
+import { SECTORS, SECTOR_DEPTH, radialLayout, ringRadius, sectorOf, type RadialNode } from "../../lib/viz/radialLayout.ts";
+import { ICON_PATH } from "../../lib/viz/icons.ts";
+import { shortLabel } from "../../lib/graph/labels.ts";
+import { TYPE_NAME } from "../../lib/graph/vocab.ts";
+import type { NodeType } from "../../lib/graph/types.ts";
 import type { Graph3DLink, Graph3DNode, Graph3DRing, Graph3DSector } from "./Graph3D";
-import { KIND_OF, KIND_STYLE } from "./kinds";
-import { TIER_WORD, clusterOf, diseaseColor, formatPercent, type AtlasModel } from "./format";
+import { KIND_OF, KIND_STYLE } from "./kinds.ts";
+import { TIER_WORD, clusterOf, diseaseColor, formatPercent, type AtlasModel } from "./format.ts";
 
 export interface Scene3D {
   nodes: Graph3DNode[];
