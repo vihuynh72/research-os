@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vihuynh72/research-os/blob/main/schema.json",
+  "title": "CVI Atlas graph",
+  "description": "DRAFT 0.1.0, proposed by Vi for agreement with Jaspaal and Paul. The contract for graph.json: typed nodes and typed edges, every edge sourced. Ids, never names. Changes only with all three at the table.",
+  "type": "object",
+  "required": ["meta", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": { "$ref": "#/$defs/meta" },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+    "clusters": { "type": "array", "items": { "$ref": "#/$defs/cluster" } }
+  },
+  "$defs": {
+    "meta": {
+      "type": "object",
+      "required": ["schema_version", "generated_at"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": { "type": "string", "const": "0.1.0" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "slice": { "$ref": "#/$defs/curie", "description": "Phenotype the graph is built around, e.g. HP:0100704." },
+        "notes": { "type": "string" }
+      }
+    },
+    "curie": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]*:[^\\s]+$",
+      "description": "Prefixed id. Disease MONDO, Gene HGNC, Phenotype HP, Mechanism REACT (Reactome), Paper PMID, Trial clinicaltrials:NCT..., Grant/Investigator reporter:..., PatientOrg/Asset atlas:... (local ids from community.csv).",
+      "examples": ["MONDO:0034106", "HGNC:11634", "HP:0100704", "PMID:31234567", "clinicaltrials:NCT04567890", "atlas:org-pcvis"]
+    },
+    "nodeType": {
+      "type": "string",
+      "enum": ["Disease", "Gene", "Variant", "Mechanism", "Phenotype", "PatientOrg", "Paper", "Trial", "Grant", "Investigator", "Asset"]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Who states it, as shown to the user.",
+      "examples": ["Monarch", "HPO", "Orphanet (via Monarch)", "Reactome", "PubMed", "ClinicalTrials.gov", "NIH RePORTER", "community.csv"]
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "type", "label", "source", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/curie" },
+        "type": { "$ref": "#/$defs/nodeType" },
+        "label": { "type": "string", "minLength": 1, "description": "Display name. Shown to people, never used as a key." },
+        "synonyms": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "description": { "type": "string", "description": "One or two plain-language sentences." },
+        "source": { "$ref": "#/$defs/source" },
+        "url": { "type": "string", "format": "uri", "description": "Page where a person can check this node." },
+        "cluster": { "type": "string", "description": "Id of the cluster (Louvain community) this node belongs to." },
+        "centrality": { "type": "number", "minimum": 0, "maximum": 1, "description": "Normalized betweenness; drives node size." },
+        "bridge": { "type": "boolean", "description": "True when the node links clusters." },
+        "attributes": { "type": "object", "description": "Type-specific extras (trial phase, org country, asset kind). Not used for logic until agreed." }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "type", "subject", "object", "source", "url", "date", "confidence", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$", "description": "Stable across rebuilds, so [edge:ID] citations from /api/explain keep working." },
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Relation, read as subject -> object.",
+          "examples": ["has_phenotype", "causes", "has_variant", "in_pathway", "has_mechanism", "studies", "funds", "investigates", "supports", "offers", "mentions", "similar_to"]
+        },
+        "subject": { "$ref": "#/$defs/curie" },
+        "object": { "$ref": "#/$defs/curie" },
+        "source": { "$ref": "#/$defs/source" },
+        "url": { "type": "string", "format": "uri", "description": "Page where a person can check this claim." },
+        "date": { "type": "string", "format": "date", "description": "YYYY-MM-DD. Publication date of the evidence; if the source has none, the date it was retrieved." },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Curated observed assertions ~1; inferred edges carry the extraction or similarity score." },
+        "kind": {
+          "type": "string",
+          "enum": ["observed", "inferred", "contradicted"],
+          "description": "observed: stated by a curated source. inferred: derived by our pipeline or a model (drawn dashed). contradicted: disputed by a source (shown in its own block)."
+        },
+        "evidence": { "type": "string", "maxLength": 1000, "description": "Exact supporting text span, e.g. from an abstract." },
+        "pmid": { "type": "string", "pattern": "^PMID:[0-9]+$" }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "required": ["id", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+        "label": { "type": "string", "minLength": 1, "description": "Plain-language group name." },
+        "description": { "type": "string" },
+        "size": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "examples": [
+    {
+      "meta": { "schema_version": "0.1.0", "generated_at": "2026-10-03T19:30:00Z", "slice": "HP:0100704" },
+      "nodes": [
+        {
+          "id": "MONDO:0034106",
+          "type": "Disease",
+          "label": "developmental and epileptic encephalopathy, 73",
+          "source": "Monarch",
+          "url": "https://monarchinitiative.org/MONDO:0034106"
+        },
+        {
+          "id": "HP:0100704",
+          "type": "Phenotype",
+          "label": "Cerebral visual impairment",
+          "synonyms": ["Cortical visual impairment"],
+          "source": "HPO",
+          "url": "https://hpo.jax.org/browse/term/HP:0100704"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e0001",
+          "type": "has_phenotype",
+          "subject": "MONDO:0034106",
+          "object": "HP:0100704",
+          "source": "Orphanet (via Monarch)",
+          "url": "https://monarchinitiative.org/MONDO:0034106",
+          "date": "2026-10-03",
+          "confidence": 1,
+          "kind": "observed"
+        }
+      ]
+    }
+  ]
+}

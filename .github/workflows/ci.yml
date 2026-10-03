@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Validate schema.json and graph data
+        run: npm run check:schema
+      - name: Build (also generates Next.js types)
+        run: npm run build
+      - name: Typecheck
+        run: npm run typecheck
