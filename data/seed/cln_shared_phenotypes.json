@@ -1,0 +1,216 @@
+[
+  {
+    "id": "HP:0002059",
+    "name": "Abnormality of metabolism/homeostasis",
+    "disease_count": 4,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 1",
+      "neuronal ceroid lipofuscinosis 7"
+    ]
+  },
+  {
+    "id": "HP:0000529",
+    "name": "Blindness",
+    "disease_count": 4,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 1",
+      "ceroid lipofuscinosis, neuronal, 6A"
+    ]
+  },
+  {
+    "id": "HP:0000546",
+    "name": "EEG abnormality",
+    "disease_count": 4,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 1",
+      "ceroid lipofuscinosis, neuronal, 6A"
+    ]
+  },
+  {
+    "id": "HP:0001250",
+    "name": "Loss of speech",
+    "disease_count": 4,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 1",
+      "ceroid lipofuscinosis, neuronal, 6A"
+    ]
+  },
+  {
+    "id": "HP:0002074",
+    "name": "Vascular granular osmiophilic material deposition",
+    "disease_count": 4,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 1",
+      "ceroid lipofuscinosis, neuronal, 6A"
+    ]
+  },
+  {
+    "id": "HP:0000648",
+    "name": "Cerebral atrophy",
+    "disease_count": 3,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 1",
+      "neuronal ceroid lipofuscinosis 7"
+    ]
+  },
+  {
+    "id": "HP:0000550",
+    "name": "Generalized hypotonia",
+    "disease_count": 3,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 1"
+    ]
+  },
+  {
+    "id": "HP:0000618",
+    "name": "Hallucinations",
+    "disease_count": 3,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 1",
+      "neuronal ceroid lipofuscinosis 7"
+    ]
+  },
+  {
+    "id": "HP:0001251",
+    "name": "Psychomotor deterioration",
+    "disease_count": 3,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 1",
+      "neuronal ceroid lipofuscinosis 7"
+    ]
+  },
+  {
+    "id": "HP:0003205",
+    "name": "Reduced tissue tripeptidyl peptidase 1 activity",
+    "disease_count": 3,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2",
+      "ceroid lipofuscinosis, neuronal, 6A"
+    ]
+  },
+  {
+    "id": "HP:0001336",
+    "name": "Spasticity",
+    "disease_count": 3,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 1"
+    ]
+  },
+  {
+    "id": "HP:0000750",
+    "name": "Ataxia",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 2",
+      "neuronal ceroid lipofuscinosis 7"
+    ]
+  },
+  {
+    "id": "HP:0003208",
+    "name": "Cerebral atrophy",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "ceroid lipofuscinosis, neuronal, 6A"
+    ]
+  },
+  {
+    "id": "HP:0001922",
+    "name": "Decreased light- and dark-adapted electroretinogram amplitude",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 1"
+    ]
+  },
+  {
+    "id": "HP:0001311",
+    "name": "Delayed speech and language development",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 2",
+      "ceroid lipofuscinosis, neuronal, 6A"
+    ]
+  },
+  {
+    "id": "HP:0000608",
+    "name": "Depression",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 1"
+    ]
+  },
+  {
+    "id": "HP:0002353",
+    "name": "Flexion contracture",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 1",
+      "neuronal ceroid lipofuscinosis 7"
+    ]
+  },
+  {
+    "id": "HP:0001263",
+    "name": "Irritability",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 1",
+      "neuronal ceroid lipofuscinosis 7"
+    ]
+  },
+  {
+    "id": "HP:0003463",
+    "name": "Progressive visual loss",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 2"
+    ]
+  },
+  {
+    "id": "HP:0002360",
+    "name": "Retinal degeneration",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 1",
+      "neuronal ceroid lipofuscinosis 7"
+    ]
+  },
+  {
+    "id": "HP:0002361",
+    "name": "Secondary microcephaly",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 1"
+    ]
+  },
+  {
+    "id": "HP:0001249",
+    "name": "Vacuolated lymphocytes",
+    "disease_count": 2,
+    "diseases": [
+      "neuronal ceroid lipofuscinosis 3",
+      "neuronal ceroid lipofuscinosis 1"
+    ]
+  }
+]
