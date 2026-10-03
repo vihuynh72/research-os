@@ -279,14 +279,30 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
     return ids;
   }, [activeNode, filtered]);
 
-  // Labels: radially outward; diseases and the searched node always; others unless they would collide.
-  const labelled = useMemo(() => {
-    const out = new Set<string>();
-    if (!filtered || !geometry) return out;
-    const boxes: [number, number, number, number][] = [];
+  // Labels: diseases and the searched node always, others only where they fit. Each label takes the
+  // first place that collides with nothing (outward from the center, then beside, above or below its
+  // dot); a label that must show and fits nowhere takes the place where it covers the least.
+  const labels = useMemo(() => {
+    const anchors = new Map<string, Anchor>();
+    const boxes: Box[] = [];
+    if (!filtered || !geometry) return { anchors, boxes, obstacles: [] as [string, Box][] };
+    // The direction names at the rim and the filter's own label are placed first: node labels go
+    // around them.
+    for (const s of SECTORS) {
+      const { x, y, anchor, lines, size } = sectorLabel(s, geometry);
+      const w = Math.max(...lines.map((l) => l.length)) * size * 0.68;
+      const left = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
+      boxes.push([left, y - size, left + w, y + 3 + (lines.length - 1) * size * 1.2]);
+    }
+    {
+      const r = ringRadius(geometry, threshold);
+      const x = geometry.cx + Math.cos((18 * Math.PI) / 180) * r + 6;
+      const y = geometry.cy + Math.sin((18 * Math.PI) / 180) * r + 4;
+      boxes.push([x, y - 11.5 * ts, x + `${pct(threshold)} filter`.length * 11.5 * 0.56 * ts, y + 3 * ts]);
+    }
     const order: HoodNode["role"][] = ["focus", "anchor", "related", "attribute", "group", "research", "bubble", "symptom"];
     const nodes = [...filtered.nodes].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role) || b.relevance - a.relevance);
-    const obstacles = filtered.nodes.flatMap((n): [string, [number, number, number, number]][] => {
+    const obstacles = filtered.nodes.flatMap((n): [string, Box][] => {
       const p = positions.get(n.id);
       if (!p) return [];
       const r = nodeRadius(n, relevance?.diseases[n.id]?.centrality ?? 0);
@@ -295,15 +311,43 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
     for (const n of nodes) {
       const p = positions.get(n.id);
       if (!p) continue;
-      const box = labelBox(n, p);
       const always = n.role === "focus" || n.type === "Disease";
-      const hits = (b: [number, number, number, number]) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1];
-      if (!always && (boxes.some(hits) || obstacles.some(([id, b]) => id !== n.id && hits(b)))) continue;
-      boxes.push(box);
-      out.add(n.id);
+      let chosen: Anchor | null = null;
+      let fallback: Anchor | null = null;
+      let least = Infinity;
+      for (const a of labelAnchors(n, p)) {
+        const box = labelBox(n, p, a);
+        const cost =
+          boxes.reduce((sum, b) => sum + overlapArea(box, b), 0) + obstacles.reduce((sum, [id, b]) => sum + (id === n.id ? 0 : overlapArea(box, b)), 0);
+        if (cost === 0) {
+          chosen = a;
+          break;
+        }
+        if (cost < least) {
+          least = cost;
+          fallback = a;
+        }
+      }
+      if (!chosen && always) chosen = fallback;
+      if (!chosen) continue;
+      anchors.set(n.id, chosen);
+      boxes.push(labelBox(n, p, chosen));
     }
-    return out;
-  }, [filtered, positions, geometry, byId, relevance]);
+    return { anchors, boxes, obstacles };
+  }, [filtered, positions, geometry, byId, relevance, ts, threshold]);
+
+  // A direction's name at the rim of the map. Two-word names ("Genes and mechanisms") break after
+  // "and" so they stay inside the map when it is drawn small.
+  function sectorLabel(s: (typeof SECTORS)[number], g: NonNullable<typeof geometry>) {
+    const a = (((s.start + s.end) / 2) * Math.PI) / 180;
+    const size = 11 * ts;
+    const words = s.label.toUpperCase().split(" AND ");
+    const lines = words.length === 2 ? [`${words[0]} AND`, words[1]] : [s.label.toUpperCase()];
+    const anchor: Anchor["anchor"] = Math.cos(a) > 0.3 ? "start" : Math.cos(a) < -0.3 ? "end" : "middle";
+    // Names above the map grow upward, names below grow downward, so neither runs into the rings.
+    const lift = Math.sin(a) < -0.3 ? (lines.length - 1) * size * 1.2 : Math.sin(a) > 0.3 ? 0 : ((lines.length - 1) * size * 1.2) / 2;
+    return { x: g.cx + Math.cos(a) * (g.outer + 34), y: g.cy + Math.sin(a) * (g.outer + 34) + 4 - lift, anchor, lines, size };
+  }
 
   function labelText(n: HoodNode): string {
     if (n.type === "Disease") return shortLabel({ label: n.label, synonyms: byId.get(n.id)?.synonyms });
@@ -311,28 +355,41 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
     return truncate(n.role === "bubble" ? n.label.replace(/^\d+ /, "") : n.label);
   }
 
-  // Where a node's label goes: below the searched node, otherwise outward from the center.
-  function labelAnchor(n: HoodNode, p: Pt) {
+  // The second line under a related disease's name: its tier and relevance.
+  function tierText(n: HoodNode): string {
+    if (n.type !== "Disease" || n.role === "focus") return "";
+    return `${n.tier && n.tier !== "none" ? `${n.tier} · ` : ""}${pct(n.relevance)}`;
+  }
+
+  // Where a node's label can go, best first: below the searched node; otherwise outward from the
+  // center, then to the right, left, above or below its dot.
+  function labelAnchors(n: HoodNode, p: Pt): Anchor[] {
     const r = nodeRadius(n, relevance?.diseases[n.id]?.centrality ?? 0);
-    if (n.role === "focus") return { x: 0, y: r + 18, anchor: "middle" as const };
+    if (n.role === "focus") return [{ x: 0, y: r + 18 * ts, anchor: "middle" }];
+    const two = !!tierText(n);
+    const off = r + 6;
+    const below: Anchor = { x: 0, y: off + 10 * ts, anchor: "middle" };
+    const above: Anchor = { x: 0, y: -off - (two ? 19 : 4) * ts, anchor: "middle" };
+    const right: Anchor = { x: off, y: 4 * ts, anchor: "start" };
+    const left: Anchor = { x: -off, y: 4 * ts, anchor: "end" };
     const dx = p[0] - center[0];
     const dy = p[1] - center[1];
     const len = Math.hypot(dx, dy) || 1;
     const ux = dx / len;
     const uy = dy / len;
-    const anchor = Math.abs(ux) < 0.35 ? ("middle" as const) : ux > 0 ? ("start" as const) : ("end" as const);
-    const off = r + 6;
-    return { x: ux * off + (anchor === "middle" ? 0 : 0), y: uy * off + (anchor === "middle" ? (uy > 0 ? 10 : -4) : 4), anchor };
+    const radial: Anchor = Math.abs(ux) < 0.35 ? (uy > 0 ? below : above) : { x: ux * off, y: uy * off + 4 * ts, anchor: ux > 0 ? "start" : "end" };
+    return [radial, ...[right, left, above, below].filter((a) => a !== radial)];
   }
 
-  function labelBox(n: HoodNode, p: Pt): [number, number, number, number] {
-    const a = labelAnchor(n, p);
-    const w = labelText(n).length * 6.6 + (n.type === "Disease" ? 0 : 0);
+  function labelBox(n: HoodNode, p: Pt, a: Anchor): Box {
+    const isDisease = n.type === "Disease";
+    const size = n.role === "focus" ? 15 : isDisease ? 13 : 12;
+    const w = Math.max(labelText(n).length * size * 0.56, tierText(n).length * 11.5 * 0.54) * ts;
     const x = p[0] + a.x;
     const y = p[1] + a.y;
     const left = a.anchor === "start" ? x : a.anchor === "end" ? x - w : x - w / 2;
-    const h = n.type === "Disease" && n.role !== "focus" ? 30 : 16;
-    return [left, y - 12, left + w, y - 12 + h];
+    const h = (tierText(n) ? 30 : 16) * ts;
+    return [left, y - 12 * ts, left + w, y - 12 * ts + h];
   }
 
   const delayOf = (n: HoodNode, i: number) => (reduced ? 0 : Math.min(n.hop, 4) * 110 + Math.min(i, 40) * 8);
@@ -351,18 +408,30 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
       list.push(p);
       groups.set(n.cluster, list);
     }
+    // A cluster's name goes above its halo, else below it, and is left out where it would cover a
+    // label or a dot: the halo color and the legend still say what it is.
+    const taken: Box[] = [...labels.boxes, ...labels.obstacles.map(([, b]) => b)];
+    const pad = 40;
     return [...groups]
       .filter(([, pts]) => pts.length > 1)
-      .map(([id, pts]) => ({
-        id,
-        label: relevance?.clusters.find((c) => c.id === id)?.label ?? id,
-        color: clusterColor(relevance, id),
-        hull: convexHull(pts),
-        top: Math.min(...pts.map((p) => p[1])),
-        left: Math.min(...pts.map((p) => p[0])),
-        right: Math.max(...pts.map((p) => p[0])),
-      }));
-  }, [filtered, positions, relevance, settled]);
+      .map(([id, pts]) => {
+        const label = truncate(relevance?.clusters.find((c) => c.id === id)?.label ?? id, 40);
+        const top = Math.min(...pts.map((p) => p[1]));
+        const bottom = Math.max(...pts.map((p) => p[1]));
+        const mid = (Math.min(...pts.map((p) => p[0])) + Math.max(...pts.map((p) => p[0]))) / 2;
+        const w = label.length * 11.5 * 0.54 * ts;
+        let labelY: number | null = null;
+        for (const y of [top - pad - 8, bottom + pad + 14 * ts]) {
+          const box: Box = [mid - w / 2, y - 11 * ts, mid + w / 2, y + 3 * ts];
+          if (!taken.some((b) => overlaps(box, b))) {
+            labelY = y;
+            taken.push(box);
+            break;
+          }
+        }
+        return { id, label, color: clusterColor(relevance, id), hull: convexHull(pts), labelX: mid, labelY };
+      });
+  }, [filtered, positions, relevance, settled, labels, ts]);
 
   const hoverNode = hover?.kind === "node" ? nodeById.get(hover.id) : undefined;
   const hoverEdge = hover?.kind === "edge" ? [...(filtered?.edges ?? []), ...(filtered?.faintEdges ?? [])].find((e) => e.id === hover.id) : undefined;
@@ -381,6 +450,29 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
   };
 
   const edgesToDraw = settled && filtered ? [...filtered.faintEdges.map((e) => ({ e, faint: true })), ...filtered.edges.map((e) => ({ e, faint: false }))] : [];
+
+  // Strength pills on the lines of the hovered or selected node, and on a hovered or selected line,
+  // the pointed-at line first and then the strongest; a pill that would cover another is left out
+  // (hovering its line still shows it).
+  const pills = new Set<string>();
+  {
+    const isActive = (e: HoodEdge) => !!touching && touching.has(e.a) && touching.has(e.b) && (e.a === activeNode || e.b === activeNode);
+    const pointed = (e: HoodEdge) => e.id === hover?.id || e.id === selectedId;
+    const placed: Box[] = [];
+    for (const { e } of edgesToDraw
+      .filter(({ e }) => e.role !== "bubble" && (pointed(e) || isActive(e)))
+      .sort((x, y) => Number(pointed(y.e)) - Number(pointed(x.e)) || y.e.relevance - x.e.relevance)) {
+      const a = positions.get(e.a);
+      const b = positions.get(e.b);
+      if (!a || !b) continue;
+      const { mid } = curve(a, b, e.role);
+      const box: Box = [mid[0] - 17 * ts, mid[1] - 10 * ts, mid[0] + 17 * ts, mid[1] + 8 * ts];
+      // Never under a dot (dots are drawn on top) or over another pill.
+      if (placed.some((p) => overlaps(box, p)) || labels.obstacles.some(([, o]) => overlaps(box, o))) continue;
+      placed.push(box);
+      pills.add(e.id);
+    }
+  }
 
   return (
     <div ref={containerRef} className={`relative h-full w-full select-none overflow-hidden ${props.className ?? ""}`}>
@@ -454,7 +546,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                 />
                 {/* Small atlases get names on the dots; big ones rely on hover. */}
                 {!focusId && constellation.size <= 30 && (
-                  <text y={r + 20} textAnchor="middle" fontSize={12} fill="var(--ink-2)" className="atlas-label">
+                  <text y={r + 8 + 12 * ts} textAnchor="middle" fontSize={12 * ts} fill="var(--ink-2)" className="atlas-label">
                     {shortLabel(node)}
                   </text>
                 )}
@@ -501,20 +593,23 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                 </g>
               ))}
               {SECTORS.map((s) => {
-                const a = (((s.start + s.end) / 2) * Math.PI) / 180;
-                const r = geometry.outer + 34;
+                const label = sectorLabel(s, geometry);
                 return (
                   <text
                     key={s.id}
-                    x={geometry.cx + Math.cos(a) * r}
-                    y={geometry.cy + Math.sin(a) * r + 4}
-                    textAnchor={Math.cos(a) > 0.3 ? "start" : Math.cos(a) < -0.3 ? "end" : "middle"}
-                    fontSize={11}
+                    x={label.x}
+                    y={label.y}
+                    textAnchor={label.anchor}
+                    fontSize={label.size}
                     letterSpacing={0.6}
                     fill="var(--ink-2)"
                     className="atlas-label uppercase"
                   >
-                    {s.label.toUpperCase()}
+                    {label.lines.map((line, i) => (
+                      <tspan key={line} x={label.x} dy={i === 0 ? 0 : label.size * 1.2}>
+                        {line}
+                      </tspan>
+                    ))}
                   </text>
                 );
               })}
@@ -533,7 +628,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
               <text
                 x={geometry.cx + Math.cos((18 * Math.PI) / 180) * ringRadius(geometry, threshold) + 6}
                 y={geometry.cy + Math.sin((18 * Math.PI) / 180) * ringRadius(geometry, threshold) + 4}
-                fontSize={11.5}
+                fontSize={11.5 * ts}
                 fontWeight={600}
                 fill="var(--accent-ink)"
                 className="atlas-label"
@@ -550,9 +645,11 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
             return (
               <g key={h.id} aria-hidden className="atlas-fade-in">
                 <path d={d} fill={h.color} stroke={h.color} strokeWidth={pad * 2} strokeLinejoin="round" strokeLinecap="round" opacity={0.07} />
-                <text x={(h.left + h.right) / 2} y={h.top - pad - 8} textAnchor="middle" fontSize={11.5} fill="var(--ink-2)" className="atlas-label">
-                  {truncate(h.label, 40)}
-                </text>
+                {h.labelY !== null && (
+                  <text x={h.labelX} y={h.labelY} textAnchor="middle" fontSize={11.5 * ts} fill="var(--ink-2)" className="atlas-label">
+                    {h.label}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -567,8 +664,8 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
             const active = touching ? touching.has(e.a) && touching.has(e.b) && (e.a === activeNode || e.b === activeNode) : false;
             const dim = touching && !active;
             const { d, mid } = curve(a, b, e.role);
-            const showStrength = (active || isSelected || hover?.id === e.id) && e.role !== "bubble";
-            const showBridgeLabel = e.role === "bridge" && (active || isSelected || hover?.id === e.id);
+            const showStrength = pills.has(e.id);
+            const showBridgeLabel = e.role === "bridge" && (isSelected || hover?.id === e.id);
             const nodeA = nodeById.get(e.a);
             const nodeB = nodeById.get(e.b);
             const delay = reduced ? 0 : Math.max(nodeA?.hop ?? 0, nodeB?.hop ?? 0) * 110 + 420;
@@ -587,7 +684,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                   opacity={isSelected ? 1 : s.opacity}
                 />
                 {showStrength && (
-                  <g transform={`translate(${mid[0]} ${mid[1]})`} aria-hidden>
+                  <g transform={`translate(${mid[0]} ${mid[1]}) scale(${ts})`} aria-hidden>
                     <rect x={-17} y={-10} width={34} height={18} rx={9} fill="var(--surface)" stroke="var(--line)" />
                     <text y={3.5} textAnchor="middle" fontSize={10.5} fontWeight={600} fill="var(--ink)">
                       {pct(e.role === "bridge" ? e.relevance : e.strength)}
@@ -595,7 +692,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                   </g>
                 )}
                 {showBridgeLabel && (
-                  <text x={mid[0]} y={mid[1] - 14} textAnchor="middle" fontSize={11.5} fill="var(--ink)" className="atlas-label">
+                  <text x={mid[0]} y={mid[1] - 14 * ts} textAnchor="middle" fontSize={11.5 * ts} fill="var(--ink)" className="atlas-label">
                     {truncate(e.label, 40)}
                   </text>
                 )}
@@ -631,10 +728,9 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
             const isDisease = n.type === "Disease";
             const fill = isDisease ? clusterColor(relevance, n.cluster) : kind.fill;
             const opacity = isFocus ? 1 : isGhost ? 0.28 : !isVisible ? 0 : touching && !touching.has(n.id) ? 0.3 : 0.6 + 0.4 * n.relevance;
-            const showLabel = isVisible && (labelled.has(n.id) || hover?.id === n.id || isSelected);
+            const showLabel = isVisible && (labels.anchors.has(n.id) || hover?.id === n.id || isSelected);
             const relevanceText = isFocus ? "what you searched" : `${pct(n.relevance)} relevant`;
-            const tierWord = n.tier && n.tier !== "none" ? n.tier : "";
-            const la = labelAnchor(n, positions.get(n.id) ?? [x, y]);
+            const la = labels.anchors.get(n.id) ?? labelAnchors(n, positions.get(n.id) ?? [x, y])[0];
             const interactive = isVisible || isGhost;
             return (
               <g
@@ -689,12 +785,19 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                   </>
                 )}
                 {showLabel && (
-                  <text x={la.x} y={la.y} textAnchor={la.anchor} fontSize={isFocus ? 15 : isDisease ? 13 : 12} fontWeight={isFocus ? 650 : isDisease ? 560 : 450} fill="var(--ink)" className="atlas-label">
+                  <text
+                    x={la.x}
+                    y={la.y}
+                    textAnchor={la.anchor}
+                    fontSize={(isFocus ? 15 : isDisease ? 13 : 12) * ts}
+                    fontWeight={isFocus ? 650 : isDisease ? 560 : 450}
+                    fill="var(--ink)"
+                    className="atlas-label"
+                  >
                     {labelText(n)}
-                    {isDisease && !isFocus && (
-                      <tspan x={la.x} dy={15} fontSize={11.5} fontWeight={450} fill="var(--ink-2)">
-                        {tierWord ? `${tierWord} · ` : ""}
-                        {pct(n.relevance)}
+                    {tierText(n) && (
+                      <tspan x={la.x} dy={15 * ts} fontSize={11.5 * ts} fontWeight={450} fill="var(--ink-2)">
+                        {tierText(n)}
                       </tspan>
                     )}
                   </text>

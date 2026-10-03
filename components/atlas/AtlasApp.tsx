@@ -323,7 +323,10 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
             <div className="hidden sm:block sm:[grid-area:search]" />
           )}
           <div className="flex items-center gap-2 justify-self-end [grid-area:controls] sm:gap-3">
-            <ViewToggle value={display} onChange={changeDisplay} />
+            {/* Phones keep the view switch above the map, so the header fits on one line. */}
+            <div className="hidden sm:block">
+              <ViewToggle value={display} onChange={changeDisplay} />
+            </div>
             <div className="flex items-center gap-2">
               <span className="hidden text-sm whitespace-nowrap text-ink-2 xl:inline">Viewing as:</span>
               <Segmented<Mode> label="Viewing as" options={PERSONAS} value={mode} onChange={setMode} />
@@ -343,7 +346,7 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-[minmax(0,1fr)_340px] lg:grid-cols-[minmax(0,1fr)_200px_360px] xl:grid-cols-[minmax(0,1fr)_200px_390px]">
-        <main className="relative flex min-w-0 flex-col gap-3 px-3 pt-3 pb-4 sm:min-h-0 sm:overflow-y-auto sm:px-4 lg:overflow-hidden lg:p-0">
+        <main className="relative flex min-w-0 flex-col gap-3 px-3 pt-3 pb-4 sm:min-h-0 sm:overflow-y-auto sm:px-4 lg:overflow-hidden lg:bg-surface lg:p-0">
           {/* One search card: above the constellation on small screens, floating over it on wide ones. */}
           {!focusId && (
             <div className={`flex justify-center ${cardOverMap ? "lg:pointer-events-none lg:absolute lg:inset-x-0 lg:top-0 lg:z-10 lg:p-6" : "lg:px-5 lg:pt-5"}`}>
@@ -351,11 +354,15 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
             </div>
           )}
 
+          <div className="flex justify-center sm:hidden">
+            <ViewToggle value={display} onChange={changeDisplay} />
+          </div>
+
           <section
             ref={mapRef}
             aria-label={focusNode ? (list ? `Everything linked to ${focusName}, as a list` : `Knowledge graph centered on ${focusName}`) : "Every disease in the atlas"}
             className={`relative w-full scroll-mt-3 overflow-hidden rounded-xl border border-line bg-surface lg:min-h-0 lg:flex-1 lg:rounded-none lg:border-0 ${
-              list ? "min-h-[420px] lg:min-h-0" : "aspect-[6/5] sm:aspect-[4/3] lg:aspect-auto"
+              list ? "min-h-[420px] lg:min-h-0" : "aspect-[7/5] lg:aspect-auto"
             }`}
           >
             {map}
@@ -405,7 +412,7 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
           )}
         </main>
 
-        <aside aria-label="Relevance filter" className="hidden min-h-0 border-l border-line bg-surface px-4 py-4 lg:block">
+        <aside aria-label="Relevance filter" className="hidden min-h-0 border-l border-line bg-surface px-3 py-4 lg:block">
           {bar("vertical")}
         </aside>
 

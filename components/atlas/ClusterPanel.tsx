@@ -99,9 +99,9 @@ export function KindSwatch({ kind, size = 16 }: { kind: Kind; size?: number }) {
 
 type GlyphKind = "distance" | "filter" | "glow" | "dashed" | "faint" | "bubble" | "halo" | "arc";
 
-function Glyph({ kind }: { kind: GlyphKind }) {
+function Glyph({ kind, width = 28 }: { kind: GlyphKind; width?: number }) {
   return (
-    <svg viewBox="0 0 28 20" width="28" height="20" aria-hidden="true" className="shrink-0" fill="none">
+    <svg viewBox="0 0 28 20" width={width} height={(width * 20) / 28} aria-hidden="true" className="shrink-0" fill="none">
       {kind === "distance" && (
         <>
           <circle cx="14" cy="10" r="8.5" stroke="var(--line)" strokeWidth="1.2" />
@@ -213,29 +213,32 @@ export function LegendStrip() {
       <span>{text}</span>
     </li>
   );
+  const short: Record<Kind, string> = { disease: "Diseases", biology: "Genes, mechanisms", clinical: "Symptoms", community: "Groups, registries", research: "Research" };
   return (
-    <ul role="list" aria-label="How to read the map" className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-2">
-      {item(<Glyph kind="distance" />, "Closer = more relevant")}
-      <li className="flex items-center gap-1.5">
-        <Compass size={20} />
-        <span className="whitespace-nowrap">Direction = kind:</span>
-        <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          {(["disease", "biology", "clinical", "community", "research"] as Kind[]).map((k) => (
-            <span key={k} className="flex items-center gap-1 whitespace-nowrap">
-              <KindSwatch kind={k} size={13} />
-              {KIND_STYLE[k].label}
-            </span>
-          ))}
-        </span>
-      </li>
-      {item(<Glyph kind="filter" />, "Your filter")}
-      {item(<Glyph kind="faint" />, "Just under it")}
-      {item(<Glyph kind="glow" />, "Strong link")}
-      {item(<Glyph kind="dashed" />, "Inferred")}
-      {item(<Glyph kind="bubble" />, "Folded group, click to open")}
-      {item(<Glyph kind="halo" />, "Same cluster")}
-      {item(<Glyph kind="arc" />, "Working together")}
-    </ul>
+    <div role="group" aria-label="How to read the map" className="space-y-1.5 text-xs text-ink-2">
+      <ul role="list" className="flex flex-wrap items-center gap-x-3.5 gap-y-1">
+        {item(<Glyph kind="distance" width={24} />, "Closer = more relevant")}
+        <li className="flex items-center gap-1.5">
+          <Compass size={20} />
+          <span className="whitespace-nowrap">Direction = kind:</span>
+        </li>
+        {(["disease", "biology", "clinical", "community", "research"] as Kind[]).map((k) => (
+          <li key={k} className="-ml-1.5 flex items-center gap-1 whitespace-nowrap">
+            <KindSwatch kind={k} size={13} />
+            {short[k]}
+          </li>
+        ))}
+      </ul>
+      <ul role="list" className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {item(<Glyph kind="filter" width={22} />, "Your filter")}
+        {item(<Glyph kind="faint" width={22} />, "Just under it")}
+        {item(<Glyph kind="glow" width={22} />, "Strong link")}
+        {item(<Glyph kind="dashed" width={22} />, "Inferred")}
+        {item(<Glyph kind="bubble" width={22} />, "Folded group: click to open")}
+        {item(<Glyph kind="halo" width={22} />, "Same cluster")}
+        {item(<Glyph kind="arc" width={22} />, "Working together")}
+      </ul>
+    </div>
   );
 }
 

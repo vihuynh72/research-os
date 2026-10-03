@@ -1,0 +1,2622 @@
+{
+  "slice": "CLN / Batten",
+  "persona": "Maria",
+  "nodes": [
+    {
+      "id": "PW:NCL-LYSOSOME",
+      "type": "mechanism",
+      "name": "Lysosomal lipofuscin accumulation",
+      "note": "Shared process. Not a claim that one therapy treats the other CLNs."
+    },
+    {
+      "id": "MONDO:0009744",
+      "type": "disease",
+      "name": "neuronal ceroid lipofuscinosis 1",
+      "synonyms": [
+        "CLN1",
+        "CLN1 disease",
+        "CLN1 variable age at onset",
+        "PPT1 neuronal ceroid lipofuscinosis",
+        "ceroid lipofuscinosis neuronal 1",
+        "ceroid lipofuscinosis, neuronal, 1",
+        "ceroid lipofuscinosis, neuronal, 1, variable Age at onset",
+        "ceroid lipofuscinosis, neuronal, type 1",
+        "ceroid storage disease",
+        "neuronal ceroid lipofuscinosis 1",
+        "neuronal ceroid lipofuscinosis caused by mutation in PPT1",
+        "neuronal ceroid lipofuscinosis type 1"
+      ],
+      "orpha": "Orphanet:228329",
+      "source_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "HGNC:9325",
+      "type": "gene",
+      "name": "PPT1"
+    },
+    {
+      "id": "HP:0000738",
+      "type": "phenotype",
+      "name": "Increased neuronal autofluorescent lipopigment"
+    },
+    {
+      "id": "HP:0001939",
+      "type": "phenotype",
+      "name": "Sleep disturbance"
+    },
+    {
+      "id": "HP:0002361",
+      "type": "phenotype",
+      "name": "Secondary microcephaly"
+    },
+    {
+      "id": "HP:0001922",
+      "type": "phenotype",
+      "name": "Decreased light- and dark-adapted electroretinogram amplitude"
+    },
+    {
+      "id": "HP:0000618",
+      "type": "phenotype",
+      "name": "Hallucinations"
+    },
+    {
+      "id": "HP:0001371",
+      "type": "phenotype",
+      "name": "Progressive microcephaly"
+    },
+    {
+      "id": "HP:0001250",
+      "type": "phenotype",
+      "name": "Loss of speech"
+    },
+    {
+      "id": "HP:6000783",
+      "type": "phenotype",
+      "name": "Progressive visual loss"
+    },
+    {
+      "id": "HP:0000546",
+      "type": "phenotype",
+      "name": "EEG abnormality"
+    },
+    {
+      "id": "HP:0002371",
+      "type": "phenotype",
+      "name": "Macular degeneration"
+    },
+    {
+      "id": "HP:0002059",
+      "type": "phenotype",
+      "name": "Abnormality of metabolism/homeostasis"
+    },
+    {
+      "id": "HP:0000608",
+      "type": "phenotype",
+      "name": "Depression"
+    },
+    {
+      "id": "HP:0002360",
+      "type": "phenotype",
+      "name": "Retinal degeneration"
+    },
+    {
+      "id": "HP:0000716",
+      "type": "phenotype",
+      "name": "Reduced tissue palmitoyl-protein thioesterase activity"
+    },
+    {
+      "id": "HP:0000737",
+      "type": "phenotype",
+      "name": "Intellectual disability"
+    },
+    {
+      "id": "HP:0001263",
+      "type": "phenotype",
+      "name": "Irritability"
+    },
+    {
+      "id": "HP:0002353",
+      "type": "phenotype",
+      "name": "Flexion contracture"
+    },
+    {
+      "id": "HP:0005484",
+      "type": "phenotype",
+      "name": "Undetectable electroretinogram"
+    },
+    {
+      "id": "HP:0001251",
+      "type": "phenotype",
+      "name": "Psychomotor deterioration"
+    },
+    {
+      "id": "HP:0000550",
+      "type": "phenotype",
+      "name": "Generalized hypotonia"
+    },
+    {
+      "id": "HP:0003657",
+      "type": "phenotype",
+      "name": "Myoclonus"
+    },
+    {
+      "id": "HP:0000529",
+      "type": "phenotype",
+      "name": "Blindness"
+    },
+    {
+      "id": "HP:0000648",
+      "type": "phenotype",
+      "name": "Cerebral atrophy"
+    },
+    {
+      "id": "HP:0001257",
+      "type": "phenotype",
+      "name": "Global developmental delay"
+    },
+    {
+      "id": "HP:0002074",
+      "type": "phenotype",
+      "name": "Vascular granular osmiophilic material deposition"
+    },
+    {
+      "id": "HP:0001249",
+      "type": "phenotype",
+      "name": "Vacuolated lymphocytes"
+    },
+    {
+      "id": "HP:0000654",
+      "type": "phenotype",
+      "name": "Ataxia"
+    },
+    {
+      "id": "HP:0001336",
+      "type": "phenotype",
+      "name": "Spasticity"
+    },
+    {
+      "id": "HP:0001290",
+      "type": "phenotype",
+      "name": "Hypotonia"
+    },
+    {
+      "id": "HP:0000253",
+      "type": "phenotype",
+      "name": "Seizure"
+    },
+    {
+      "id": "HP:0001252",
+      "type": "phenotype",
+      "name": "Optic atrophy"
+    },
+    {
+      "id": "MONDO:0008769",
+      "type": "disease",
+      "name": "neuronal ceroid lipofuscinosis 2",
+      "synonyms": [
+        "CLN2",
+        "TPP1 neuronal ceroid lipofuscinosis",
+        "ceroid lipofuscinosis, neuronal, type 2",
+        "neuronal ceroid lipofuscinosis caused by mutation in TPP1",
+        "neuronal ceroid lipofuscinosis type 2"
+      ],
+      "orpha": "Orphanet:228349",
+      "source_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "HGNC:2073",
+      "type": "gene",
+      "name": "TPP1"
+    },
+    {
+      "id": "HP:0003205",
+      "type": "phenotype",
+      "name": "Reduced tissue tripeptidyl peptidase 1 activity"
+    },
+    {
+      "id": "HP:0003463",
+      "type": "phenotype",
+      "name": "Progressive visual loss"
+    },
+    {
+      "id": "HP:0001311",
+      "type": "phenotype",
+      "name": "Delayed speech and language development"
+    },
+    {
+      "id": "HP:0002376",
+      "type": "phenotype",
+      "name": "Cerebral atrophy"
+    },
+    {
+      "id": "HP:0000750",
+      "type": "phenotype",
+      "name": "Ataxia"
+    },
+    {
+      "id": "HP:6000571",
+      "type": "phenotype",
+      "name": "Seizure"
+    },
+    {
+      "id": "MONDO:0008767",
+      "type": "disease",
+      "name": "neuronal ceroid lipofuscinosis 3",
+      "synonyms": [
+        "CLN3",
+        "CLN3 neuronal ceroid lipofuscinosis",
+        "Juvenile CLN3 Disease",
+        "ceroid lipofuscinosis, neuronal, type 3",
+        "neuronal ceroid lipofuscinosis 3",
+        "neuronal ceroid lipofuscinosis caused by mutation in CLN3",
+        "neuronal ceroid lipofuscinosis type 3"
+      ],
+      "orpha": "Orphanet:228346",
+      "source_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "HGNC:2074",
+      "type": "gene",
+      "name": "CLN3"
+    },
+    {
+      "id": "HP:0002069",
+      "type": "phenotype",
+      "name": "Dysarthria"
+    },
+    {
+      "id": "HP:0000709",
+      "type": "phenotype",
+      "name": "Abnormality of extrapyramidal motor function"
+    },
+    {
+      "id": "HP:0002505",
+      "type": "phenotype",
+      "name": "Blindness"
+    },
+    {
+      "id": "HP:0003208",
+      "type": "phenotype",
+      "name": "Cerebral atrophy"
+    },
+    {
+      "id": "HP:0000501",
+      "type": "phenotype",
+      "name": "Cataract"
+    },
+    {
+      "id": "HP:0000518",
+      "type": "phenotype",
+      "name": "Increased extraneuronal autofluorescent lipopigment"
+    },
+    {
+      "id": "HP:0001300",
+      "type": "phenotype",
+      "name": "Retinal degeneration"
+    },
+    {
+      "id": "HP:0007663",
+      "type": "phenotype",
+      "name": "Optic atrophy"
+    },
+    {
+      "id": "HP:0005157",
+      "type": "phenotype",
+      "name": "Undetectable electroretinogram"
+    },
+    {
+      "id": "HP:0002071",
+      "type": "phenotype",
+      "name": "Curvilinear intracellular accumulation of autofluorescent lipopigment storage material"
+    },
+    {
+      "id": "HP:0001317",
+      "type": "phenotype",
+      "name": "Macular degeneration"
+    },
+    {
+      "id": "HP:0000726",
+      "type": "phenotype",
+      "name": "Dementia"
+    },
+    {
+      "id": "HP:0000510",
+      "type": "phenotype",
+      "name": "Parkinsonism"
+    },
+    {
+      "id": "HP:0000739",
+      "type": "phenotype",
+      "name": "Progressive visual loss"
+    },
+    {
+      "id": "HP:0001260",
+      "type": "phenotype",
+      "name": "Loss of ambulation"
+    },
+    {
+      "id": "MONDO:0011144",
+      "type": "disease",
+      "name": "ceroid lipofuscinosis, neuronal, 6A",
+      "synonyms": [
+        "CLN6",
+        "CLN6 late infantile neuronal ceroid lipofuscinosis",
+        "CLN6A",
+        "ceroid lipofuscinosis, neuronal, type 6",
+        "late infantile neuronal ceroid lipofuscinosis caused by mutation in CLN6",
+        "neuronal ceroid lipofuscinosis type 6",
+        "neuronal ceroid lipofuscinosis, late infantile, variant",
+        "vLINCL"
+      ],
+      "orpha": "Orphanet:228363",
+      "source_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "HGNC:2077",
+      "type": "gene",
+      "name": "CLN6"
+    },
+    {
+      "id": "HP:0002333",
+      "type": "phenotype",
+      "name": "Motor deterioration"
+    },
+    {
+      "id": "MONDO:0012588",
+      "type": "disease",
+      "name": "neuronal ceroid lipofuscinosis 7",
+      "synonyms": [
+        "CLN7",
+        "MFSD8 neuronal ceroid lipofuscinosis",
+        "ceroid lipofuscinosis, neuronal, type 7",
+        "neuronal ceroid lipofuscinosis 7",
+        "neuronal ceroid lipofuscinosis caused by mutation in MFSD8",
+        "neuronal ceroid lipofuscinosis type 7"
+      ],
+      "orpha": "Orphanet:228366",
+      "source_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "HGNC:28486",
+      "type": "gene",
+      "name": "MFSD8"
+    },
+    {
+      "id": "HP:0001268",
+      "type": "phenotype",
+      "name": "Mental deterioration"
+    },
+    {
+      "id": "HP:0000572",
+      "type": "phenotype",
+      "name": "Cerebellar atrophy"
+    },
+    {
+      "id": "HP:0000580",
+      "type": "phenotype",
+      "name": "Neurodegeneration"
+    },
+    {
+      "id": "HP:0001272",
+      "type": "phenotype",
+      "name": "Sleep disturbance"
+    },
+    {
+      "id": "HP:0002180",
+      "type": "phenotype",
+      "name": "Retinopathy"
+    },
+    {
+      "id": "HP:0002123",
+      "type": "phenotype",
+      "name": "Optic atrophy"
+    },
+    {
+      "id": "HP:0000488",
+      "type": "phenotype",
+      "name": "Global developmental delay"
+    },
+    {
+      "id": "NCT01161576",
+      "type": "study",
+      "name": "Safety Study of a Gene Transfer Vector (Rh.10) for Children With Late Infantile Neuronal Ceroid Lipofuscinosis (LINCL)",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01161576"
+    },
+    {
+      "id": "NCT00151216",
+      "type": "study",
+      "name": "Safety Study of a Gene Transfer Vector for Children With Late Infantile Neuronal Ceroid Lipofuscinosis",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT00151216"
+    },
+    {
+      "id": "NCT04476862",
+      "type": "study",
+      "name": "Cerliponase Alfa Observational Study in the US",
+      "overall_status": "ACTIVE_NOT_RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT04476862"
+    },
+    {
+      "id": "NCT01586455",
+      "type": "study",
+      "name": "Human Placental-Derived Stem Cell Transplantation",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01586455"
+    },
+    {
+      "id": "NCT04480476",
+      "type": "study",
+      "name": "A Retrospective, Natural History Study in Children With CLN2",
+      "overall_status": "WITHDRAWN",
+      "source_url": "https://clinicaltrials.gov/study/NCT04480476"
+    },
+    {
+      "id": "NCT04273243",
+      "type": "study",
+      "name": "Long-Term Follow Up of CLN6 Batten Disease Subjects Following Gene Transfer",
+      "overall_status": "ACTIVE_NOT_RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT04273243"
+    },
+    {
+      "id": "NCT05152914",
+      "type": "study",
+      "name": "Intravitreal ERT to Prevent Retinal Disease Progression in Children With CLN2",
+      "overall_status": "ACTIVE_NOT_RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT05152914"
+    },
+    {
+      "id": "NCT04613089",
+      "type": "study",
+      "name": "Natural History and Longitudinal Clinical Assessments in NCL / Batten Disease, the International DEM-CHILD Database",
+      "overall_status": "RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT04613089"
+    },
+    {
+      "id": "NCT01238315",
+      "type": "study",
+      "name": "Safety and Efficacy Study of HuCNS-SC in Subjects With Neuronal Ceroid Lipofuscinosis",
+      "overall_status": "WITHDRAWN",
+      "source_url": "https://clinicaltrials.gov/study/NCT01238315"
+    },
+    {
+      "id": "NCT01873924",
+      "type": "study",
+      "name": "Clinical and Neuropsychological Investigations in Batten Disease",
+      "overall_status": "RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT01873924"
+    },
+    {
+      "id": "NCT02254863",
+      "type": "study",
+      "name": "UCB Transplant of Inherited Metabolic Diseases With Administration of Intrathecal UCB Derived Oligodendrocyte-Like Cells",
+      "overall_status": "RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT02254863"
+    },
+    {
+      "id": "NCT06203106",
+      "type": "study",
+      "name": "NYSCF Scientific Discovery Biobank",
+      "overall_status": "RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT06203106"
+    },
+    {
+      "id": "NCT04462692",
+      "type": "study",
+      "name": "An Observational Study in Children With CLN2 Batten Disease",
+      "overall_status": "WITHDRAWN",
+      "source_url": "https://clinicaltrials.gov/study/NCT04462692"
+    },
+    {
+      "id": "NCT01414985",
+      "type": "study",
+      "name": "AAVRh.10 Administered to Children With Late Infantile Neuronal Ceroid Lipofuscinosis",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01414985"
+    },
+    {
+      "id": "NCT05228145",
+      "type": "study",
+      "name": "Gene Therapy Study for Children With CLN5 Batten Disease",
+      "overall_status": "ACTIVE_NOT_RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT05228145"
+    },
+    {
+      "id": "NCT03770572",
+      "type": "study",
+      "name": "Gene Therapy for Children With CLN3 Batten Disease",
+      "overall_status": "ACTIVE_NOT_RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT03770572"
+    },
+    {
+      "id": "NCT05791864",
+      "type": "study",
+      "name": "A First-in-Human, Open-Label, Dose-Escalation Study to Evaluate the Safety and Tolerability of Gene Therapy With TTX-381 for the Ocular Manifestations Associated With Neuronal Ceroid Lipofuscinosis Type 2 (CLN2) Disease",
+      "overall_status": "RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT05791864"
+    },
+    {
+      "id": "NCT01035424",
+      "type": "study",
+      "name": "Genotype-Phenotype Correlations of Late Infantile Neuronal Ceroid Lipofuscinosis",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01035424"
+    },
+    {
+      "id": "NCT04761952",
+      "type": "study",
+      "name": "N-3 Polyunsaturated Fatty Acids Prevent Postoperative Recurrence of Crohn's Disease",
+      "overall_status": "UNKNOWN",
+      "source_url": "https://clinicaltrials.gov/study/NCT04761952"
+    },
+    {
+      "id": "NCT01698229",
+      "type": "study",
+      "name": "Collection of Cerebrospinal Fluid in Healthy Children",
+      "overall_status": "TERMINATED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01698229"
+    },
+    {
+      "id": "NCT04637282",
+      "type": "study",
+      "name": "Safety, Tolerability, and Efficacy of PLX-200 in Patients With CLN3",
+      "overall_status": "WITHDRAWN",
+      "source_url": "https://clinicaltrials.gov/study/NCT04637282"
+    },
+    {
+      "id": "NCT03307304",
+      "type": "study",
+      "name": "Investigations of Juvenile Neuronal Ceroid Lipofuscinosis",
+      "overall_status": "RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT03307304"
+    },
+    {
+      "id": "NCT04644549",
+      "type": "study",
+      "name": "Natural History Study of Batten Disease",
+      "overall_status": "TERMINATED",
+      "source_url": "https://clinicaltrials.gov/study/NCT04644549"
+    },
+    {
+      "id": "NCT01399047",
+      "type": "study",
+      "name": "Cellcept for Treatment of Juvenile Neuronal Ceroid Lipofuscinosis",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01399047"
+    },
+    {
+      "id": "NCT04737460",
+      "type": "study",
+      "name": "Study for the Treatment for CLN7 Disease",
+      "overall_status": "ACTIVE_NOT_RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT04737460"
+    },
+    {
+      "id": "NCT03822650",
+      "type": "study",
+      "name": "A Natural History Study of Neuronal Ceroid Lipofuscinosis Type 5 (CLN5)",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT03822650"
+    },
+    {
+      "id": "NCT05368038",
+      "type": "study",
+      "name": "ScreenPlus: A Comprehensive, Flexible, Multi-disorder Newborn Screening Program",
+      "overall_status": "ENROLLING_BY_INVITATION",
+      "source_url": "https://clinicaltrials.gov/study/NCT05368038"
+    },
+    {
+      "id": "NCT01907087",
+      "type": "study",
+      "name": "A Phase 1/2 Open-Label Dose-Escalation Study to Evaluate Safety, Tolerability, Pharmacokinetics, and Efficacy of Intracerebroventricular BMN 190 in Patients With Late-Infantile Neuronal Ceroid Lipofuscinosis (CLN2) Disease",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01907087"
+    },
+    {
+      "id": "NCT01360944",
+      "type": "study",
+      "name": "Exploratory Study to Investigate Efficacy of LAS41004 in a Psoriasis Plaque Test",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01360944"
+    },
+    {
+      "id": "NCT00531037",
+      "type": "study",
+      "name": "Natural Evolution of AV Conduction Disorders in Patients Implanted With Cardiac Pacemakers",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT00531037"
+    },
+    {
+      "id": "NCT04098211",
+      "type": "study",
+      "name": "Longitudinal Assessment of Atypical Tripeptidyl Peptidase 1 Enzyme Deficiency Patients",
+      "overall_status": "ACTIVE_NOT_RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT04098211"
+    },
+    {
+      "id": "NCT01966757",
+      "type": "study",
+      "name": "Neuronal Ceroid Lipofuscinosis and Associated Sleep Abnormalities",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT01966757"
+    },
+    {
+      "id": "NCT00028262",
+      "type": "study",
+      "name": "Cystagon to Treat Infantile Neuronal Ceroid Lipofuscinosis",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT00028262"
+    },
+    {
+      "id": "NCT07178288",
+      "type": "study",
+      "name": "Assessment of Pressure Pain Threshold (PPT) and Conditioned Pain Modulation (CPM) After Effect in Patients With and Without Tennis Elbow (TE)",
+      "overall_status": "RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT07178288"
+    },
+    {
+      "id": "NCT00176904",
+      "type": "study",
+      "name": "Stem Cell Transplant for Inborn Errors of Metabolism",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT00176904"
+    },
+    {
+      "id": "NCT07582484",
+      "type": "study",
+      "name": "Gene Therapy Trial for CLN6 Batten Disease",
+      "overall_status": "NOT_YET_RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT07582484"
+    },
+    {
+      "id": "NCT05174039",
+      "type": "study",
+      "name": "An Open-label Safety, Pharmacokinetic, and Efficacy Study of Miglustat for the Treatment of Subjects With Batten Ceroid Lipofuscinosis, Neuronal 3 (CLN3) Disease",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT05174039"
+    },
+    {
+      "id": "NCT05642221",
+      "type": "study",
+      "name": "Functional Near-Infrared Spectroscopy (fNIRS) Combined With Diffuse Correlation Spectroscopy (DCS) in Neurocognitive Disease as Compared to Healthy Neurotypical Controls",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT05642221"
+    },
+    {
+      "id": "NCT01793168",
+      "type": "study",
+      "name": "Rare Disease Patient Registry & Natural History Study - Coordination of Rare Diseases at Sanford",
+      "overall_status": "RECRUITING",
+      "source_url": "https://clinicaltrials.gov/study/NCT01793168"
+    },
+    {
+      "id": "NCT00151268",
+      "type": "study",
+      "name": "Genotype - Phenotype Correlations of LINCL",
+      "overall_status": "COMPLETED",
+      "source_url": "https://clinicaltrials.gov/study/NCT00151268"
+    },
+    {
+      "id": "PMID:11073228",
+      "type": "paper",
+      "name": "Neuronal ceroid lipofuscinoses: research update.",
+      "journal": "Neurological sciences : official journal of the Italian Neurological Society and of the Italian Society of Clinical Neurophysiology",
+      "year": "2000",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/11073228/"
+    },
+    {
+      "id": "PMID:23747979",
+      "type": "paper",
+      "name": "Pathogenesis and therapies for infantile neuronal ceroid lipofuscinosis (infantile CLN1 disease).",
+      "journal": "Biochimica et biophysica acta",
+      "year": "2013 Nov",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/23747979/"
+    },
+    {
+      "id": "PMID:21990111",
+      "type": "paper",
+      "name": "Update of the mutation spectrum and clinical correlations of over 360 mutations in eight genes that underlie the neuronal ceroid lipofuscinoses.",
+      "journal": "Human mutation",
+      "year": "2012 Jan",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/21990111/"
+    },
+    {
+      "id": "PMID:38101904",
+      "type": "paper",
+      "name": "Safety and efficacy of cerliponase alfa in children with neuronal ceroid lipofuscinosis type 2 (CLN2 disease): an open-label extension study.",
+      "journal": "The Lancet. Neurology",
+      "year": "2024 Jan",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/38101904/"
+    },
+    {
+      "id": "PMID:31393684",
+      "type": "paper",
+      "name": "",
+      "journal": "",
+      "year": "2019 Jun",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/31393684/"
+    },
+    {
+      "id": "PMID:31393685",
+      "type": "paper",
+      "name": "",
+      "journal": "",
+      "year": "2019 Jun",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/31393685/"
+    },
+    {
+      "id": "PMID:38447580",
+      "type": "paper",
+      "name": "Glycerophosphodiesters inhibit lysosomal phospholipid catabolism in Batten disease.",
+      "journal": "Molecular cell",
+      "year": "2024 Apr 4",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/38447580/"
+    },
+    {
+      "id": "PMID:37400440",
+      "type": "paper",
+      "name": "Loss of the batten disease protein CLN3 leads to mis-trafficking of M6PR and defective autophagic-lysosomal reformation.",
+      "journal": "Nature communications",
+      "year": "2023 Jul 3",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/37400440/"
+    },
+    {
+      "id": "PMID:15657902",
+      "type": "paper",
+      "name": "CLN3, the protein associated with batten disease: structure, function and localization.",
+      "journal": "Journal of neuroscience research",
+      "year": "2005 Mar 1",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/15657902/"
+    },
+    {
+      "id": "PMID:35012600",
+      "type": "paper",
+      "name": "Neuronal Ceroid Lipofuscinosis Type 6 (CLN6) clinical findings and molecular diagnosis: Costa Rica's experience.",
+      "journal": "Orphanet journal of rare diseases",
+      "year": "2022 Jan 10",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/35012600/"
+    },
+    {
+      "id": "PMID:36034292",
+      "type": "paper",
+      "name": "Neuronal ceroid lipofuscinosis in the South American-Caribbean region: An epidemiological overview.",
+      "journal": "Frontiers in neurology",
+      "year": "2022",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/36034292/"
+    },
+    {
+      "id": "PMID:20301601",
+      "type": "paper",
+      "name": "Neuronal Ceroid Lipofuscinoses Overview.",
+      "journal": "",
+      "year": "1993",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/20301601/"
+    },
+    {
+      "id": "PMID:35087090",
+      "type": "paper",
+      "name": "Aberrant upregulation of the glycolytic enzyme PFKFB3 in CLN7 neuronal ceroid lipofuscinosis.",
+      "journal": "Nature communications",
+      "year": "2022 Jan 27",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/35087090/"
+    },
+    {
+      "id": "PMID:35025759",
+      "type": "paper",
+      "name": "AAV9/MFSD8 gene therapy is effective in preclinical models of neuronal ceroid lipofuscinosis type 7 disease.",
+      "journal": "The Journal of clinical investigation",
+      "year": "2022 Mar 1",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/35025759/"
+    },
+    {
+      "id": "PMID:27211611",
+      "type": "paper",
+      "name": "Neuronal ceroid lipofuscinosis associated with an MFSD8 mutation in Chihuahuas.",
+      "journal": "Molecular genetics and metabolism",
+      "year": "2016 Aug",
+      "source_url": "https://pubmed.ncbi.nlm.nih.gov/27211611/"
+    },
+    {
+      "id": "NIH:R44NS120360",
+      "type": "project",
+      "name": "Development of N-tert-(butyl)hydroxylamine (NtBuHA) as a Therapeutic Agent for Treating CLN1 Batten Disease",
+      "pi": "CHELSKY, DANIEL ",
+      "fiscal_year": 2026,
+      "agency": "NINDS",
+      "source_url": "https://reporter.nih.gov/project-details/11399162"
+    },
+    {
+      "id": "NIH:SB1NS135733",
+      "type": "project",
+      "name": "Manufacture of an intracerebroventricular Enzyme Replacement Therapy for CLN1 Batten Disease",
+      "pi": "EKINS, SEAN ",
+      "fiscal_year": 2025,
+      "agency": "NINDS",
+      "source_url": "https://reporter.nih.gov/project-details/11051903"
+    },
+    {
+      "id": "NIH:R03NS146860",
+      "type": "project",
+      "name": "Investigating TTYH3 and Its Relation to CLN3 Batten Disease",
+      "pi": "COTMAN, SUSAN LYNN",
+      "fiscal_year": 2026,
+      "agency": "NINDS",
+      "source_url": "https://reporter.nih.gov/project-details/11285738"
+    },
+    {
+      "id": "NIH:U01NS148918",
+      "type": "project",
+      "name": "IND-Enabling Studies of an Antisense Oligonucleotide Therapy for CLN3 Batten Disease",
+      "pi": "HASTINGS, MICHELLE L",
+      "fiscal_year": 2026,
+      "agency": "NINDS",
+      "source_url": "https://reporter.nih.gov/project-details/11348100"
+    },
+    {
+      "id": "NIH:U54HD122210",
+      "type": "project",
+      "name": "Batten Disease Clinical Research Consortium",
+      "pi": "AUGUSTINE, ERIKA ",
+      "fiscal_year": 2026,
+      "agency": "NICHD",
+      "source_url": "https://reporter.nih.gov/project-details/11417480"
+    },
+    {
+      "id": "NIH:R01NS140682",
+      "type": "project",
+      "name": "Cellular Mechanisms of Enteric Nervous System Damage in CLN2 Disease",
+      "pi": "COOPER, JONATHAN D",
+      "fiscal_year": 2026,
+      "agency": "NINDS",
+      "source_url": "https://reporter.nih.gov/project-details/11370693"
+    },
+    {
+      "id": "NIH:ZIATR000509",
+      "type": "project",
+      "name": "Discovery of single-domain antibodies targeting MFSD8",
+      "pi": "SIMEONOV, ANTON ",
+      "fiscal_year": 2024,
+      "agency": "NCATS",
+      "source_url": "https://reporter.nih.gov/project-details/11192003"
+    },
+    {
+      "id": "NIH:R21NS125847",
+      "type": "project",
+      "name": "Exploring the Pathogenic Mechanisms of Batten's disease MFSD8 mutations using patient iPSC derived neurons.",
+      "pi": "MAZZULLI, JOSEPH R",
+      "fiscal_year": 2023,
+      "agency": "NINDS",
+      "source_url": "https://reporter.nih.gov/project-details/10581666"
+    },
+    {
+      "id": "CLINVAR:4968397",
+      "type": "variant",
+      "name": "NM_000310.4(PPT1):c.1A>T (p.Met1Leu)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968397/"
+    },
+    {
+      "id": "CLINVAR:4968365",
+      "type": "variant",
+      "name": "NM_000310.4(PPT1):c.138C>A (p.Cys46Ter)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968365/"
+    },
+    {
+      "id": "CLINVAR:4849359",
+      "type": "variant",
+      "name": "NM_000310.4(PPT1):c.224C>A (p.Thr75Asn)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4849359/"
+    },
+    {
+      "id": "CLINVAR:4974749",
+      "type": "variant",
+      "name": "GRCh38/hg38 11p15.4(chr11:4793595-7562692)x1",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4974749/"
+    },
+    {
+      "id": "CLINVAR:4910503",
+      "type": "variant",
+      "name": "NM_000391.4(TPP1):c.141_144del (p.Leu49fs)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4910503/"
+    },
+    {
+      "id": "CLINVAR:4910492",
+      "type": "variant",
+      "name": "NM_000391.4(TPP1):c.1053dup (p.Leu352fs)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4910492/"
+    },
+    {
+      "id": "CLINVAR:4929239",
+      "type": "variant",
+      "name": "NM_001042432.2(CLN3):c.70_73del (p.Arg24fs)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4929239/"
+    },
+    {
+      "id": "CLINVAR:4929232",
+      "type": "variant",
+      "name": "NM_001042432.2(CLN3):c.461-2A>C",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4929232/"
+    },
+    {
+      "id": "CLINVAR:4929225",
+      "type": "variant",
+      "name": "NM_001042432.2(CLN3):c.887A>G (p.Tyr296Cys)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4929225/"
+    },
+    {
+      "id": "CLINVAR:4891001",
+      "type": "variant",
+      "name": "Single allele",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4891001/"
+    },
+    {
+      "id": "CLINVAR:4815917",
+      "type": "variant",
+      "name": "NM_017882.3(CLN6):c.761del (p.Phe254fs)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4815917/"
+    },
+    {
+      "id": "CLINVAR:4815916",
+      "type": "variant",
+      "name": "NM_017882.3(CLN6):c.516T>G (p.Tyr172Ter)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4815916/"
+    },
+    {
+      "id": "CLINVAR:4968619",
+      "type": "variant",
+      "name": "NM_001371596.2(MFSD8):c.54_62+11del",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968619/"
+    },
+    {
+      "id": "CLINVAR:4968612",
+      "type": "variant",
+      "name": "NM_001371596.2(MFSD8):c.496del (p.Thr166fs)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968612/"
+    },
+    {
+      "id": "CLINVAR:4968608",
+      "type": "variant",
+      "name": "NM_001371596.2(MFSD8):c.624C>A (p.Asn208Lys)",
+      "clinical_significance": null,
+      "source_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968608/"
+    },
+    {
+      "id": "ORPHA-ORG:139868",
+      "type": "patient_group",
+      "name": "Suomen JNCL-perheiden tukiyhdistys ry",
+      "country": "Finland",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/139868"
+    },
+    {
+      "id": "ORPHA-ORG:139901",
+      "type": "patient_group",
+      "name": "Suomen INCL-yhdistys ry - INCL F\u00f6reningen",
+      "country": "Finland",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/139901"
+    },
+    {
+      "id": "ORPHA-ORG:45762",
+      "type": "patient_group",
+      "name": "NCL-Gruppe Deutschland e.V.",
+      "country": "Germany",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/45762"
+    },
+    {
+      "id": "ORPHA-ORG:169890",
+      "type": "patient_group",
+      "name": "NCL-N\u00c4CHSTENLIEBE e.V.",
+      "country": "Germany",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/169890"
+    },
+    {
+      "id": "ORPHA-ORG:274335",
+      "type": "patient_group",
+      "name": "Bee for Battens",
+      "country": "Ireland",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/274335"
+    },
+    {
+      "id": "ORPHA-ORG:392089",
+      "type": "patient_group",
+      "name": "A-NCL - Associazione Nazionale Ceroidolipofuscinosi",
+      "country": "Italy",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/392089"
+    },
+    {
+      "id": "ORPHA-ORG:586367",
+      "type": "patient_group",
+      "name": "Norsk NCL-forening",
+      "country": "Norway",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/586367"
+    },
+    {
+      "id": "ORPHA-ORG:662124",
+      "type": "patient_group",
+      "name": "AEFAL: Asociaci\u00f3n para el apoyo e investigaci\u00f3n de la enfermedad de ceroidolipofuscinosis",
+      "country": "Spain",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/662124"
+    },
+    {
+      "id": "ORPHA-ORG:610594",
+      "type": "patient_group",
+      "name": "Svenska NCL f\u00f6reningen",
+      "country": "Sweden",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/610594"
+    },
+    {
+      "id": "ORPHA-ORG:91211",
+      "type": "patient_group",
+      "name": "BDFA UK - Batten Disease Family Association",
+      "country": "United Kingdom",
+      "source_url": "https://www.orpha.net/en/patient-organisations/patient/91211"
+    },
+    {
+      "id": "ORPHA-REG:311059",
+      "type": "registry",
+      "name": "Batten Disease Neuronal Ceroid Lipofuscinosis (NCL) Patient Registry",
+      "country": "United Kingdom",
+      "source_url": "https://www.orpha.net/en/research-trials/registry/311059"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-MONDO:0009744-mech",
+      "source": "MONDO:0009744",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "disrupts_process",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-HGNC:9325-MONDO:0009744",
+      "source": "HGNC:9325",
+      "target": "MONDO:0009744",
+      "relation": "causes",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000738",
+      "source": "MONDO:0009744",
+      "target": "HP:0000738",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001939",
+      "source": "MONDO:0009744",
+      "target": "HP:0001939",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0002361",
+      "source": "MONDO:0009744",
+      "target": "HP:0002361",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001922",
+      "source": "MONDO:0009744",
+      "target": "HP:0001922",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000618",
+      "source": "MONDO:0009744",
+      "target": "HP:0000618",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001371",
+      "source": "MONDO:0009744",
+      "target": "HP:0001371",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001250",
+      "source": "MONDO:0009744",
+      "target": "HP:0001250",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:6000783",
+      "source": "MONDO:0009744",
+      "target": "HP:6000783",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000546",
+      "source": "MONDO:0009744",
+      "target": "HP:0000546",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0002371",
+      "source": "MONDO:0009744",
+      "target": "HP:0002371",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0002059",
+      "source": "MONDO:0009744",
+      "target": "HP:0002059",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000608",
+      "source": "MONDO:0009744",
+      "target": "HP:0000608",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0002360",
+      "source": "MONDO:0009744",
+      "target": "HP:0002360",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000716",
+      "source": "MONDO:0009744",
+      "target": "HP:0000716",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000737",
+      "source": "MONDO:0009744",
+      "target": "HP:0000737",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001263",
+      "source": "MONDO:0009744",
+      "target": "HP:0001263",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0002353",
+      "source": "MONDO:0009744",
+      "target": "HP:0002353",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0005484",
+      "source": "MONDO:0009744",
+      "target": "HP:0005484",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001251",
+      "source": "MONDO:0009744",
+      "target": "HP:0001251",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000550",
+      "source": "MONDO:0009744",
+      "target": "HP:0000550",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0003657",
+      "source": "MONDO:0009744",
+      "target": "HP:0003657",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000529",
+      "source": "MONDO:0009744",
+      "target": "HP:0000529",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000648",
+      "source": "MONDO:0009744",
+      "target": "HP:0000648",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001257",
+      "source": "MONDO:0009744",
+      "target": "HP:0001257",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0002074",
+      "source": "MONDO:0009744",
+      "target": "HP:0002074",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001249",
+      "source": "MONDO:0009744",
+      "target": "HP:0001249",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000654",
+      "source": "MONDO:0009744",
+      "target": "HP:0000654",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001336",
+      "source": "MONDO:0009744",
+      "target": "HP:0001336",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001290",
+      "source": "MONDO:0009744",
+      "target": "HP:0001290",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0000253",
+      "source": "MONDO:0009744",
+      "target": "HP:0000253",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0009744-HP:0001252",
+      "source": "MONDO:0009744",
+      "target": "HP:0001252",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009744"
+    },
+    {
+      "id": "e-MONDO:0008769-mech",
+      "source": "MONDO:0008769",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "disrupts_process",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-HGNC:2073-MONDO:0008769",
+      "source": "HGNC:2073",
+      "target": "MONDO:0008769",
+      "relation": "causes",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0003205",
+      "source": "MONDO:0008769",
+      "target": "HP:0003205",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0000546",
+      "source": "MONDO:0008769",
+      "target": "HP:0000546",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0000550",
+      "source": "MONDO:0008769",
+      "target": "HP:0000550",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0000529",
+      "source": "MONDO:0008769",
+      "target": "HP:0000529",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0003463",
+      "source": "MONDO:0008769",
+      "target": "HP:0003463",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0001311",
+      "source": "MONDO:0008769",
+      "target": "HP:0001311",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0001336",
+      "source": "MONDO:0008769",
+      "target": "HP:0001336",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0002376",
+      "source": "MONDO:0008769",
+      "target": "HP:0002376",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0002074",
+      "source": "MONDO:0008769",
+      "target": "HP:0002074",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0000750",
+      "source": "MONDO:0008769",
+      "target": "HP:0000750",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0001250",
+      "source": "MONDO:0008769",
+      "target": "HP:0001250",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:6000571",
+      "source": "MONDO:0008769",
+      "target": "HP:6000571",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0001251",
+      "source": "MONDO:0008769",
+      "target": "HP:0001251",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008769-HP:0002059",
+      "source": "MONDO:0008769",
+      "target": "HP:0002059",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008769"
+    },
+    {
+      "id": "e-MONDO:0008767-mech",
+      "source": "MONDO:0008767",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "disrupts_process",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-HGNC:2074-MONDO:0008767",
+      "source": "HGNC:2074",
+      "target": "MONDO:0008767",
+      "relation": "causes",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0002361",
+      "source": "MONDO:0008767",
+      "target": "HP:0002361",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0002069",
+      "source": "MONDO:0008767",
+      "target": "HP:0002069",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000709",
+      "source": "MONDO:0008767",
+      "target": "HP:0000709",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0002505",
+      "source": "MONDO:0008767",
+      "target": "HP:0002505",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0003208",
+      "source": "MONDO:0008767",
+      "target": "HP:0003208",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000501",
+      "source": "MONDO:0008767",
+      "target": "HP:0000501",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000608",
+      "source": "MONDO:0008767",
+      "target": "HP:0000608",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0002059",
+      "source": "MONDO:0008767",
+      "target": "HP:0002059",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0002074",
+      "source": "MONDO:0008767",
+      "target": "HP:0002074",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000518",
+      "source": "MONDO:0008767",
+      "target": "HP:0000518",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0001250",
+      "source": "MONDO:0008767",
+      "target": "HP:0001250",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0001300",
+      "source": "MONDO:0008767",
+      "target": "HP:0001300",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0007663",
+      "source": "MONDO:0008767",
+      "target": "HP:0007663",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0001922",
+      "source": "MONDO:0008767",
+      "target": "HP:0001922",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000618",
+      "source": "MONDO:0008767",
+      "target": "HP:0000618",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0001249",
+      "source": "MONDO:0008767",
+      "target": "HP:0001249",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0003463",
+      "source": "MONDO:0008767",
+      "target": "HP:0003463",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0005157",
+      "source": "MONDO:0008767",
+      "target": "HP:0005157",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0002071",
+      "source": "MONDO:0008767",
+      "target": "HP:0002071",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0001317",
+      "source": "MONDO:0008767",
+      "target": "HP:0001317",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000726",
+      "source": "MONDO:0008767",
+      "target": "HP:0000726",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000510",
+      "source": "MONDO:0008767",
+      "target": "HP:0000510",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0001336",
+      "source": "MONDO:0008767",
+      "target": "HP:0001336",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000739",
+      "source": "MONDO:0008767",
+      "target": "HP:0000739",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000546",
+      "source": "MONDO:0008767",
+      "target": "HP:0000546",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0003205",
+      "source": "MONDO:0008767",
+      "target": "HP:0003205",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000529",
+      "source": "MONDO:0008767",
+      "target": "HP:0000529",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000648",
+      "source": "MONDO:0008767",
+      "target": "HP:0000648",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0001260",
+      "source": "MONDO:0008767",
+      "target": "HP:0001260",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0008767-HP:0000550",
+      "source": "MONDO:0008767",
+      "target": "HP:0000550",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008767"
+    },
+    {
+      "id": "e-MONDO:0011144-mech",
+      "source": "MONDO:0011144",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "disrupts_process",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-HGNC:2077-MONDO:0011144",
+      "source": "HGNC:2077",
+      "target": "MONDO:0011144",
+      "relation": "causes",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0011144-HP:0000546",
+      "source": "MONDO:0011144",
+      "target": "HP:0000546",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0011144-HP:0003205",
+      "source": "MONDO:0011144",
+      "target": "HP:0003205",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0011144-HP:0000529",
+      "source": "MONDO:0011144",
+      "target": "HP:0000529",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0011144-HP:0002074",
+      "source": "MONDO:0011144",
+      "target": "HP:0002074",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0011144-HP:0001250",
+      "source": "MONDO:0011144",
+      "target": "HP:0001250",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0011144-HP:0001311",
+      "source": "MONDO:0011144",
+      "target": "HP:0001311",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0011144-HP:0002333",
+      "source": "MONDO:0011144",
+      "target": "HP:0002333",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0011144-HP:0003208",
+      "source": "MONDO:0011144",
+      "target": "HP:0003208",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011144"
+    },
+    {
+      "id": "e-MONDO:0012588-mech",
+      "source": "MONDO:0012588",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "disrupts_process",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-HGNC:28486-MONDO:0012588",
+      "source": "HGNC:28486",
+      "target": "MONDO:0012588",
+      "relation": "causes",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0001268",
+      "source": "MONDO:0012588",
+      "target": "HP:0001268",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0000572",
+      "source": "MONDO:0012588",
+      "target": "HP:0000572",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0000648",
+      "source": "MONDO:0012588",
+      "target": "HP:0000648",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0001263",
+      "source": "MONDO:0012588",
+      "target": "HP:0001263",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0000750",
+      "source": "MONDO:0012588",
+      "target": "HP:0000750",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0000580",
+      "source": "MONDO:0012588",
+      "target": "HP:0000580",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0001272",
+      "source": "MONDO:0012588",
+      "target": "HP:0001272",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0000618",
+      "source": "MONDO:0012588",
+      "target": "HP:0000618",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0002180",
+      "source": "MONDO:0012588",
+      "target": "HP:0002180",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0002123",
+      "source": "MONDO:0012588",
+      "target": "HP:0002123",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0002360",
+      "source": "MONDO:0012588",
+      "target": "HP:0002360",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0002059",
+      "source": "MONDO:0012588",
+      "target": "HP:0002059",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0001251",
+      "source": "MONDO:0012588",
+      "target": "HP:0001251",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0000488",
+      "source": "MONDO:0012588",
+      "target": "HP:0000488",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-MONDO:0012588-HP:0002353",
+      "source": "MONDO:0012588",
+      "target": "HP:0002353",
+      "relation": "has_phenotype",
+      "status": "sourced",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012588"
+    },
+    {
+      "id": "e-NCT04476862-MONDO:0008769",
+      "source": "NCT04476862",
+      "target": "MONDO:0008769",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT04476862"
+    },
+    {
+      "id": "e-NCT04480476-MONDO:0008769",
+      "source": "NCT04480476",
+      "target": "MONDO:0008769",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT04480476"
+    },
+    {
+      "id": "e-NCT04273243-MONDO:0011144",
+      "source": "NCT04273243",
+      "target": "MONDO:0011144",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT04273243"
+    },
+    {
+      "id": "e-NCT05152914-MONDO:0008769",
+      "source": "NCT05152914",
+      "target": "MONDO:0008769",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT05152914"
+    },
+    {
+      "id": "e-NCT04462692-MONDO:0008769",
+      "source": "NCT04462692",
+      "target": "MONDO:0008769",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT04462692"
+    },
+    {
+      "id": "e-NCT03770572-MONDO:0008767",
+      "source": "NCT03770572",
+      "target": "MONDO:0008767",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT03770572"
+    },
+    {
+      "id": "e-NCT05791864-MONDO:0008769",
+      "source": "NCT05791864",
+      "target": "MONDO:0008769",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT05791864"
+    },
+    {
+      "id": "e-NCT04637282-MONDO:0008767",
+      "source": "NCT04637282",
+      "target": "MONDO:0008767",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT04637282"
+    },
+    {
+      "id": "e-NCT04737460-MONDO:0012588",
+      "source": "NCT04737460",
+      "target": "MONDO:0012588",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT04737460"
+    },
+    {
+      "id": "e-NCT01907087-MONDO:0008769",
+      "source": "NCT01907087",
+      "target": "MONDO:0008769",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT01907087"
+    },
+    {
+      "id": "e-NCT07582484-MONDO:0011144",
+      "source": "NCT07582484",
+      "target": "MONDO:0011144",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT07582484"
+    },
+    {
+      "id": "e-NCT05174039-MONDO:0008767",
+      "source": "NCT05174039",
+      "target": "MONDO:0008767",
+      "relation": "studies",
+      "status": "sourced",
+      "evidence_url": "https://clinicaltrials.gov/study/NCT05174039"
+    },
+    {
+      "id": "e-PMID:11073228-MONDO:0009744",
+      "source": "PMID:11073228",
+      "target": "MONDO:0009744",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/11073228/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:23747979-MONDO:0009744",
+      "source": "PMID:23747979",
+      "target": "MONDO:0009744",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/23747979/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:21990111-MONDO:0009744",
+      "source": "PMID:21990111",
+      "target": "MONDO:0009744",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/21990111/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:38101904-MONDO:0008769",
+      "source": "PMID:38101904",
+      "target": "MONDO:0008769",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/38101904/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:31393684-MONDO:0008769",
+      "source": "PMID:31393684",
+      "target": "MONDO:0008769",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/31393684/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:31393685-MONDO:0008769",
+      "source": "PMID:31393685",
+      "target": "MONDO:0008769",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/31393685/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:38447580-MONDO:0008767",
+      "source": "PMID:38447580",
+      "target": "MONDO:0008767",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/38447580/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:37400440-MONDO:0008767",
+      "source": "PMID:37400440",
+      "target": "MONDO:0008767",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/37400440/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:15657902-MONDO:0008767",
+      "source": "PMID:15657902",
+      "target": "MONDO:0008767",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/15657902/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:35012600-MONDO:0011144",
+      "source": "PMID:35012600",
+      "target": "MONDO:0011144",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/35012600/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:36034292-MONDO:0011144",
+      "source": "PMID:36034292",
+      "target": "MONDO:0011144",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/36034292/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:20301601-MONDO:0011144",
+      "source": "PMID:20301601",
+      "target": "MONDO:0011144",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/20301601/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:35087090-MONDO:0012588",
+      "source": "PMID:35087090",
+      "target": "MONDO:0012588",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/35087090/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:35025759-MONDO:0012588",
+      "source": "PMID:35025759",
+      "target": "MONDO:0012588",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/35025759/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-PMID:27211611-MONDO:0012588",
+      "source": "PMID:27211611",
+      "target": "MONDO:0012588",
+      "relation": "about",
+      "status": "sourced",
+      "evidence_url": "https://pubmed.ncbi.nlm.nih.gov/27211611/",
+      "note": "Title search hit. Not a claim the paper's result transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R44NS120360-MONDO:0009744",
+      "source": "NIH:R44NS120360",
+      "target": "MONDO:0009744",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11399162",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R44NS120360-MONDO:0009744",
+      "source": "NIH:R44NS120360",
+      "target": "MONDO:0009744",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11253743",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:SB1NS135733-MONDO:0009744",
+      "source": "NIH:SB1NS135733",
+      "target": "MONDO:0009744",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11051903",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R03NS146860-MONDO:0008767",
+      "source": "NIH:R03NS146860",
+      "target": "MONDO:0008767",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11285738",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U01NS148918-MONDO:0008767",
+      "source": "NIH:U01NS148918",
+      "target": "MONDO:0008767",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11348100",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0008767",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0008767",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11417480",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0011144",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0011144",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11417480",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0011144",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0011144",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11417532",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0011144",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0011144",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11173013",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R44NS120360-MONDO:0009744",
+      "source": "NIH:R44NS120360",
+      "target": "MONDO:0009744",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11399162",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R44NS120360-MONDO:0009744",
+      "source": "NIH:R44NS120360",
+      "target": "MONDO:0009744",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11253743",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:SB1NS135733-MONDO:0009744",
+      "source": "NIH:SB1NS135733",
+      "target": "MONDO:0009744",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11051903",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R01NS140682-MONDO:0008769",
+      "source": "NIH:R01NS140682",
+      "target": "MONDO:0008769",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11370693",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0008769",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0008769",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11417532",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0008769",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0008769",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11417535",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R03NS146860-MONDO:0008767",
+      "source": "NIH:R03NS146860",
+      "target": "MONDO:0008767",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11285738",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U01NS148918-MONDO:0008767",
+      "source": "NIH:U01NS148918",
+      "target": "MONDO:0008767",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11348100",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0008767",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0008767",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11417480",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0011144",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0011144",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11417480",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0011144",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0011144",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11417532",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:U54HD122210-MONDO:0011144",
+      "source": "NIH:U54HD122210",
+      "target": "MONDO:0011144",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11173013",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:ZIATR000509-MONDO:0012588",
+      "source": "NIH:ZIATR000509",
+      "target": "MONDO:0012588",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/11192003",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R21NS125847-MONDO:0012588",
+      "source": "NIH:R21NS125847",
+      "target": "MONDO:0012588",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/10581666",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-NIH:R21NS125847-MONDO:0012588",
+      "source": "NIH:R21NS125847",
+      "target": "MONDO:0012588",
+      "relation": "funds",
+      "status": "sourced",
+      "evidence_url": "https://reporter.nih.gov/project-details/10467764",
+      "note": "RePORTER title or terms hit. Not a claim the work transfers to another CLN."
+    },
+    {
+      "id": "e-CLINVAR:4968397-HGNC:9325",
+      "source": "CLINVAR:4968397",
+      "target": "HGNC:9325",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968397/",
+      "note": "Pathogenic ClinVar hit for PPT1. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4968365-HGNC:9325",
+      "source": "CLINVAR:4968365",
+      "target": "HGNC:9325",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968365/",
+      "note": "Pathogenic ClinVar hit for PPT1. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4849359-HGNC:9325",
+      "source": "CLINVAR:4849359",
+      "target": "HGNC:9325",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4849359/",
+      "note": "Pathogenic ClinVar hit for PPT1. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4974749-HGNC:2073",
+      "source": "CLINVAR:4974749",
+      "target": "HGNC:2073",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4974749/",
+      "note": "Pathogenic ClinVar hit for TPP1. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4910503-HGNC:2073",
+      "source": "CLINVAR:4910503",
+      "target": "HGNC:2073",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4910503/",
+      "note": "Pathogenic ClinVar hit for TPP1. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4910492-HGNC:2073",
+      "source": "CLINVAR:4910492",
+      "target": "HGNC:2073",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4910492/",
+      "note": "Pathogenic ClinVar hit for TPP1. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4929239-HGNC:2074",
+      "source": "CLINVAR:4929239",
+      "target": "HGNC:2074",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4929239/",
+      "note": "Pathogenic ClinVar hit for CLN3. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4929232-HGNC:2074",
+      "source": "CLINVAR:4929232",
+      "target": "HGNC:2074",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4929232/",
+      "note": "Pathogenic ClinVar hit for CLN3. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4929225-HGNC:2074",
+      "source": "CLINVAR:4929225",
+      "target": "HGNC:2074",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4929225/",
+      "note": "Pathogenic ClinVar hit for CLN3. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4891001-HGNC:2077",
+      "source": "CLINVAR:4891001",
+      "target": "HGNC:2077",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4891001/",
+      "note": "Pathogenic ClinVar hit for CLN6. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4815917-HGNC:2077",
+      "source": "CLINVAR:4815917",
+      "target": "HGNC:2077",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4815917/",
+      "note": "Pathogenic ClinVar hit for CLN6. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4815916-HGNC:2077",
+      "source": "CLINVAR:4815916",
+      "target": "HGNC:2077",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4815916/",
+      "note": "Pathogenic ClinVar hit for CLN6. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4968619-HGNC:28486",
+      "source": "CLINVAR:4968619",
+      "target": "HGNC:28486",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968619/",
+      "note": "Pathogenic ClinVar hit for MFSD8. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4968612-HGNC:28486",
+      "source": "CLINVAR:4968612",
+      "target": "HGNC:28486",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968612/",
+      "note": "Pathogenic ClinVar hit for MFSD8. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-CLINVAR:4968608-HGNC:28486",
+      "source": "CLINVAR:4968608",
+      "target": "HGNC:28486",
+      "relation": "variant_of",
+      "status": "sourced",
+      "evidence_url": "https://www.ncbi.nlm.nih.gov/clinvar/variation/4968608/",
+      "note": "Pathogenic ClinVar hit for MFSD8. Does not by itself link this variant to another disease."
+    },
+    {
+      "id": "e-ORPHA-ORG:139868-mech",
+      "source": "ORPHA-ORG:139868",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/139868",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:139901-mech",
+      "source": "ORPHA-ORG:139901",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/139901",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:45762-mech",
+      "source": "ORPHA-ORG:45762",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/45762",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:169890-mech",
+      "source": "ORPHA-ORG:169890",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/169890",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:274335-mech",
+      "source": "ORPHA-ORG:274335",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/274335",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:392089-mech",
+      "source": "ORPHA-ORG:392089",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/392089",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:586367-mech",
+      "source": "ORPHA-ORG:586367",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/586367",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:662124-mech",
+      "source": "ORPHA-ORG:662124",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/662124",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:610594-mech",
+      "source": "ORPHA-ORG:610594",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/610594",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-ORG:91211-mech",
+      "source": "ORPHA-ORG:91211",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "works_on",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/patient-organisations/patient/91211",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    },
+    {
+      "id": "e-ORPHA-REG:311059-mech",
+      "source": "ORPHA-REG:311059",
+      "target": "PW:NCL-LYSOSOME",
+      "relation": "registers",
+      "status": "sourced",
+      "evidence_url": "https://www.orpha.net/en/research-trials/registry/311059",
+      "note": "Orphanet directory result includes this disease. Not a disease-specific listing."
+    }
+  ],
+  "not_fetched": []
+}

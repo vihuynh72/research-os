@@ -855,9 +855,15 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     for (const s of scene.sectors) {
       const q = at(Math.cos(s.angle) * 1.08, Math.sin(s.angle) * 1.08);
       const cos = Math.cos(s.angle);
+      const text = s.label.toUpperCase();
+      const align: CanvasTextAlign = cos > 0.3 ? "left" : cos < -0.3 ? "right" : "center";
+      // Kept inside the canvas: a direction label cut off at the edge would name nothing.
+      const w = measure(pal.fonts.rim, text);
+      const left = align === "left" ? q.x : align === "right" ? q.x - w : q.x - w / 2;
+      const dx = clamp(left, 6, Math.max(6, width - 6 - w)) - left;
       // Farther labels fade a little, like the dots behind them.
       const back = depthT(q.depth, view.distance, span);
-      drawText(s.label.toUpperCase(), pal.fonts.rim, q.x, q.y, cos > 0.3 ? "left" : cos < -0.3 ? "right" : "center", pal.ink2, pal.halo, lerp(1, 0.6, back));
+      drawText(text, pal.fonts.rim, q.x + dx, clamp(q.y, 10, height - 10), align, pal.ink2, pal.halo, lerp(1, 0.6, back));
     }
     g.textBaseline = "top";
   }
