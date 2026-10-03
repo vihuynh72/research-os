@@ -1,0 +1,1965 @@
+{
+  "nodes": [
+    {
+      "id": "MONDO:0007077",
+      "type": "disease",
+      "name": "Tietz syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0007077"
+    },
+    {
+      "id": "HGNC:7105",
+      "type": "gene",
+      "name": "MITF",
+      "source_url": "https://monarchinitiative.org/MONDO:0007077"
+    },
+    {
+      "id": "MONDO:0007097",
+      "type": "disease",
+      "name": "Finnish type amyloidosis",
+      "source_url": "https://monarchinitiative.org/MONDO:0007097"
+    },
+    {
+      "id": "HGNC:4620",
+      "type": "gene",
+      "name": "GSN",
+      "source_url": "https://monarchinitiative.org/MONDO:0007097"
+    },
+    {
+      "id": "MONDO:0007375",
+      "type": "disease",
+      "name": "epithelial basement membrane dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0007375"
+    },
+    {
+      "id": "HGNC:11771",
+      "type": "gene",
+      "name": "TGFBI",
+      "source_url": "https://monarchinitiative.org/MONDO:0007375"
+    },
+    {
+      "id": "MONDO:0007380",
+      "type": "disease",
+      "name": "lattice corneal dystrophy type I",
+      "source_url": "https://monarchinitiative.org/MONDO:0007380"
+    },
+    {
+      "id": "MONDO:0007176",
+      "type": "disease",
+      "name": "helicoid peripapillary chorioretinal degeneration",
+      "source_url": "https://monarchinitiative.org/MONDO:0007176"
+    },
+    {
+      "id": "HGNC:11714",
+      "type": "gene",
+      "name": "TEAD1",
+      "source_url": "https://monarchinitiative.org/MONDO:0007176"
+    },
+    {
+      "id": "MONDO:0007376",
+      "type": "disease",
+      "name": "fleck corneal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0007376"
+    },
+    {
+      "id": "HGNC:23785",
+      "type": "gene",
+      "name": "PIKFYVE",
+      "source_url": "https://monarchinitiative.org/MONDO:0007376"
+    },
+    {
+      "id": "MONDO:0007640",
+      "type": "disease",
+      "name": "Sorsby fundus dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0007640"
+    },
+    {
+      "id": "HGNC:11822",
+      "type": "gene",
+      "name": "TIMP3",
+      "source_url": "https://monarchinitiative.org/MONDO:0007640"
+    },
+    {
+      "id": "MONDO:0007931",
+      "type": "disease",
+      "name": "vitelliform macular dystrophy 2",
+      "source_url": "https://monarchinitiative.org/MONDO:0007931"
+    },
+    {
+      "id": "HGNC:12703",
+      "type": "gene",
+      "name": "BEST1",
+      "source_url": "https://monarchinitiative.org/MONDO:0007931"
+    },
+    {
+      "id": "MONDO:0008061",
+      "type": "disease",
+      "name": "nail-patella syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0008061"
+    },
+    {
+      "id": "HGNC:6654",
+      "type": "gene",
+      "name": "LMX1B",
+      "source_url": "https://monarchinitiative.org/MONDO:0008061"
+    },
+    {
+      "id": "MONDO:0008133",
+      "type": "disease",
+      "name": "optic atrophy 3",
+      "source_url": "https://monarchinitiative.org/MONDO:0008133"
+    },
+    {
+      "id": "HGNC:8142",
+      "type": "gene",
+      "name": "OPA3",
+      "source_url": "https://monarchinitiative.org/MONDO:0008133"
+    },
+    {
+      "id": "MONDO:0008134",
+      "type": "disease",
+      "name": "autosomal dominant optic atrophy, classic form",
+      "source_url": "https://monarchinitiative.org/MONDO:0008134"
+    },
+    {
+      "id": "HGNC:8140",
+      "type": "gene",
+      "name": "OPA1",
+      "source_url": "https://monarchinitiative.org/MONDO:0008134"
+    },
+    {
+      "id": "MONDO:0008745",
+      "type": "disease",
+      "name": "oculocutaneous albinism type 1A",
+      "source_url": "https://monarchinitiative.org/MONDO:0008745"
+    },
+    {
+      "id": "HGNC:12442",
+      "type": "gene",
+      "name": "TYR",
+      "source_url": "https://monarchinitiative.org/MONDO:0008745"
+    },
+    {
+      "id": "MONDO:0008777",
+      "type": "disease",
+      "name": "gelatinous drop-like corneal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0008777"
+    },
+    {
+      "id": "HGNC:11530",
+      "type": "gene",
+      "name": "TACSTD2",
+      "source_url": "https://monarchinitiative.org/MONDO:0008777"
+    },
+    {
+      "id": "MONDO:0008795",
+      "type": "disease",
+      "name": "aniridia-cerebellar ataxia-intellectual disability syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0008795"
+    },
+    {
+      "id": "HGNC:6180",
+      "type": "gene",
+      "name": "ITPR1",
+      "source_url": "https://monarchinitiative.org/MONDO:0008795"
+    },
+    {
+      "id": "MONDO:0008853",
+      "type": "disease",
+      "name": "Barber-Say syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0008853"
+    },
+    {
+      "id": "HGNC:20670",
+      "type": "gene",
+      "name": "TWIST2",
+      "source_url": "https://monarchinitiative.org/MONDO:0008853"
+    },
+    {
+      "id": "MONDO:0009255",
+      "type": "disease",
+      "name": "galactokinase deficiency",
+      "source_url": "https://monarchinitiative.org/MONDO:0009255"
+    },
+    {
+      "id": "HGNC:4118",
+      "type": "gene",
+      "name": "GALK1",
+      "source_url": "https://monarchinitiative.org/MONDO:0009255"
+    },
+    {
+      "id": "MONDO:0009258",
+      "type": "disease",
+      "name": "classic galactosemia",
+      "source_url": "https://monarchinitiative.org/MONDO:0009258"
+    },
+    {
+      "id": "HGNC:4135",
+      "type": "gene",
+      "name": "GALT",
+      "source_url": "https://monarchinitiative.org/MONDO:0009258"
+    },
+    {
+      "id": "MONDO:0009260",
+      "type": "disease",
+      "name": "GM1 gangliosidosis type 1",
+      "source_url": "https://monarchinitiative.org/MONDO:0009260"
+    },
+    {
+      "id": "HGNC:4298",
+      "type": "gene",
+      "name": "GLB1",
+      "source_url": "https://monarchinitiative.org/MONDO:0009260"
+    },
+    {
+      "id": "MONDO:0009261",
+      "type": "disease",
+      "name": "GM1 gangliosidosis type 2",
+      "source_url": "https://monarchinitiative.org/MONDO:0009261"
+    },
+    {
+      "id": "MONDO:0009262",
+      "type": "disease",
+      "name": "GM1 gangliosidosis type 3",
+      "source_url": "https://monarchinitiative.org/MONDO:0009262"
+    },
+    {
+      "id": "MONDO:0009499",
+      "type": "disease",
+      "name": "Krabbe disease",
+      "source_url": "https://monarchinitiative.org/MONDO:0009499"
+    },
+    {
+      "id": "HGNC:4115",
+      "type": "gene",
+      "name": "GALC",
+      "source_url": "https://monarchinitiative.org/MONDO:0009499"
+    },
+    {
+      "id": "MONDO:0009549",
+      "type": "disease",
+      "name": "severe early-childhood-onset retinal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0009549"
+    },
+    {
+      "id": "HGNC:34",
+      "type": "gene",
+      "name": "ABCA4",
+      "source_url": "https://monarchinitiative.org/MONDO:0009549"
+    },
+    {
+      "id": "MONDO:0009644",
+      "type": "disease",
+      "name": "sulfite oxidase deficiency due to molybdenum cofactor deficiency type B1",
+      "source_url": "https://monarchinitiative.org/MONDO:0009644"
+    },
+    {
+      "id": "HGNC:7193",
+      "type": "gene",
+      "name": "MOCS2",
+      "source_url": "https://monarchinitiative.org/MONDO:0009644"
+    },
+    {
+      "id": "MONDO:0009653",
+      "type": "disease",
+      "name": "mucolipidosis type IV",
+      "source_url": "https://monarchinitiative.org/MONDO:0009653"
+    },
+    {
+      "id": "HGNC:13356",
+      "type": "gene",
+      "name": "MCOLN1",
+      "source_url": "https://monarchinitiative.org/MONDO:0009653"
+    },
+    {
+      "id": "MONDO:0009818",
+      "type": "disease",
+      "name": "autosomal recessive osteopetrosis 3",
+      "source_url": "https://monarchinitiative.org/MONDO:0009818"
+    },
+    {
+      "id": "HGNC:1373",
+      "type": "gene",
+      "name": "CA2",
+      "source_url": "https://monarchinitiative.org/MONDO:0009818"
+    },
+    {
+      "id": "MONDO:0010006",
+      "type": "disease",
+      "name": "Sandhoff disease",
+      "source_url": "https://monarchinitiative.org/MONDO:0010006"
+    },
+    {
+      "id": "HGNC:4879",
+      "type": "gene",
+      "name": "HEXB",
+      "source_url": "https://monarchinitiative.org/MONDO:0010006"
+    },
+    {
+      "id": "MONDO:0010026",
+      "type": "disease",
+      "name": "SHORT syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0010026"
+    },
+    {
+      "id": "HGNC:8979",
+      "type": "gene",
+      "name": "PIK3R1",
+      "source_url": "https://monarchinitiative.org/MONDO:0010026"
+    },
+    {
+      "id": "MONDO:0010100",
+      "type": "disease",
+      "name": "Tay-Sachs disease",
+      "source_url": "https://monarchinitiative.org/MONDO:0010100"
+    },
+    {
+      "id": "HGNC:4878",
+      "type": "gene",
+      "name": "HEXA",
+      "source_url": "https://monarchinitiative.org/MONDO:0010100"
+    },
+    {
+      "id": "MONDO:0010221",
+      "type": "disease",
+      "name": "CHIME syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0010221"
+    },
+    {
+      "id": "HGNC:8966",
+      "type": "gene",
+      "name": "PIGL",
+      "source_url": "https://monarchinitiative.org/MONDO:0010221"
+    },
+    {
+      "id": "MONDO:0007160",
+      "type": "disease",
+      "name": "Stickler syndrome type 1",
+      "source_url": "https://monarchinitiative.org/MONDO:0007160"
+    },
+    {
+      "id": "HGNC:2200",
+      "type": "gene",
+      "name": "COL2A1",
+      "source_url": "https://monarchinitiative.org/MONDO:0007160"
+    },
+    {
+      "id": "MONDO:0007354",
+      "type": "disease",
+      "name": "coloboma of optic nerve",
+      "source_url": "https://monarchinitiative.org/MONDO:0007354"
+    },
+    {
+      "id": "HGNC:8620",
+      "type": "gene",
+      "name": "PAX6",
+      "source_url": "https://monarchinitiative.org/MONDO:0007354"
+    },
+    {
+      "id": "MONDO:0007374",
+      "type": "disease",
+      "name": "Schnyder corneal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0007374"
+    },
+    {
+      "id": "HGNC:30791",
+      "type": "gene",
+      "name": "UBIAD1",
+      "source_url": "https://monarchinitiative.org/MONDO:0007374"
+    },
+    {
+      "id": "MONDO:0007381",
+      "type": "disease",
+      "name": "epithelial recurrent erosion dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0007381"
+    },
+    {
+      "id": "HGNC:2194",
+      "type": "gene",
+      "name": "COL17A1",
+      "source_url": "https://monarchinitiative.org/MONDO:0007381"
+    },
+    {
+      "id": "MONDO:0007410",
+      "type": "disease",
+      "name": "isolated cryptophthalmia",
+      "source_url": "https://monarchinitiative.org/MONDO:0007410"
+    },
+    {
+      "id": "HGNC:25396",
+      "type": "gene",
+      "name": "FREM2",
+      "source_url": "https://monarchinitiative.org/MONDO:0007410"
+    },
+    {
+      "id": "MONDO:0008799",
+      "type": "disease",
+      "name": "anophthalmia/microphthalmia-esophageal atresia syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0008799"
+    },
+    {
+      "id": "HGNC:11195",
+      "type": "gene",
+      "name": "SOX2",
+      "source_url": "https://monarchinitiative.org/MONDO:0008799"
+    },
+    {
+      "id": "MONDO:0008927",
+      "type": "disease",
+      "name": "colobomatous optic disc-macular atrophy-chorioretinopathy syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0008927"
+    },
+    {
+      "id": "HGNC:10892",
+      "type": "gene",
+      "name": "SIX6",
+      "source_url": "https://monarchinitiative.org/MONDO:0008927"
+    },
+    {
+      "id": "MONDO:0008948",
+      "type": "disease",
+      "name": "cerebrotendinous xanthomatosis",
+      "source_url": "https://monarchinitiative.org/MONDO:0008948"
+    },
+    {
+      "id": "HGNC:2605",
+      "type": "gene",
+      "name": "CYP27A1",
+      "source_url": "https://monarchinitiative.org/MONDO:0008948"
+    },
+    {
+      "id": "MONDO:0009019",
+      "type": "disease",
+      "name": "congenital hereditary endothelial dystrophy of cornea",
+      "source_url": "https://monarchinitiative.org/MONDO:0009019"
+    },
+    {
+      "id": "HGNC:16438",
+      "type": "gene",
+      "name": "SLC4A11",
+      "source_url": "https://monarchinitiative.org/MONDO:0009019"
+    },
+    {
+      "id": "MONDO:0009020",
+      "type": "disease",
+      "name": "macular corneal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0009020"
+    },
+    {
+      "id": "HGNC:6938",
+      "type": "gene",
+      "name": "CHST6",
+      "source_url": "https://monarchinitiative.org/MONDO:0009020"
+    },
+    {
+      "id": "MONDO:0009265",
+      "type": "disease",
+      "name": "Gaucher disease type I",
+      "source_url": "https://monarchinitiative.org/MONDO:0009265"
+    },
+    {
+      "id": "HGNC:4177",
+      "type": "gene",
+      "name": "GBA1",
+      "source_url": "https://monarchinitiative.org/MONDO:0009265"
+    },
+    {
+      "id": "MONDO:0009266",
+      "type": "disease",
+      "name": "Gaucher disease type II",
+      "source_url": "https://monarchinitiative.org/MONDO:0009266"
+    },
+    {
+      "id": "MONDO:0009267",
+      "type": "disease",
+      "name": "Gaucher disease type III",
+      "source_url": "https://monarchinitiative.org/MONDO:0009267"
+    },
+    {
+      "id": "MONDO:0012177",
+      "type": "disease",
+      "name": "posterior column ataxia-retinitis pigmentosa syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0012177"
+    },
+    {
+      "id": "HGNC:24682",
+      "type": "gene",
+      "name": "FLVCR1",
+      "source_url": "https://monarchinitiative.org/MONDO:0012177"
+    },
+    {
+      "id": "MONDO:0012216",
+      "type": "disease",
+      "name": "foveal hypoplasia - optic nerve decussation defect - anterior segment dysgenesis syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0012216"
+    },
+    {
+      "id": "HGNC:32434",
+      "type": "gene",
+      "name": "SLC38A8",
+      "source_url": "https://monarchinitiative.org/MONDO:0012216"
+    },
+    {
+      "id": "MONDO:0012401",
+      "type": "disease",
+      "name": "congenital stromal corneal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0012401"
+    },
+    {
+      "id": "HGNC:2705",
+      "type": "gene",
+      "name": "DCN",
+      "source_url": "https://monarchinitiative.org/MONDO:0012401"
+    },
+    {
+      "id": "MONDO:0012439",
+      "type": "disease",
+      "name": "Alagille syndrome due to a NOTCH2 point mutation",
+      "source_url": "https://monarchinitiative.org/MONDO:0012439"
+    },
+    {
+      "id": "HGNC:7882",
+      "type": "gene",
+      "name": "NOTCH2",
+      "source_url": "https://monarchinitiative.org/MONDO:0012439"
+    },
+    {
+      "id": "MONDO:0015014",
+      "type": "disease",
+      "name": "coloboma, osteopetrosis, microphthalmia, macrocephaly, albinism, and deafness",
+      "source_url": "https://monarchinitiative.org/MONDO:0015014"
+    },
+    {
+      "id": "MONDO:0012043",
+      "type": "disease",
+      "name": "Reis-Bucklers corneal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0012043"
+    },
+    {
+      "id": "MONDO:0011185",
+      "type": "disease",
+      "name": "Thiel-Behnke corneal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0011185"
+    },
+    {
+      "id": "MONDO:0011855",
+      "type": "disease",
+      "name": "granular corneal dystrophy type II",
+      "source_url": "https://monarchinitiative.org/MONDO:0011855"
+    },
+    {
+      "id": "MONDO:0007377",
+      "type": "disease",
+      "name": "granular corneal dystrophy type I",
+      "source_url": "https://monarchinitiative.org/MONDO:0007377"
+    },
+    {
+      "id": "MONDO:0008662",
+      "type": "disease",
+      "name": "autosomal dominant vitreoretinochoroidopathy",
+      "source_url": "https://monarchinitiative.org/MONDO:0008662"
+    },
+    {
+      "id": "MONDO:0012733",
+      "type": "disease",
+      "name": "autosomal recessive bestrophinopathy",
+      "source_url": "https://monarchinitiative.org/MONDO:0012733"
+    },
+    {
+      "id": "MONDO:0009724",
+      "type": "disease",
+      "name": "nail-patella-like renal disease",
+      "source_url": "https://monarchinitiative.org/MONDO:0009724"
+    },
+    {
+      "id": "MONDO:0009787",
+      "type": "disease",
+      "name": "3-methylglutaconic aciduria type 3",
+      "source_url": "https://monarchinitiative.org/MONDO:0009787"
+    },
+    {
+      "id": "MONDO:0008858",
+      "type": "disease",
+      "name": "Behr syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0008858"
+    },
+    {
+      "id": "MONDO:0011414",
+      "type": "disease",
+      "name": "Peters anomaly",
+      "source_url": "https://monarchinitiative.org/MONDO:0011414"
+    },
+    {
+      "id": "MONDO:0007848",
+      "type": "disease",
+      "name": "autosomal dominant keratitis",
+      "source_url": "https://monarchinitiative.org/MONDO:0007848"
+    },
+    {
+      "id": "MONDO:0011749",
+      "type": "disease",
+      "name": "oculocutaneous albinism type 1B",
+      "source_url": "https://monarchinitiative.org/MONDO:0011749"
+    },
+    {
+      "id": "MONDO:0011694",
+      "type": "disease",
+      "name": "spinocerebellar ataxia type 15/16",
+      "source_url": "https://monarchinitiative.org/MONDO:0011694"
+    },
+    {
+      "id": "MONDO:0007298",
+      "type": "disease",
+      "name": "spinocerebellar ataxia type 29",
+      "source_url": "https://monarchinitiative.org/MONDO:0007298"
+    },
+    {
+      "id": "MONDO:0008693",
+      "type": "disease",
+      "name": "ablepharon macrostomia syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0008693"
+    },
+    {
+      "id": "MONDO:0009203",
+      "type": "disease",
+      "name": "focal facial dermal dysplasia type III",
+      "source_url": "https://monarchinitiative.org/MONDO:0009203"
+    },
+    {
+      "id": "MONDO:0859147",
+      "type": "disease",
+      "name": "Marbach-Rustad progeroid syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0859147"
+    },
+    {
+      "id": "HGNC:21244",
+      "type": "gene",
+      "name": "LEMD2",
+      "source_url": "https://monarchinitiative.org/MONDO:0859147"
+    },
+    {
+      "id": "MONDO:0018116",
+      "type": "disease",
+      "name": "galactosemia",
+      "source_url": "https://monarchinitiative.org/MONDO:0018116"
+    },
+    {
+      "id": "MONDO:0009660",
+      "type": "disease",
+      "name": "mucopolysaccharidosis type 4B",
+      "source_url": "https://monarchinitiative.org/MONDO:0009660"
+    },
+    {
+      "id": "MONDO:0010425",
+      "type": "disease",
+      "name": "Lisch epithelial corneal dystrophy",
+      "source_url": "https://monarchinitiative.org/MONDO:0010425"
+    },
+    {
+      "id": "MONDO:0014453",
+      "type": "disease",
+      "name": "immunodeficiency 36 with lymphoproliferation",
+      "source_url": "https://monarchinitiative.org/MONDO:0014453"
+    },
+    {
+      "id": "MONDO:0007987",
+      "type": "disease",
+      "name": "Kniest dysplasia",
+      "source_url": "https://monarchinitiative.org/MONDO:0007987"
+    },
+    {
+      "id": "MONDO:0007885",
+      "type": "disease",
+      "name": "Legg-Calve-Perthes disease",
+      "source_url": "https://monarchinitiative.org/MONDO:0007885"
+    },
+    {
+      "id": "MONDO:0011496",
+      "type": "disease",
+      "name": "mild spondyloepiphyseal dysplasia due to COL2A1 mutation with early-onset osteoarthritis",
+      "source_url": "https://monarchinitiative.org/MONDO:0011496"
+    },
+    {
+      "id": "MONDO:0007895",
+      "type": "disease",
+      "name": "platyspondylic dysplasia, Torrance type",
+      "source_url": "https://monarchinitiative.org/MONDO:0007895"
+    },
+    {
+      "id": "MONDO:0008476",
+      "type": "disease",
+      "name": "spondyloepimetaphyseal dysplasia, Strudwick type",
+      "source_url": "https://monarchinitiative.org/MONDO:0008476"
+    },
+    {
+      "id": "MONDO:0014701",
+      "type": "disease",
+      "name": "spondyloepiphyseal dysplasia, Stanescu type",
+      "source_url": "https://monarchinitiative.org/MONDO:0014701"
+    },
+    {
+      "id": "MONDO:0010078",
+      "type": "disease",
+      "name": "spondyloperipheral dysplasia",
+      "source_url": "https://monarchinitiative.org/MONDO:0010078"
+    },
+    {
+      "id": "MONDO:0012206",
+      "type": "disease",
+      "name": "spondyloepiphyseal dysplasia with metatarsal shortening",
+      "source_url": "https://monarchinitiative.org/MONDO:0012206"
+    },
+    {
+      "id": "MONDO:0008471",
+      "type": "disease",
+      "name": "spondyloepiphyseal dysplasia congenita",
+      "source_url": "https://monarchinitiative.org/MONDO:0008471"
+    },
+    {
+      "id": "MONDO:0008478",
+      "type": "disease",
+      "name": "spondylometaphyseal dysplasia, Schmidt type",
+      "source_url": "https://monarchinitiative.org/MONDO:0008478"
+    },
+    {
+      "id": "MONDO:0008702",
+      "type": "disease",
+      "name": "achondrogenesis type II",
+      "source_url": "https://monarchinitiative.org/MONDO:0008702"
+    },
+    {
+      "id": "MONDO:0009015",
+      "type": "disease",
+      "name": "corneal dystrophy-perceptive deafness syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0009015"
+    },
+    {
+      "id": "MONDO:0011945",
+      "type": "disease",
+      "name": "Gaucher disease perinatal lethal",
+      "source_url": "https://monarchinitiative.org/MONDO:0011945"
+    },
+    {
+      "id": "MONDO:0009268",
+      "type": "disease",
+      "name": "Gaucher disease-ophthalmoplegia-cardiovascular calcification syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0009268"
+    },
+    {
+      "id": "MONDO:0007057",
+      "type": "disease",
+      "name": "acroosteolysis dominant type",
+      "source_url": "https://monarchinitiative.org/MONDO:0007057"
+    },
+    {
+      "id": "MONDO:0008746",
+      "type": "disease",
+      "name": "oculocutaneous albinism type 2",
+      "source_url": "https://monarchinitiative.org/MONDO:0008746"
+    },
+    {
+      "id": "HGNC:8101",
+      "type": "gene",
+      "name": "OCA2",
+      "source_url": "https://monarchinitiative.org/MONDO:0008746"
+    },
+    {
+      "id": "MONDO:0019290",
+      "type": "disease_group",
+      "name": "MONDO:0019290",
+      "source_url": "https://monarchinitiative.org/MONDO:0019290"
+    },
+    {
+      "id": "MONDO:0008747",
+      "type": "disease",
+      "name": "oculocutaneous albinism type 3",
+      "source_url": "https://monarchinitiative.org/MONDO:0008747"
+    },
+    {
+      "id": "HGNC:12450",
+      "type": "gene",
+      "name": "TYRP1",
+      "source_url": "https://monarchinitiative.org/MONDO:0008747"
+    },
+    {
+      "id": "MONDO:0008963",
+      "type": "disease",
+      "name": "Chediak-Higashi syndrome",
+      "source_url": "https://monarchinitiative.org/MONDO:0008963"
+    },
+    {
+      "id": "HGNC:1968",
+      "type": "gene",
+      "name": "LYST",
+      "source_url": "https://monarchinitiative.org/MONDO:0008963"
+    },
+    {
+      "id": "MONDO:0008962",
+      "type": "disease",
+      "name": "Griscelli syndrome type 1",
+      "source_url": "https://monarchinitiative.org/MONDO:0008962"
+    },
+    {
+      "id": "HGNC:7602",
+      "type": "gene",
+      "name": "MYO5A",
+      "source_url": "https://monarchinitiative.org/MONDO:0008962"
+    },
+    {
+      "id": "MONDO:0011683",
+      "type": "disease",
+      "name": "oculocutaneous albinism type 4",
+      "source_url": "https://monarchinitiative.org/MONDO:0011683"
+    },
+    {
+      "id": "HGNC:16472",
+      "type": "gene",
+      "name": "SLC45A2",
+      "source_url": "https://monarchinitiative.org/MONDO:0011683"
+    },
+    {
+      "id": "MONDO:0011872",
+      "type": "disease",
+      "name": "Griscelli syndrome type 2",
+      "source_url": "https://monarchinitiative.org/MONDO:0011872"
+    },
+    {
+      "id": "HGNC:9766",
+      "type": "gene",
+      "name": "RAB27A",
+      "source_url": "https://monarchinitiative.org/MONDO:0011872"
+    },
+    {
+      "id": "MONDO:0012220",
+      "type": "disease",
+      "name": "Griscelli syndrome type 3",
+      "source_url": "https://monarchinitiative.org/MONDO:0012220"
+    },
+    {
+      "id": "HGNC:29643",
+      "type": "gene",
+      "name": "MLPH",
+      "source_url": "https://monarchinitiative.org/MONDO:0012220"
+    },
+    {
+      "id": "MONDO:0014885",
+      "type": "disease",
+      "name": "Hermansky-Pudlak syndrome 10",
+      "source_url": "https://monarchinitiative.org/MONDO:0014885"
+    },
+    {
+      "id": "HGNC:568",
+      "type": "gene",
+      "name": "AP3D1",
+      "source_url": "https://monarchinitiative.org/MONDO:0014885"
+    },
+    {
+      "id": "MONDO:0011997",
+      "type": "disease",
+      "name": "Hermansky-Pudlak syndrome 2",
+      "source_url": "https://monarchinitiative.org/MONDO:0011997"
+    },
+    {
+      "id": "HGNC:566",
+      "type": "gene",
+      "name": "AP3B1",
+      "source_url": "https://monarchinitiative.org/MONDO:0011997"
+    },
+    {
+      "id": "MONDO:0013559",
+      "type": "disease",
+      "name": "Hermansky-Pudlak syndrome 7",
+      "source_url": "https://monarchinitiative.org/MONDO:0013559"
+    },
+    {
+      "id": "HGNC:17328",
+      "type": "gene",
+      "name": "DTNBP1",
+      "source_url": "https://monarchinitiative.org/MONDO:0013559"
+    }
+  ],
+  "edges": [
+    {
+      "source": "HGNC:7105",
+      "target": "MONDO:0007077",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007077"
+    },
+    {
+      "source": "HGNC:4620",
+      "target": "MONDO:0007097",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007097"
+    },
+    {
+      "source": "HGNC:11771",
+      "target": "MONDO:0007375",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007375"
+    },
+    {
+      "source": "HGNC:11771",
+      "target": "MONDO:0007380",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007380"
+    },
+    {
+      "source": "HGNC:11714",
+      "target": "MONDO:0007176",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007176"
+    },
+    {
+      "source": "HGNC:23785",
+      "target": "MONDO:0007376",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007376"
+    },
+    {
+      "source": "HGNC:11822",
+      "target": "MONDO:0007640",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007640"
+    },
+    {
+      "source": "HGNC:12703",
+      "target": "MONDO:0007931",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007931"
+    },
+    {
+      "source": "HGNC:6654",
+      "target": "MONDO:0008061",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008061"
+    },
+    {
+      "source": "HGNC:8142",
+      "target": "MONDO:0008133",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008133"
+    },
+    {
+      "source": "HGNC:8140",
+      "target": "MONDO:0008134",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008134"
+    },
+    {
+      "source": "HGNC:12442",
+      "target": "MONDO:0008745",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008745"
+    },
+    {
+      "source": "HGNC:11530",
+      "target": "MONDO:0008777",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008777"
+    },
+    {
+      "source": "HGNC:6180",
+      "target": "MONDO:0008795",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008795"
+    },
+    {
+      "source": "HGNC:20670",
+      "target": "MONDO:0008853",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008853"
+    },
+    {
+      "source": "HGNC:4118",
+      "target": "MONDO:0009255",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009255"
+    },
+    {
+      "source": "HGNC:4135",
+      "target": "MONDO:0009258",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009258"
+    },
+    {
+      "source": "HGNC:4298",
+      "target": "MONDO:0009260",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009260"
+    },
+    {
+      "source": "HGNC:4298",
+      "target": "MONDO:0009261",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009261"
+    },
+    {
+      "source": "HGNC:4298",
+      "target": "MONDO:0009262",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009262"
+    },
+    {
+      "source": "HGNC:4115",
+      "target": "MONDO:0009499",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009499"
+    },
+    {
+      "source": "HGNC:34",
+      "target": "MONDO:0009549",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009549"
+    },
+    {
+      "source": "HGNC:7193",
+      "target": "MONDO:0009644",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009644"
+    },
+    {
+      "source": "HGNC:13356",
+      "target": "MONDO:0009653",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009653"
+    },
+    {
+      "source": "HGNC:1373",
+      "target": "MONDO:0009818",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009818"
+    },
+    {
+      "source": "HGNC:4879",
+      "target": "MONDO:0010006",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0010006"
+    },
+    {
+      "source": "HGNC:8979",
+      "target": "MONDO:0010026",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0010026"
+    },
+    {
+      "source": "HGNC:4878",
+      "target": "MONDO:0010100",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0010100"
+    },
+    {
+      "source": "HGNC:8966",
+      "target": "MONDO:0010221",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0010221"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0007160",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007160"
+    },
+    {
+      "source": "HGNC:8620",
+      "target": "MONDO:0007354",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007354"
+    },
+    {
+      "source": "HGNC:30791",
+      "target": "MONDO:0007374",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007374"
+    },
+    {
+      "source": "HGNC:2194",
+      "target": "MONDO:0007381",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007381"
+    },
+    {
+      "source": "HGNC:25396",
+      "target": "MONDO:0007410",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007410"
+    },
+    {
+      "source": "HGNC:11195",
+      "target": "MONDO:0008799",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008799"
+    },
+    {
+      "source": "HGNC:10892",
+      "target": "MONDO:0008927",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008927"
+    },
+    {
+      "source": "HGNC:2605",
+      "target": "MONDO:0008948",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008948"
+    },
+    {
+      "source": "HGNC:16438",
+      "target": "MONDO:0009019",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009019"
+    },
+    {
+      "source": "HGNC:6938",
+      "target": "MONDO:0009020",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009020"
+    },
+    {
+      "source": "HGNC:4177",
+      "target": "MONDO:0009265",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009265"
+    },
+    {
+      "source": "HGNC:4177",
+      "target": "MONDO:0009266",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009266"
+    },
+    {
+      "source": "HGNC:4177",
+      "target": "MONDO:0009267",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009267"
+    },
+    {
+      "source": "HGNC:24682",
+      "target": "MONDO:0012177",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012177"
+    },
+    {
+      "source": "HGNC:32434",
+      "target": "MONDO:0012216",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012216"
+    },
+    {
+      "source": "HGNC:2705",
+      "target": "MONDO:0012401",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012401"
+    },
+    {
+      "source": "HGNC:7882",
+      "target": "MONDO:0012439",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012439"
+    },
+    {
+      "source": "HGNC:7105",
+      "target": "MONDO:0015014",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0015014"
+    },
+    {
+      "source": "MONDO:0015014",
+      "target": "MONDO:0007077",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0015014",
+      "note": "same gene MITF as MONDO:0007077"
+    },
+    {
+      "source": "HGNC:11771",
+      "target": "MONDO:0012043",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012043"
+    },
+    {
+      "source": "MONDO:0012043",
+      "target": "MONDO:0007375",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012043",
+      "note": "same gene TGFBI as MONDO:0007375"
+    },
+    {
+      "source": "MONDO:0012043",
+      "target": "MONDO:0007380",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012043",
+      "note": "same gene TGFBI as MONDO:0007380"
+    },
+    {
+      "source": "HGNC:11771",
+      "target": "MONDO:0011185",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011185"
+    },
+    {
+      "source": "MONDO:0011185",
+      "target": "MONDO:0007375",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011185",
+      "note": "same gene TGFBI as MONDO:0007375"
+    },
+    {
+      "source": "MONDO:0011185",
+      "target": "MONDO:0007380",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011185",
+      "note": "same gene TGFBI as MONDO:0007380"
+    },
+    {
+      "source": "HGNC:11771",
+      "target": "MONDO:0011855",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011855"
+    },
+    {
+      "source": "MONDO:0011855",
+      "target": "MONDO:0007375",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011855",
+      "note": "same gene TGFBI as MONDO:0007375"
+    },
+    {
+      "source": "MONDO:0011855",
+      "target": "MONDO:0007380",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011855",
+      "note": "same gene TGFBI as MONDO:0007380"
+    },
+    {
+      "source": "HGNC:11771",
+      "target": "MONDO:0007377",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007377"
+    },
+    {
+      "source": "MONDO:0007377",
+      "target": "MONDO:0007375",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007377",
+      "note": "same gene TGFBI as MONDO:0007375"
+    },
+    {
+      "source": "MONDO:0007377",
+      "target": "MONDO:0007380",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007377",
+      "note": "same gene TGFBI as MONDO:0007380"
+    },
+    {
+      "source": "HGNC:12703",
+      "target": "MONDO:0008662",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008662"
+    },
+    {
+      "source": "MONDO:0008662",
+      "target": "MONDO:0007931",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008662",
+      "note": "same gene BEST1 as MONDO:0007931"
+    },
+    {
+      "source": "HGNC:12703",
+      "target": "MONDO:0012733",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012733"
+    },
+    {
+      "source": "MONDO:0012733",
+      "target": "MONDO:0007931",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012733",
+      "note": "same gene BEST1 as MONDO:0007931"
+    },
+    {
+      "source": "HGNC:6654",
+      "target": "MONDO:0009724",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009724"
+    },
+    {
+      "source": "MONDO:0009724",
+      "target": "MONDO:0008061",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009724",
+      "note": "same gene LMX1B as MONDO:0008061"
+    },
+    {
+      "source": "HGNC:8142",
+      "target": "MONDO:0009787",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009787"
+    },
+    {
+      "source": "MONDO:0009787",
+      "target": "MONDO:0008133",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009787",
+      "note": "same gene OPA3 as MONDO:0008133"
+    },
+    {
+      "source": "HGNC:8140",
+      "target": "MONDO:0008858",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008858"
+    },
+    {
+      "source": "MONDO:0008858",
+      "target": "MONDO:0008134",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008858",
+      "note": "same gene OPA1 as MONDO:0008134"
+    },
+    {
+      "source": "HGNC:8620",
+      "target": "MONDO:0011414",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011414"
+    },
+    {
+      "source": "MONDO:0011414",
+      "target": "MONDO:0007354",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011414",
+      "note": "same gene PAX6 as MONDO:0007354"
+    },
+    {
+      "source": "MONDO:0011414",
+      "target": "MONDO:0008136",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011414",
+      "note": "same gene PAX6 as MONDO:0008136"
+    },
+    {
+      "source": "HGNC:8620",
+      "target": "MONDO:0007848",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007848"
+    },
+    {
+      "source": "MONDO:0007848",
+      "target": "MONDO:0007354",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007848",
+      "note": "same gene PAX6 as MONDO:0007354"
+    },
+    {
+      "source": "MONDO:0007848",
+      "target": "MONDO:0008136",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007848",
+      "note": "same gene PAX6 as MONDO:0008136"
+    },
+    {
+      "source": "HGNC:12442",
+      "target": "MONDO:0011749",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011749"
+    },
+    {
+      "source": "MONDO:0011749",
+      "target": "MONDO:0008745",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011749",
+      "note": "same gene TYR as MONDO:0008745"
+    },
+    {
+      "source": "HGNC:6180",
+      "target": "MONDO:0011694",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011694"
+    },
+    {
+      "source": "MONDO:0011694",
+      "target": "MONDO:0008795",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011694",
+      "note": "same gene ITPR1 as MONDO:0008795"
+    },
+    {
+      "source": "HGNC:6180",
+      "target": "MONDO:0007298",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007298"
+    },
+    {
+      "source": "MONDO:0007298",
+      "target": "MONDO:0008795",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007298",
+      "note": "same gene ITPR1 as MONDO:0008795"
+    },
+    {
+      "source": "HGNC:20670",
+      "target": "MONDO:0008693",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008693"
+    },
+    {
+      "source": "MONDO:0008693",
+      "target": "MONDO:0008853",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008693",
+      "note": "same gene TWIST2 as MONDO:0008853"
+    },
+    {
+      "source": "HGNC:20670",
+      "target": "MONDO:0009203",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009203"
+    },
+    {
+      "source": "MONDO:0009203",
+      "target": "MONDO:0008853",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009203",
+      "note": "same gene TWIST2 as MONDO:0008853"
+    },
+    {
+      "source": "HGNC:21244",
+      "target": "MONDO:0859147",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0859147"
+    },
+    {
+      "source": "MONDO:0859147",
+      "target": "MONDO:0008925",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0859147",
+      "note": "same gene LEMD2 as MONDO:0008925"
+    },
+    {
+      "source": "HGNC:4135",
+      "target": "MONDO:0018116",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0018116"
+    },
+    {
+      "source": "MONDO:0018116",
+      "target": "MONDO:0009258",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0018116",
+      "note": "same gene GALT as MONDO:0009258"
+    },
+    {
+      "source": "HGNC:4298",
+      "target": "MONDO:0009660",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009660"
+    },
+    {
+      "source": "MONDO:0009660",
+      "target": "MONDO:0009260",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009660",
+      "note": "same gene GLB1 as MONDO:0009260"
+    },
+    {
+      "source": "MONDO:0009660",
+      "target": "MONDO:0009261",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009660",
+      "note": "same gene GLB1 as MONDO:0009261"
+    },
+    {
+      "source": "MONDO:0009660",
+      "target": "MONDO:0009262",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009660",
+      "note": "same gene GLB1 as MONDO:0009262"
+    },
+    {
+      "source": "HGNC:13356",
+      "target": "MONDO:0010425",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0010425"
+    },
+    {
+      "source": "MONDO:0010425",
+      "target": "MONDO:0009653",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0010425",
+      "note": "same gene MCOLN1 as MONDO:0009653"
+    },
+    {
+      "source": "HGNC:8979",
+      "target": "MONDO:0014453",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0014453"
+    },
+    {
+      "source": "MONDO:0014453",
+      "target": "MONDO:0010026",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0014453",
+      "note": "same gene PIK3R1 as MONDO:0010026"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0007987",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007987"
+    },
+    {
+      "source": "MONDO:0007987",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007987",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0007885",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007885"
+    },
+    {
+      "source": "MONDO:0007885",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007885",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0011496",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011496"
+    },
+    {
+      "source": "MONDO:0011496",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011496",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0007895",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007895"
+    },
+    {
+      "source": "MONDO:0007895",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007895",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0008476",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008476"
+    },
+    {
+      "source": "MONDO:0008476",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008476",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0014701",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0014701"
+    },
+    {
+      "source": "MONDO:0014701",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0014701",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0010078",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0010078"
+    },
+    {
+      "source": "MONDO:0010078",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0010078",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0012206",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012206"
+    },
+    {
+      "source": "MONDO:0012206",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012206",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0008471",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008471"
+    },
+    {
+      "source": "MONDO:0008471",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008471",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0008478",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008478"
+    },
+    {
+      "source": "MONDO:0008478",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008478",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:2200",
+      "target": "MONDO:0008702",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008702"
+    },
+    {
+      "source": "MONDO:0008702",
+      "target": "MONDO:0007160",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008702",
+      "note": "same gene COL2A1 as MONDO:0007160"
+    },
+    {
+      "source": "HGNC:16438",
+      "target": "MONDO:0009015",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009015"
+    },
+    {
+      "source": "MONDO:0009015",
+      "target": "MONDO:0009019",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009015",
+      "note": "same gene SLC4A11 as MONDO:0009019"
+    },
+    {
+      "source": "HGNC:4177",
+      "target": "MONDO:0011945",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011945"
+    },
+    {
+      "source": "MONDO:0011945",
+      "target": "MONDO:0009265",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011945",
+      "note": "same gene GBA1 as MONDO:0009265"
+    },
+    {
+      "source": "MONDO:0011945",
+      "target": "MONDO:0009266",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011945",
+      "note": "same gene GBA1 as MONDO:0009266"
+    },
+    {
+      "source": "MONDO:0011945",
+      "target": "MONDO:0009267",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011945",
+      "note": "same gene GBA1 as MONDO:0009267"
+    },
+    {
+      "source": "HGNC:4177",
+      "target": "MONDO:0009268",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009268"
+    },
+    {
+      "source": "MONDO:0009268",
+      "target": "MONDO:0009265",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009268",
+      "note": "same gene GBA1 as MONDO:0009265"
+    },
+    {
+      "source": "MONDO:0009268",
+      "target": "MONDO:0009266",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009268",
+      "note": "same gene GBA1 as MONDO:0009266"
+    },
+    {
+      "source": "MONDO:0009268",
+      "target": "MONDO:0009267",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009268",
+      "note": "same gene GBA1 as MONDO:0009267"
+    },
+    {
+      "source": "HGNC:7882",
+      "target": "MONDO:0007057",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007057"
+    },
+    {
+      "source": "MONDO:0007057",
+      "target": "MONDO:0012439",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007057",
+      "note": "same gene NOTCH2 as MONDO:0012439"
+    },
+    {
+      "source": "HGNC:8101",
+      "target": "MONDO:0008746",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008746"
+    },
+    {
+      "source": "MONDO:0008746",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:12450",
+      "target": "MONDO:0008747",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008747"
+    },
+    {
+      "source": "MONDO:0008747",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:1968",
+      "target": "MONDO:0008963",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008963"
+    },
+    {
+      "source": "MONDO:0008963",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:7602",
+      "target": "MONDO:0008962",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008962"
+    },
+    {
+      "source": "MONDO:0008962",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:16472",
+      "target": "MONDO:0011683",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011683"
+    },
+    {
+      "source": "MONDO:0011683",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:9766",
+      "target": "MONDO:0011872",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011872"
+    },
+    {
+      "source": "MONDO:0011872",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:29643",
+      "target": "MONDO:0012220",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0012220"
+    },
+    {
+      "source": "MONDO:0012220",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:568",
+      "target": "MONDO:0014885",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0014885"
+    },
+    {
+      "source": "MONDO:0014885",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:566",
+      "target": "MONDO:0011997",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0011997"
+    },
+    {
+      "source": "MONDO:0011997",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "HGNC:17328",
+      "target": "MONDO:0013559",
+      "relation": "causes",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0013559"
+    },
+    {
+      "source": "MONDO:0013559",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007077",
+      "target": "MONDO:0019290",
+      "relation": "subclass_of",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0019290",
+      "note": "shares parent MONDO:0019290 with MONDO:0007077"
+    },
+    {
+      "source": "MONDO:0007375",
+      "target": "MONDO:0007380",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0007375",
+      "note": "same gene TGFBI"
+    },
+    {
+      "source": "MONDO:0008136",
+      "target": "MONDO:0007354",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0008136",
+      "note": "same gene PAX6"
+    },
+    {
+      "source": "MONDO:0009260",
+      "target": "MONDO:0009261",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009260",
+      "note": "same gene GLB1"
+    },
+    {
+      "source": "MONDO:0009260",
+      "target": "MONDO:0009262",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009260",
+      "note": "same gene GLB1"
+    },
+    {
+      "source": "MONDO:0009265",
+      "target": "MONDO:0009266",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009265",
+      "note": "same gene GBA1"
+    },
+    {
+      "source": "MONDO:0009265",
+      "target": "MONDO:0009267",
+      "relation": "same_gene",
+      "evidence_url": "https://monarchinitiative.org/MONDO:0009265",
+      "note": "same gene GBA1"
+    }
+  ]
+}
