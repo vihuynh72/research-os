@@ -235,6 +235,7 @@ export interface ClusterRow {
   size: number;
   color: string;
   lead: string | null; // the most central member, focused when the row is picked
+  members: string[];
 }
 
 function mostCentral(model: AtlasModel, ids: string[]): string | null {
@@ -258,6 +259,7 @@ export function clusterRows(model: AtlasModel): ClusterRow[] {
     size: c.size,
     color: clusterColor(c.color_slot),
     lead: mostCentral(model, c.members),
+    members: [...c.members],
   }));
   const other = [
     ...model.relevance.clusters.filter((c) => c.color_slot === null).flatMap((c) => c.members),
@@ -266,7 +268,14 @@ export function clusterRows(model: AtlasModel): ClusterRow[] {
       .map((d) => d.id),
   ];
   if (other.length) {
-    rows.push({ id: OTHER_CLUSTER, label: "Other / unclustered", size: other.length, color: clusterColor(null), lead: mostCentral(model, other) });
+    rows.push({
+      id: OTHER_CLUSTER,
+      label: "Other / unclustered",
+      size: other.length,
+      color: clusterColor(null),
+      lead: mostCentral(model, other),
+      members: other,
+    });
   }
   return rows;
 }

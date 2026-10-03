@@ -1,7 +1,7 @@
 "use client";
 
 // One search for everything: a WAI-ARIA combobox over diseases, genes, symptoms, groups and
-// research. Picking a result focuses the map on the disease it leads to.
+// research. Picking a result puts it in the center of the map.
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { SearchHit } from "@/lib/graph/index";
 import { countLabel } from "@/lib/graph/vocab";
@@ -9,21 +9,26 @@ import { ICON_PATH } from "@/lib/viz/icons";
 import { TYPE_WORD } from "./format";
 
 // Longest first: the box shows the longest hint that fits, so a phone never shows a hint cut
-// off mid-word. The server renders the first one.
-const PLACEHOLDERS = [
-  'Search a disease, gene or symptom, e.g. "CLN3" or "PPT1"',
-  'Search a disease, gene or symptom, e.g. "CLN3"',
-  "Search a disease, gene or symptom",
-  "Search the atlas",
-];
+// off mid-word. The examples come from the data, so the hint never names something the atlas
+// does not have. The server renders the first one.
+function placeholdersFor(examples: string[]): string[] {
+  return [
+    examples.length >= 2 ? `Search a disease, gene or symptom, e.g. "${examples[0]}" or "${examples[1]}"` : "",
+    examples.length >= 1 ? `Search a disease, gene or symptom, e.g. "${examples[0]}"` : "",
+    "Search a disease, gene or symptom",
+    "Search the atlas",
+  ].filter(Boolean);
+}
 
 interface Props {
   search(query: string): SearchHit[];
   onPick(hit: SearchHit): void;
+  examples?: string[]; // names to suggest in the placeholder, e.g. ["CLN3", "MFSD8"]
+  autoFocus?: boolean; // on devices with a mouse or trackpad only, so phones do not pop the keyboard
   className?: string;
 }
 
-export default function SearchBox({ search, onPick, className = "" }: Props) {
+export default function SearchBox({ search, onPick, examples = [], autoFocus = false, className = "" }: Props) {
   const id = useId();
   const inputId = `${id}-input`;
   const listId = `${id}-list`;
@@ -32,7 +37,9 @@ export default function SearchBox({ search, onPick, className = "" }: Props) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [announcement, setAnnouncement] = useState("");
-  const [placeholder, setPlaceholder] = useState(PLACEHOLDERS[0]);
+  const exampleKey = examples.join("\n");
+  const placeholders = useMemo(() => placeholdersFor(exampleKey ? exampleKey.split("\n") : []), [exampleKey]);
+  const [placeholder, setPlaceholder] = useState(placeholders[0]);
 
   useLayoutEffect(() => {
     const input = inputRef.current;
@@ -42,13 +49,17 @@ export default function SearchBox({ search, onPick, className = "" }: Props) {
       const style = getComputedStyle(input);
       context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
       const room = input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 4;
-      setPlaceholder(PLACEHOLDERS.find((text) => context.measureText(text).width <= room) ?? PLACEHOLDERS[PLACEHOLDERS.length - 1]);
+      setPlaceholder(placeholders.find((text) => context.measureText(text).width <= room) ?? placeholders[placeholders.length - 1]);
     };
     fit();
     const observer = new ResizeObserver(fit);
     observer.observe(input);
     return () => observer.disconnect();
-  }, []);
+  }, [placeholders]);
+
+  useEffect(() => {
+    if (autoFocus && window.matchMedia("(pointer: fine)").matches) inputRef.current?.focus({ preventScroll: true });
+  }, [autoFocus]);
 
   const trimmed = query.trim();
   const hits = useMemo(() => (trimmed ? search(trimmed) : []), [trimmed, search]);
@@ -191,7 +202,7 @@ export default function SearchBox({ search, onPick, className = "" }: Props) {
       </ul>
       {open && trimmed && !hits.length && (
         <div className="absolute inset-x-0 top-full z-30 mt-2 rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink-2 shadow-[0_12px_32px_rgb(0_0_0/0.16)]">
-          Nothing in this atlas matches “{trimmed}”. Try a disease name, a gene such as CLN3, or a symptom.
+          Nothing in this atlas matches “{trimmed}”. Try a disease name, a gene{examples[1] ? ` such as ${examples[1]}` : ""}, or a symptom.
         </div>
       )}
       <div aria-live="polite" className="visually-hidden">
