@@ -1,7 +1,7 @@
 "use client";
 
 // Segmented control: a group of toggle buttons where exactly one is pressed. Used for the
-// 2D | 3D view switch and for the Parent | Researcher persona switch.
+// 2D | 3D | List switch and for the Parent | Researcher persona switch.
 import type { View } from "./format";
 
 export interface SegmentOption<T extends string> {
@@ -35,11 +35,15 @@ export function Segmented<T extends string>({ label, options, value, onChange, c
   );
 }
 
-const VIEWS: SegmentOption<View>[] = [
+// How the map is shown: the 2D map, the same map in 3D, or the list that reads it out.
+export type Display = View | "list";
+
+const DISPLAYS: SegmentOption<Display>[] = [
   { value: "2d", label: "2D" },
   { value: "3d", label: "3D" },
+  { value: "list", label: "List" },
 ];
 
-export default function ViewToggle({ view, onChange, className }: { view: View; onChange(view: View): void; className?: string }) {
-  return <Segmented label="Map view" options={VIEWS} value={view} onChange={onChange} className={className} />;
+export default function ViewToggle({ value, onChange, className }: { value: Display; onChange(value: Display): void; className?: string }) {
+  return <Segmented label="Show the map as" options={DISPLAYS} value={value} onChange={onChange} className={className} />;
 }

@@ -18,7 +18,7 @@ import { constellationScene, neighborhoodScene } from "./scene3d";
 import KnowledgeGraph from "./KnowledgeGraph";
 import RelevanceBar from "./RelevanceBar";
 import SearchBox from "./SearchBox";
-import { Segmented, type SegmentOption } from "./ViewToggle";
+import ViewToggle, { Segmented, type Display, type SegmentOption } from "./ViewToggle";
 import ClusterPanel, { LegendStrip, Legend } from "./ClusterPanel";
 import DetailPanel from "./DetailPanel";
 import MapList from "./MapList";
@@ -38,14 +38,6 @@ interface Props {
 
 // Every type the map can show, in the order the type filters list them.
 const TYPE_ORDER: NodeType[] = ["Disease", "Gene", "Variant", "Mechanism", "Phenotype", "PatientOrg", "Asset", "Trial", "Paper", "Grant", "Investigator"];
-
-type Display = View | "list";
-
-const DISPLAYS: SegmentOption<Display>[] = [
-  { value: "2d", label: "2D" },
-  { value: "3d", label: "3D" },
-  { value: "list", label: "List" },
-];
 
 const PERSONAS: SegmentOption<Mode>[] = [
   { value: "parent", label: "Parent" },
@@ -212,8 +204,8 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
   const scene3d = useMemo(() => {
     if (view !== "3d" || list) return null;
     if (!hood || !filtered || !focusId) return constellationScene(model);
-    return neighborhoodScene(model, hood, filtered, selected);
-  }, [view, list, hood, filtered, focusId, model, selected]);
+    return neighborhoodScene(model, hood, filtered, threshold, selected);
+  }, [view, list, hood, filtered, focusId, model, selected, threshold]);
 
   const diseaseCount = model.index.diseases.length;
   // The team seed is the CLN slice; say so only while every disease in the sample is one.
@@ -251,6 +243,8 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
         focusId={focusId ?? ""}
         selectedId={selected}
         layout={focusId ? "disc" : "cloud"}
+        rings={scene3d.rings}
+        sectors={scene3d.sectors}
         onSelect={(id) => {
           const node = hood?.nodes.find((n) => n.id === id);
           if (!focusId) focusOn(id);
@@ -329,7 +323,7 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
             <div className="hidden sm:block sm:[grid-area:search]" />
           )}
           <div className="flex items-center gap-2 justify-self-end [grid-area:controls] sm:gap-3">
-            <Segmented<Display> label="Show the map as" options={DISPLAYS} value={display} onChange={changeDisplay} />
+            <ViewToggle value={display} onChange={changeDisplay} />
             <div className="flex items-center gap-2">
               <span className="hidden text-sm whitespace-nowrap text-ink-2 xl:inline">Viewing as:</span>
               <Segmented<Mode> label="Viewing as" options={PERSONAS} value={mode} onChange={setMode} />

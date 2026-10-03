@@ -1,9 +1,13 @@
 "use client";
 
-// The whole atlas in 3D: every disease at its MDS position (closer = more shared biology), the
-// focus and its neighbors in color, everything else grayed. Plain Canvas 2D with the projection
-// math in lib/viz/project3d.ts, so there is no 3D library to ship. AtlasApp loads this through
-// next/dynamic with ssr: false; even so, nothing here touches window or document during render.
+// The atlas in 3D, in two layouts. "cloud": before a search, every disease at its MDS position
+// (closer = more shared biology). "disc": after a search, the same knowledge graph as the 2D map,
+// laid on a tilted disc around what was searched: distance from the center is relevance, direction
+// is the kind of thing, and each kind floats at its own height. Kind colors and icons, opacity by
+// relevance, faint ghosts, glowing strong lines and dashed inferred lines match the 2D map.
+// Plain Canvas 2D with the projection math in lib/viz/project3d.ts, so there is no 3D library to
+// ship. AtlasApp loads this through next/dynamic with ssr: false; even so, nothing here touches
+// window or document during render.
 
 import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
@@ -37,10 +41,19 @@ export interface Graph3DNode {
   label: string;
   shortLabel: string;
   coords: [number, number, number];
-  color: string; // CSS color or "var(--series-1)"
+  color: string; // fill: CSS color or "var(--series-1)"
   size: number; // 0..1
   emphasis: "focus" | "neighbor" | "context";
-  tierLabel?: string;
+  tierLabel?: string; // second label line, e.g. "Strong · 85%"
+  ink?: string; // ring and icon color for the pale evidence kinds
+  icon?: string; // SVG path on a 24 x 24 grid, drawn inside the dot
+  count?: number; // a folded group: its size, drawn inside the dot
+  alpha?: number; // 0..1 opacity, from relevance
+  ghost?: boolean; // just under the filter: faint and unlabelled
+  radius?: number; // dot radius in px before perspective; default from size and emphasis
+  labelled?: boolean; // name shown without hovering (default: everything but context nodes)
+  detail?: string; // tooltip line under the name
+  hint?: string; // tooltip line on what a click does
 }
 
 export interface Graph3DLink {
@@ -49,6 +62,24 @@ export interface Graph3DLink {
   strength: number; // 0..1
   dashed: boolean;
   emphasis: "selected" | "normal";
+  color?: string; // default --ink-3
+  alpha?: number; // 0..1, default from strength
+  width?: number; // px, default from strength
+  glow?: number; // px of glow around a strong line
+  dash?: number[]; // dash pattern when dashed, default 6 5
+}
+
+// Rings in the disc's plane around the center: the relevance tiers and the person's filter.
+export interface Graph3DRing {
+  r: number; // in scene units, the same as the coords
+  kind: "tier" | "filter";
+  label?: string;
+}
+
+// Where each kind of thing sits on the disc, as a label at the rim.
+export interface Graph3DSector {
+  label: string;
+  angle: number; // radians in the disc's plane, 0 = right, growing toward the viewer
 }
 
 export interface Graph3DProps {
@@ -59,10 +90,16 @@ export interface Graph3DProps {
   onSelect(id: string): void;
   onFocus(id: string): void;
   ariaLabel: string;
+  layout?: "cloud" | "disc";
+  rings?: Graph3DRing[];
+  sectors?: Graph3DSector[];
+  caption?: string;
   className?: string;
 }
 
 const CAPTION = "3D layout: distance reflects shared biology. Drag to rotate, scroll to zoom.";
+const DISC_PITCH = 0.95; // rad: the disc seen from above at an angle, its far side (diseases) on top
+const MORPH_MS = 750; // nodes glide to their places when the center changes
 
 // The camera orbits the focus, like the 2D map keeps it in the middle. Distances are in orbit
 // spans (the radius around the focus that holds every disease), so framing is the same whatever
@@ -106,7 +143,9 @@ const TOKEN_FALLBACK: Record<"light" | "dark", Record<string, string>> = {
     "--ink": "#1d1d1f",
     "--ink-2": "#6e6e73",
     "--ink-3": "#8e8e93",
+    "--line": "#e5e5ea",
     "--accent": "#0071e3",
+    "--accent-ink": "#0066cc",
     "--surface": "#ffffff",
     "--node-gray": "#8e8e93",
   },
@@ -114,7 +153,9 @@ const TOKEN_FALLBACK: Record<"light" | "dark", Record<string, string>> = {
     "--ink": "#f5f5f7",
     "--ink-2": "#a1a1a6",
     "--ink-3": "#8e8e93",
+    "--line": "#38383a",
     "--accent": "#0a84ff",
+    "--accent-ink": "#2997ff",
     "--surface": "#1c1c1e",
     "--node-gray": "#8e8e93",
   },
@@ -133,6 +174,15 @@ interface SceneNode {
   tier?: string;
   p: Vec3; // centered, inside the unit sphere
   color: string;
+  ink?: string;
+  icon?: string;
+  count?: number;
+  alpha: number;
+  ghost: boolean;
+  radius?: number;
+  labelled: boolean;
+  detail?: string;
+  hint?: string;
   size: number;
   role: Role;
   selected: boolean;
@@ -144,8 +194,13 @@ interface SceneLink {
   ids: readonly [string, string];
   strength: number;
   dashed: boolean;
+  dash: number[];
   selected: boolean;
   faint: boolean; // touches a grayed node
+  color?: string;
+  alpha?: number;
+  width?: number;
+  glow: number;
 }
 
 interface Scene {
@@ -155,6 +210,9 @@ interface Scene {
   focus: number; // index of the focus node, -1 when it is not among the nodes
   pivot: Vec3; // what the camera orbits: the focus, else the middle of the cloud
   frame: OrbitFrame;
+  layout: "cloud" | "disc";
+  rings: Graph3DRing[];
+  sectors: Graph3DSector[];
   linkKey: string; // which pairs are linked; styling changes alone do not cross-fade
   colors: string[];
   colorKey: string;
@@ -167,6 +225,9 @@ const EMPTY_SCENE: Scene = {
   focus: -1,
   pivot: [0, 0, 0],
   frame: { span: 1, zoom: 1 },
+  layout: "cloud",
+  rings: [],
+  sectors: [],
   linkKey: "",
   colors: [],
   colorKey: "",
@@ -174,7 +235,15 @@ const EMPTY_SCENE: Scene = {
 
 const finite = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
-function buildScene(nodes: readonly Graph3DNode[], links: readonly Graph3DLink[], focusId: string, selectedId: string | null): Scene {
+function buildScene(
+  nodes: readonly Graph3DNode[],
+  links: readonly Graph3DLink[],
+  focusId: string,
+  selectedId: string | null,
+  layout: "cloud" | "disc",
+  rings: readonly Graph3DRing[],
+  sectors: readonly Graph3DSector[],
+): Scene {
   const index = new Map<string, number>();
   const unique: Graph3DNode[] = [];
   for (const node of nodes) {
@@ -183,12 +252,15 @@ function buildScene(nodes: readonly Graph3DNode[], links: readonly Graph3DLink[]
     unique.push(node);
   }
 
-  // Center the cloud and scale it to the unit sphere, so any coordinate units frame the same way.
-  // relevance coords3d are already centered with max norm 1, which makes this a no-op for them.
+  // A cloud is centered and scaled to the unit sphere, so any coordinate units frame the same way
+  // (relevance coords3d are already centered with max norm 1, which makes this a no-op for them).
+  // A disc arrives already scaled around its center over the whole neighborhood, so moving the
+  // relevance bar only shows and hides dots; nothing rescales.
   const raw = unique.map((n) => [finite(n.coords?.[0]), finite(n.coords?.[1]), finite(n.coords?.[2])]);
-  const mean = [0, 1, 2].map((k) => raw.reduce((sum, p) => sum + p[k], 0) / Math.max(1, raw.length));
+  const disc = layout === "disc";
+  const mean = disc ? [0, 0, 0] : [0, 1, 2].map((k) => raw.reduce((sum, p) => sum + p[k], 0) / Math.max(1, raw.length));
   const radius = raw.reduce((max, p) => Math.max(max, Math.hypot(p[0] - mean[0], p[1] - mean[1], p[2] - mean[2])), 0);
-  const unit = radius > 1e-12 ? 1 / radius : 0;
+  const unit = disc ? 1 : radius > 1e-12 ? 1 / radius : 0;
 
   let focus = -1;
   const sceneNodes = unique.map((n, i): SceneNode => {
@@ -201,6 +273,15 @@ function buildScene(nodes: readonly Graph3DNode[], links: readonly Graph3DLink[]
       tier: n.tierLabel,
       p: [(raw[i][0] - mean[0]) * unit, (raw[i][1] - mean[1]) * unit, (raw[i][2] - mean[2]) * unit],
       color: n.color,
+      ink: n.ink,
+      icon: n.icon,
+      count: n.count,
+      alpha: n.alpha === undefined ? 1 : clamp(finite(n.alpha), 0, 1),
+      ghost: Boolean(n.ghost),
+      radius: n.radius,
+      labelled: n.labelled ?? role !== "context",
+      detail: n.detail,
+      hint: n.hint,
       size: clamp(finite(n.size), 0, 1),
       role,
       selected: n.id === selectedId,
@@ -223,13 +304,18 @@ function buildScene(nodes: readonly Graph3DNode[], links: readonly Graph3DLink[]
       ids: [na.id, nb.id],
       strength: clamp(finite(link.strength), 0, 1),
       dashed: Boolean(link.dashed),
+      dash: link.dash ?? DASH,
       selected: link.emphasis === "selected" || toSelected,
-      faint: na.role === "context" || nb.role === "context",
+      faint: na.role === "context" || nb.role === "context" || na.ghost || nb.ghost,
+      color: link.color,
+      alpha: link.alpha,
+      width: link.width,
+      glow: Math.max(0, finite(link.glow)),
     });
   }
   sceneLinks.sort((x, y) => Number(x.selected) - Number(y.selected));
 
-  const colors = [...new Set(sceneNodes.map((n) => n.color))].sort();
+  const colors = [...new Set([...sceneNodes.flatMap((n) => (n.ink ? [n.color, n.ink] : [n.color])), ...sceneLinks.flatMap((l) => (l.color ? [l.color] : []))])].sort();
   const pivot: Vec3 = focus >= 0 ? sceneNodes[focus].p : [0, 0, 0];
   return {
     nodes: sceneNodes,
@@ -237,11 +323,17 @@ function buildScene(nodes: readonly Graph3DNode[], links: readonly Graph3DLink[]
     index,
     focus,
     pivot,
-    frame: orbitFrame(
-      pivot,
-      sceneNodes.map((n) => n.p),
-      sceneNodes.filter((n) => n.role === "neighbor").map((n) => n.p),
-    ),
+    // The disc is framed whole, rings included, so lowering the bar never pushes dots off screen.
+    frame: disc
+      ? { span: 1, zoom: 1 }
+      : orbitFrame(
+          pivot,
+          sceneNodes.map((n) => n.p),
+          sceneNodes.filter((n) => n.role === "neighbor").map((n) => n.p),
+        ),
+    layout,
+    rings: [...rings],
+    sectors: [...sectors],
     linkKey: sceneLinks
       .map((l) => [...l.ids].sort().join(">"))
       .sort()
@@ -261,11 +353,14 @@ interface Palette {
   ink: Rgba;
   ink2: Rgba;
   ink3: Rgba;
+  line: Rgba;
   accent: Rgba;
+  accentInk: Rgba;
   gray: Rgba;
   halo: Rgba; // whatever is actually behind the canvas
   colors: Map<string, Rgba>;
-  fonts: { focus: string; main: string; sub: string };
+  family: string;
+  fonts: { focus: string; main: string; sub: string; rim: string };
 }
 
 function parseRgb(value: string): Rgba | null {
@@ -340,11 +435,14 @@ function resolvePalette(canvas: HTMLCanvasElement, colors: readonly string[]): P
     ink: token("--ink"),
     ink2: token("--ink-2"),
     ink3: token("--ink-3"),
+    line: token("--line"),
     accent: token("--accent"),
+    accentInk: token("--accent-ink"),
     gray: token("--node-gray"),
     halo: backdrop(canvas) ?? token("--surface"),
     colors: new Map(colors.map((c) => [c, resolve(c) ?? GRAY])),
-    fonts: { focus: `600 13px ${family}`, main: `500 12px ${family}`, sub: `400 11px ${family}` },
+    family,
+    fonts: { focus: `600 13px ${family}`, main: `500 12px ${family}`, sub: `400 11px ${family}`, rim: `500 10.5px ${family}` },
   };
 }
 
@@ -409,8 +507,16 @@ interface Look {
   band: number; // alpha of the background-colored band that separates overlapping dots
   ring: string | null;
   ringWidth: number;
+  edge: string | null; // the thin outline of a pale evidence dot, in its kind's ink
+  ink: string | null; // icon and count color
   e: number;
   hover: boolean;
+}
+
+// Nodes glide to their new places when the center changes; new ones come out of the center.
+interface Morph {
+  start: number;
+  from: Map<string, Vec3>;
 }
 
 interface Frame {
@@ -470,9 +576,12 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
   let dim = 0;
   let linkAlpha = 1;
   let fading: { links: SceneLink[]; alpha: number } | null = null;
+  let morph: Morph | null = null;
+  let shown: Vec3[] = []; // where each node of the scene was last drawn, for the next morph
   const anim = new Map<string, Anim>();
   const labelSides = new Map<string, { side: LabelSide; compact: boolean; dx: number; dy: number }>();
   const textWidths = new Map<string, number>();
+  const icons = new Map<string, Path2D>();
   let palette: Palette | null = null;
 
   let width = 0;
@@ -579,7 +688,15 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       fading.alpha = approach(fading.alpha, 0, rate);
       if (fading.alpha === 0) fading = null;
     }
-    return busy || dim !== dimGoal || linkAlpha !== 1 || fading !== null;
+    if (morph && (reduceMotion || now - morph.start >= MORPH_MS)) morph = null;
+    return busy || dim !== dimGoal || linkAlpha !== 1 || fading !== null || morph !== null;
+  }
+
+  // Where a node is drawn this frame: its place, or on its way there after a change of center.
+  function placeOf(n: SceneNode, now: number): Vec3 {
+    if (!morph) return n.p;
+    const t = easeInOutCubic(clamp((now - morph.start) / MORPH_MS, 0, 1));
+    return lerp3(morph.from.get(n.id) ?? [0, 0, 0], n.p, t);
   }
 
   // Finishes every animation at once (reduced motion was switched on).
@@ -601,6 +718,7 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     for (const n of scene.nodes) anim.set(n.id, goalsOf(n));
     linkAlpha = 1;
     fading = null;
+    morph = null;
   }
 
   // Moves the orbit onto the scene's pivot and default framing.
@@ -661,11 +779,13 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     const f = smooth(a.f);
     const s = smooth(a.s);
     const hover = n.id === hoverId || n.id === keyId;
-    const r = dotRadius(n.size, e, f) * p.k;
+    const r = (n.radius !== undefined ? lerp(n.radius, n.radius * 1.12, s) : dotRadius(n.size, e, f)) * p.k;
     const own = pal.colors.get(n.color) ?? pal.gray;
     const color = mix(mix(pal.gray, own, e), pal.halo, FOG * t * e);
-    let alpha = lerp(CONTEXT_ALPHA * lerp(1.25, 0.75, t), 1, e);
-    if (hover) alpha = Math.max(alpha, 0.9);
+    // Relevance sets the opacity, as on the 2D map; dots just under the filter stay faint ghosts.
+    let alpha = lerp(CONTEXT_ALPHA * lerp(1.25, 0.75, t), 1, e) * n.alpha;
+    if (n.ghost) alpha = Math.min(alpha, 0.3);
+    if (hover || n.selected) alpha = Math.max(alpha, 0.9);
     let ring: string | null = null;
     let ringWidth = 0;
     if (s > 0.01) {
@@ -678,7 +798,68 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       ring = rgba(pal.ink2);
       ringWidth = 1.5;
     }
-    return { r, outer: r + (ring ? 2 + ringWidth : 1), fill: rgba(color, alpha), band: e, ring, ringWidth, e, hover };
+    const ink = n.ink ? (pal.colors.get(n.ink) ?? pal.ink) : null;
+    return {
+      r,
+      outer: r + (ring ? 2 + ringWidth : 1),
+      fill: rgba(color, alpha),
+      band: e * alpha,
+      ring,
+      ringWidth,
+      edge: ink ? rgba(ink, alpha * 0.55) : null,
+      ink: ink ? rgba(ink, Math.min(1, alpha * 1.1)) : null,
+      e,
+      hover,
+    };
+  }
+
+  // Rings in the disc's plane (the relevance tiers and the person's filter) and the kind of thing
+  // each direction holds, written at the rim. Drawn first, under everything else.
+  function drawDisc(pal: Palette, view: View) {
+    if (scene.layout !== "disc") return;
+    const at = (x: number, z: number) => project([x - pivot[0], -pivot[1], z - pivot[2]], view);
+    const ringPath = (r: number) => {
+      g.beginPath();
+      for (let k = 0; k <= 96; k++) {
+        const a = (k / 96) * TAU;
+        const q = at(Math.cos(a) * r, Math.sin(a) * r);
+        if (k === 0) g.moveTo(q.x, q.y);
+        else g.lineTo(q.x, q.y);
+      }
+      g.closePath();
+    };
+    for (const ring of scene.rings) {
+      ringPath(ring.r);
+      if (ring.kind === "filter") {
+        g.fillStyle = rgba(pal.accent, 0.04);
+        g.fill();
+        g.setLineDash([4, 6]);
+        g.lineWidth = 1.4;
+        g.strokeStyle = rgba(pal.accent, 0.95);
+      } else {
+        g.setLineDash([]);
+        g.lineWidth = 1;
+        g.strokeStyle = rgba(pal.line);
+      }
+      g.stroke();
+    }
+    g.setLineDash([]);
+    g.textBaseline = "middle";
+    g.lineJoin = "round";
+    for (const ring of scene.rings) {
+      if (ring.kind !== "filter" || !ring.label) continue;
+      const a = (18 * Math.PI) / 180; // the same spot as on the 2D map, just right of the front
+      const q = at(Math.cos(a) * ring.r, Math.sin(a) * ring.r);
+      drawText(ring.label, `600 11.5px ${pal.family}`, q.x + 6, q.y, "left", pal.accentInk, pal.halo, 1);
+    }
+    for (const s of scene.sectors) {
+      const q = at(Math.cos(s.angle) * 1.08, Math.sin(s.angle) * 1.08);
+      const cos = Math.cos(s.angle);
+      // Farther labels fade a little, like the dots behind them.
+      const back = depthT(q.depth, view.distance, span);
+      drawText(s.label.toUpperCase(), pal.fonts.rim, q.x, q.y, cos > 0.3 ? "left" : cos < -0.3 ? "right" : "center", pal.ink2, pal.halo, lerp(1, 0.6, back));
+    }
+    g.textBaseline = "top";
   }
 
   function drawLinks(pal: Palette, points: Projected[], depths: number[]) {
@@ -687,25 +868,36 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
         const pa = points[l.a];
         const pb = points[l.b];
         if (!pa || !pb) continue;
-        let color = pal.ink3;
-        let lineWidth = 1 + 2.5 * l.strength;
+        let color = l.color ? (pal.colors.get(l.color) ?? pal.ink3) : pal.ink3;
+        let lineWidth = l.width ?? 1 + 2.5 * l.strength;
         let alpha: number;
+        let glow = l.glow;
         if (l.selected) {
           color = pal.accent;
-          lineWidth = 3.5;
+          lineWidth = Math.max(3.5, lineWidth + 1.5);
           alpha = 1;
         } else {
           const recede = lerp(1, 0.55, (depths[l.a] + depths[l.b]) / 2);
-          alpha = (l.faint ? 0.2 : 0.85) * recede * lerp(1, DIM_UNSELECTED, dim);
+          alpha = (l.alpha ?? 0.85) * (l.faint ? 0.3 : 1) * recede * lerp(1, DIM_UNSELECTED, dim);
+          if (l.faint) glow = 0;
         }
-        g.setLineDash(l.dashed ? DASH : []);
+        g.setLineDash(l.dashed ? l.dash : []);
         g.lineCap = l.dashed ? "butt" : "round"; // round caps would close the dash gaps
         g.lineWidth = lineWidth;
         g.strokeStyle = rgba(color, alpha * generation);
+        // Strong links glow, the way the 2D map blurs a wider stroke under them.
+        if (glow > 0) {
+          g.shadowColor = rgba(color, 0.65 * generation);
+          g.shadowBlur = 4 + 2.5 * glow;
+        }
         g.beginPath();
         g.moveTo(pa.x, pa.y);
         g.lineTo(pb.x, pb.y);
         g.stroke();
+        if (glow > 0) {
+          g.shadowBlur = 0;
+          g.shadowColor = "transparent";
+        }
       }
     };
     if (fading) drawSet(fading.links, fading.alpha);
@@ -713,7 +905,17 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     g.setLineDash([]);
   }
 
-  function drawNode(l: Look, p: Projected, pal: Palette) {
+  function iconPath(d: string): Path2D | null {
+    if (typeof Path2D === "undefined") return null;
+    let path = icons.get(d);
+    if (!path) {
+      path = new Path2D(d);
+      icons.set(d, path);
+    }
+    return path;
+  }
+
+  function drawNode(n: SceneNode, l: Look, p: Projected, pal: Palette) {
     if (l.band > 0.01) {
       g.beginPath();
       g.arc(p.x, p.y, l.r + 2, 0, TAU);
@@ -724,6 +926,36 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     g.arc(p.x, p.y, l.r, 0, TAU);
     g.fillStyle = l.fill;
     g.fill();
+    if (l.edge) {
+      // A folded group has a dashed outline, as on the 2D map.
+      g.setLineDash(n.count !== undefined ? [3, 2.5] : []);
+      g.lineWidth = 1.3;
+      g.strokeStyle = l.edge;
+      g.stroke();
+      g.setLineDash([]);
+    }
+    if (l.ink && n.count !== undefined && l.r >= 5) {
+      g.font = `650 ${Math.round(clamp(l.r * 0.8, 9, 14))}px ${pal.family}`;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillStyle = l.ink;
+      g.fillText(String(n.count), p.x, p.y + 0.5);
+      g.textBaseline = "top";
+    } else if (l.ink && n.icon && l.r >= 5) {
+      const path = iconPath(n.icon);
+      if (path) {
+        const scale = (l.r * 1.24) / 24;
+        g.save();
+        g.translate(p.x - l.r * 0.62, p.y - l.r * 0.62);
+        g.scale(scale, scale);
+        g.lineWidth = 1.7 / scale;
+        g.lineCap = "round";
+        g.lineJoin = "round";
+        g.strokeStyle = l.ink;
+        g.stroke(path);
+        g.restore();
+      }
+    }
     if (l.ring) {
       g.beginPath();
       g.arc(p.x, p.y, l.r + 2 + l.ringWidth / 2, 0, TAU);
@@ -765,7 +997,7 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       const { x, y } = points[i];
       const r = looks[i].outer;
       if (x < -r || y < -r || x > width + r || y > height + r) return;
-      if (looks[i].e > 0.5 || looks[i].hover || n.selected) wanted.push(i);
+      if ((n.labelled && !n.ghost && looks[i].e > 0.5) || looks[i].hover || n.selected) wanted.push(i);
     });
     const rank = (i: number) => (nodes[i].role === "focus" ? 0 : nodes[i].selected ? 1 : looks[i].hover ? 2 : 3);
     wanted.sort((i, j) => rank(i) - rank(j) || points[i].depth - points[j].depth || i - j);
@@ -883,18 +1115,21 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       cy: height / 2,
     };
     const nodes = scene.nodes;
-    const points = nodes.map((n) => project([n.p[0] - pivot[0], n.p[1] - pivot[1], n.p[2] - pivot[2]], view));
+    const now = performance.now();
+    shown = nodes.map((n) => placeOf(n, now));
+    const points = shown.map((p) => project([p[0] - pivot[0], p[1] - pivot[1], p[2] - pivot[2]], view));
     const depths = points.map((p) => depthT(p.depth, distance, span));
     const looks = nodes.map((n, i) => look(n, points[i], depths[i], pal));
     frame = {
       ids: nodes.map((n) => n.id),
       points,
       looks,
-      targets: points.map((p, i) => ({ x: p.x, y: p.y, r: looks[i].outer, depth: p.depth, priority: nodes[i].role === "context" ? 0 : 1 })),
+      targets: points.map((p, i) => ({ x: p.x, y: p.y, r: looks[i].outer, depth: p.depth, priority: nodes[i].role === "context" || nodes[i].ghost ? 0 : 1 })),
     };
 
+    drawDisc(pal, view);
     drawLinks(pal, points, depths);
-    for (const i of depthSort(points.map((p) => p.depth))) drawNode(looks[i], points[i], pal);
+    for (const i of depthSort(points.map((p) => p.depth))) drawNode(nodes[i], looks[i], points[i], pal);
     drawLabels(pal, points, depths, looks);
 
     if (!nodes.length) {
@@ -1265,12 +1500,33 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       // its neighbors and turns so the rest of the atlas sits behind it rather than in front.
       const focus = next.focus >= 0 ? next.nodes[next.focus] : null;
       const focusId = focus ? focus.id : null;
-      if (first || focusId !== facedId) {
+      const layoutChanged = first || next.layout !== previous.layout;
+      if (first || focusId !== facedId || layoutChanged) {
+        // On the disc, every dot glides from where it was (new ones from the center), like the
+        // 2D map's entrance; the cloud keeps its positions and the camera moves instead.
+        if (next.layout === "disc" && !reduceMotion) {
+          const from = new Map<string, Vec3>();
+          if (previous.layout === "disc") previous.nodes.forEach((n, i) => from.set(n.id, shown[i] ?? n.p));
+          morph = { start: performance.now(), from };
+        } else morph = null;
         facedId = focusId;
         glideHome(first ? 0 : FLY_MS);
-        if (focus && Math.hypot(focus.p[0], focus.p[1], focus.p[2]) > FACE_MIN_RADIUS) {
+        if (next.layout === "disc") {
+          // Seen from above at an angle, diseases at the far side as on the 2D map. The disc holds
+          // still: turning it on its own would scramble which direction holds which kind of thing.
+          autoRotate = false;
+          spin = 0;
+          if (layoutChanged) {
+            if (first) {
+              yaw = 0;
+              pitch = DISC_PITCH;
+            } else flyTo(0, DISC_PITCH, FLY_MS, true);
+          }
+        } else if (focus && Math.hypot(focus.p[0], focus.p[1], focus.p[2]) > FACE_MIN_RADIUS) {
           if (first) ({ yaw, pitch } = faceAngles(focus.p));
           else if (!drag?.moved) faceFocus(FLY_MS);
+        } else if (layoutChanged && !first) {
+          flyTo(yaw, 0, FLY_MS, true);
         }
       }
       invalidate();
@@ -1385,7 +1641,23 @@ const CENTER_BUTTON: CSSProperties = {
   color: "var(--accent, #0071e3)",
 };
 
-export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, onFocus, ariaLabel, className }: Graph3DProps) {
+const NO_RINGS: Graph3DRing[] = [];
+const NO_SECTORS: Graph3DSector[] = [];
+
+export default function Graph3D({
+  nodes,
+  links,
+  focusId,
+  selectedId,
+  onSelect,
+  onFocus,
+  ariaLabel,
+  layout = "cloud",
+  rings = NO_RINGS,
+  sectors = NO_SECTORS,
+  caption = CAPTION,
+  className,
+}: Graph3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -1395,7 +1667,10 @@ export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, o
   const [listOpen, setListOpen] = useState(false);
   const hintId = useId();
 
-  const scene = useMemo(() => buildScene(nodes, links, focusId, selectedId), [nodes, links, focusId, selectedId]);
+  const scene = useMemo(
+    () => buildScene(nodes, links, focusId, selectedId, layout, rings, sectors),
+    [nodes, links, focusId, selectedId, layout, rings, sectors],
+  );
 
   const select = useEffectEvent((id: string) => onSelect(id));
   const focus = useEffectEvent((id: string) => onFocus(id));
@@ -1450,13 +1725,11 @@ export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, o
   const tip = tipId === null ? undefined : scene.nodes[scene.index.get(tipId) ?? -1];
   const hint =
     keyId === null && tip
-      ? tip.role === "neighbor"
-        ? "Click for the evidence"
-        : tip.role === "context"
-          ? "Double-click to center the map here"
-          : null
+      ? (tip.hint ??
+        (tip.role === "neighbor" ? "Click for the evidence" : tip.role === "context" ? "Double-click to center the map here" : null))
       : null;
   const count = scene.nodes.length;
+  const what = layout === "disc" ? (count === 1 ? "item" : "items") : count === 1 ? "disease" : "diseases";
 
   return (
     <div className={`flex h-full min-h-0 w-full flex-col ${className ?? ""}`}>
@@ -1465,7 +1738,7 @@ export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, o
           ref={canvasRef}
           tabIndex={0}
           role="img"
-          aria-label={`${ariaLabel} (${count} ${count === 1 ? "disease" : "diseases"})`}
+          aria-label={`${ariaLabel} (${count} ${what})`}
           aria-describedby={hintId}
           className="absolute inset-0 block h-full w-full"
           style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", outline: "none", WebkitTapHighlightColor: "transparent" }}
@@ -1474,7 +1747,7 @@ export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, o
           {tip ? (
             <>
               <div style={{ fontWeight: 600 }}>{sentenceLabel(tip.label)}</div>
-              {tip.tier ? <div style={MUTED}>{tip.tier}</div> : null}
+              {tip.detail ? <div style={MUTED}>{tip.detail}</div> : tip.tier ? <div style={MUTED}>{tip.tier}</div> : null}
               {hint ? <div style={{ ...MUTED, fontSize: 12, marginTop: 2 }}>{hint}</div> : null}
             </>
           ) : null}
@@ -1483,7 +1756,7 @@ export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, o
           <div
             ref={listRef}
             role="group"
-            aria-label="Highlighted diseases"
+            aria-label={layout === "disc" ? "Items on the map" : "Highlighted diseases"}
             onFocus={() => setListOpen(true)}
             onBlur={(e) => {
               if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setListOpen(false);
@@ -1514,7 +1787,7 @@ export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, o
                     {n.tier ? <span style={MUTED}> · {n.tier}</span> : null}
                     {n.role === "focus" ? <span style={MUTED}> · in focus</span> : null}
                   </button>
-                  {n.role === "focus" ? null : (
+                  {n.role === "focus" || n.count !== undefined ? null : (
                     <button
                       type="button"
                       aria-label={`Center the map on ${sentenceLabel(n.label)}`}
@@ -1532,12 +1805,12 @@ export default function Graph3D({ nodes, links, focusId, selectedId, onSelect, o
           </div>
         ) : null}
       </div>
-      <p className="mt-2 text-xs leading-4" style={MUTED}>
-        {CAPTION}
+      <p className="mt-2 text-xs leading-4 text-pretty" style={MUTED}>
+        {caption}
       </p>
       <p id={hintId} style={VISUALLY_HIDDEN}>
-        Arrow keys rotate the view, plus and minus zoom, and 0 resets it. Press Tab to reach the list of highlighted
-        diseases.
+        Arrow keys rotate the view, plus and minus zoom, and 0 resets it. Press Tab to reach the list of{" "}
+        {layout === "disc" ? "items on the map" : "highlighted diseases"}.
       </p>
     </div>
   );

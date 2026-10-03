@@ -120,96 +120,6 @@
   scrollbar-gutter: stable;
 }
 
-/* Cluster chips scroll sideways on small screens instead of widening the page. */
-.chip-row {
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-
-/* ---------- Radial map (SVG) ---------- */
-.map-svg {
-  display: block;
-  touch-action: manipulation; /* no double-tap zoom, so double-tap can refocus */
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* Visual dots glide to their new place on a refocus. */
-.map-move {
-  transition: transform 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-/* Invisible hit targets on top, in reading order, carrying the keyboard focus ring. */
-.map-hit {
-  cursor: pointer;
-}
-
-.map-hit:focus {
-  outline: none;
-}
-
-.map-hit .map-focus-ring {
-  opacity: 0;
-}
-
-.map-hit:focus-visible .map-focus-ring {
-  opacity: 1;
-}
-
-.map-link {
-  transition: opacity 150ms ease-out;
-}
-
-/* Links and labels re-enter after a refocus, once the nodes have moved. */
-.map-enter {
-  animation: map-enter 180ms ease-out 260ms both;
-}
-
-@keyframes map-enter {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.map-label {
-  fill: var(--ink);
-  paint-order: stroke;
-  stroke: var(--surface);
-  stroke-linejoin: round;
-}
-
-.map-label-muted {
-  fill: var(--ink-2);
-}
-
-.map-tooltip {
-  position: absolute;
-  z-index: 20;
-  max-width: min(18rem, calc(100% - 16px));
-  pointer-events: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .map-move,
-  .map-link {
-    transition: none;
-  }
-  .map-enter {
-    animation: none;
-  }
-}
-
-@media (forced-colors: active) {
-  .map-label {
-    stroke: Canvas;
-    fill: CanvasText;
-  }
-}
-
 /* ---------- Evidence chips and path ---------- */
 .kind-inferred {
   border-style: dashed;
@@ -228,4 +138,71 @@
   block-size: 5px;
   border-radius: 999px;
   background: var(--line);
+}
+
+/* ---------- Knowledge-graph map (components/atlas/KnowledgeGraph.tsx) and its legend ---------- */
+:root {
+  /* Node kinds: pale fill, darker icon. Diseases use the cluster series colors instead. */
+  --kind-bio-fill: #eeebfa;
+  --kind-bio-ink: #5b4bb7;
+  --kind-clin-fill: #fcebf1;
+  --kind-clin-ink: #b23c68;
+  --kind-comm-fill: #e6f4ec;
+  --kind-comm-ink: #2b7a4b;
+  --kind-res-fill: #fbf1df;
+  --kind-res-ink: #8f5a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --kind-bio-fill: #2b2647;
+    --kind-bio-ink: #b3a8f0;
+    --kind-clin-fill: #3d2430;
+    --kind-clin-ink: #f09ab9;
+    --kind-comm-fill: #1f3529;
+    --kind-comm-ink: #8fd3a8;
+    --kind-res-fill: #3a2d17;
+    --kind-res-ink: #f0c070;
+  }
+}
+.atlas-label {
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.atlas-label-plain {
+  paint-order: normal;
+}
+.atlas-focus-ring {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.atlas-node:focus-visible .atlas-focus-ring {
+  opacity: 1;
+}
+.atlas-twinkle {
+  animation: atlas-twinkle 4.8s ease-in-out infinite;
+}
+.atlas-fade-in {
+  animation: atlas-fade-in 450ms ease both;
+}
+.atlas-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: atlas-pulse 2.6s ease-out infinite;
+}
+@keyframes atlas-twinkle {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
+}
+@keyframes atlas-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes atlas-pulse {
+  0% { opacity: 0.55; transform: scale(0.85); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-twinkle, .atlas-fade-in, .atlas-pulse { animation: none; }
 }
