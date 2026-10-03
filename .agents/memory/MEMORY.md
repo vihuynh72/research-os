@@ -1,0 +1,2 @@
+- [One lane per teammate](scope.md) — owner Vi = app/infra; never build Jaspaal's (data/AI) or Paul's (community/demo) parts of PLAN-16H.md.
+- [GitHub push auth](github-push.md) — built-in git askpass returns an invalid token for origin; pushing needs the GitHub connection.
