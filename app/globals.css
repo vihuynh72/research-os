@@ -1,1 +1,231 @@
 @import "tailwindcss";
+
+/* Team design tokens. Series colors are validated against --surface in each scheme
+   (light #fff, dark #1c1c1e); several light ones are under 3:1, so colored marks always
+   carry a text label and text is always ink, never a series color. */
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f5f5f7;
+  --raised: #ffffff; /* the pressed segment of a segmented control */
+  --ink: #1d1d1f;
+  --ink-2: #6e6e73;
+  --ink-3: #86868b; /* hairline graphics only (map links, icons), never body text */
+  --line: #e5e5ea;
+  --accent: #0071e3;
+  --accent-ink: #0066cc; /* accent as text: links, selected labels */
+  --node-gray: #8e8e93;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --radius: 12px;
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --raised: #636366;
+    --ink: #f5f5f7;
+    --ink-2: #a1a1a6;
+    --ink-3: #6e6e73;
+    --line: #38383a;
+    --accent: #0071e3; /* fills and strokes; white text on it stays above 4.5:1 */
+    --accent-ink: #2997ff;
+    --node-gray: #8e8e93;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --font-sans: var(--font);
+}
+
+/* Base element styles sit in the base layer so Tailwind utilities can still override them. */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    accent-color: var(--accent);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :where(a, button, input, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 22%, transparent);
+  }
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Panels scroll inside the viewport on wide screens; no scroll chaining into the page.
+   Relative, so visually hidden text inside is clipped by the panel instead of stretching the page. */
+.panel-scroll {
+  position: relative;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/* Cluster chips scroll sideways on small screens instead of widening the page. */
+.chip-row {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+/* ---------- Radial map (SVG) ---------- */
+.map-svg {
+  display: block;
+  touch-action: manipulation; /* no double-tap zoom, so double-tap can refocus */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Visual dots glide to their new place on a refocus. */
+.map-move {
+  transition: transform 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Invisible hit targets on top, in reading order, carrying the keyboard focus ring. */
+.map-hit {
+  cursor: pointer;
+}
+
+.map-hit:focus {
+  outline: none;
+}
+
+.map-hit .map-focus-ring {
+  opacity: 0;
+}
+
+.map-hit:focus-visible .map-focus-ring {
+  opacity: 1;
+}
+
+.map-link {
+  transition: opacity 150ms ease-out;
+}
+
+/* Links and labels re-enter after a refocus, once the nodes have moved. */
+.map-enter {
+  animation: map-enter 180ms ease-out 260ms both;
+}
+
+@keyframes map-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.map-label {
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-linejoin: round;
+}
+
+.map-label-muted {
+  fill: var(--ink-2);
+}
+
+.map-tooltip {
+  position: absolute;
+  z-index: 20;
+  max-width: min(18rem, calc(100% - 16px));
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-move,
+  .map-link {
+    transition: none;
+  }
+  .map-enter {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .map-label {
+    stroke: Canvas;
+    fill: CanvasText;
+  }
+}
+
+/* ---------- Evidence chips and path ---------- */
+.kind-inferred {
+  border-style: dashed;
+}
+
+.path-connector {
+  border-inline-start: 2px solid var(--ink-3);
+}
+
+.path-connector.kind-inferred {
+  border-inline-start-style: dashed;
+}
+
+.sheet-grabber {
+  inline-size: 36px;
+  block-size: 5px;
+  border-radius: 999px;
+  background: var(--line);
+}

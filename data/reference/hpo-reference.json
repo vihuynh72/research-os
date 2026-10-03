@@ -1,0 +1,2563 @@
+{
+  "meta": {
+    "hpo_version": "2026-09-01",
+    "annotations_version": "2026-09-02",
+    "n_diseases": 12880,
+    "ic_formula": "-ln(n_t/N)/ln(N) over diseases in phenotype.hpoa, is_a-propagated",
+    "sources": [
+      "https://purl.obolibrary.org/obo/hp.json",
+      "https://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa"
+    ],
+    "null": {
+      "pairs": 20000,
+      "seed": 20261003,
+      "mean": 0.0289,
+      "quantiles": [
+        {
+          "p": 0,
+          "value": 0
+        },
+        {
+          "p": 0.5,
+          "value": 0.0157
+        },
+        {
+          "p": 0.75,
+          "value": 0.0405
+        },
+        {
+          "p": 0.8,
+          "value": 0.0487
+        },
+        {
+          "p": 0.85,
+          "value": 0.0609
+        },
+        {
+          "p": 0.9,
+          "value": 0.0765
+        },
+        {
+          "p": 0.95,
+          "value": 0.1036
+        },
+        {
+          "p": 0.975,
+          "value": 0.1281
+        },
+        {
+          "p": 0.99,
+          "value": 0.1636
+        },
+        {
+          "p": 0.995,
+          "value": 0.1897
+        },
+        {
+          "p": 0.999,
+          "value": 0.2777
+        },
+        {
+          "p": 1,
+          "value": 0.8197
+        }
+      ]
+    },
+    "same_disease": {
+      "pairs": 497,
+      "quantiles": [
+        {
+          "p": 0,
+          "value": 0.056
+        },
+        {
+          "p": 0.25,
+          "value": 0.2446
+        },
+        {
+          "p": 0.5,
+          "value": 0.3173
+        },
+        {
+          "p": 0.75,
+          "value": 0.3932
+        },
+        {
+          "p": 1,
+          "value": 0.8401
+        }
+      ]
+    }
+  },
+  "terms": {
+    "HP:0000001": {
+      "label": "All",
+      "ic": 0,
+      "specificity": 0,
+      "ancestors": [],
+      "aspect": "other"
+    },
+    "HP:0000005": {
+      "label": "Mode of inheritance",
+      "ic": 0.0456,
+      "specificity": 0.0005,
+      "ancestors": [
+        "HP:0000001"
+      ],
+      "aspect": "I"
+    },
+    "HP:0000007": {
+      "label": "Autosomal recessive inheritance",
+      "ic": 0.1168,
+      "specificity": 0.0035,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000005",
+        "HP:0034345"
+      ],
+      "aspect": "I"
+    },
+    "HP:0000118": {
+      "label": "Phenotypic abnormality",
+      "ic": 0.0001,
+      "specificity": 0,
+      "ancestors": [
+        "HP:0000001"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000152": {
+      "label": "Abnormality of head or neck",
+      "ic": 0.0693,
+      "specificity": 0.0009,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000234": {
+      "label": "Abnormality of the head",
+      "ic": 0.071,
+      "specificity": 0.001,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000152"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000240": {
+      "label": "Abnormality of skull size",
+      "ic": 0.1725,
+      "specificity": 0.0462,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000152",
+        "HP:0000234",
+        "HP:0000924",
+        "HP:0000929",
+        "HP:0009121",
+        "HP:0011842",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000252": {
+      "label": "Microcephaly",
+      "ic": 0.1978,
+      "specificity": 0.0649,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000152",
+        "HP:0000234",
+        "HP:0000240",
+        "HP:0000707",
+        "HP:0000924",
+        "HP:0000929",
+        "HP:0002011",
+        "HP:0002060",
+        "HP:0002977",
+        "HP:0007364",
+        "HP:0009121",
+        "HP:0011842",
+        "HP:0012443",
+        "HP:0012639",
+        "HP:0033127",
+        "HP:0040195",
+        "HP:0100547"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000253": {
+      "label": "Progressive microcephaly",
+      "ic": 0.5144,
+      "specificity": 0.6558,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000152",
+        "HP:0000234",
+        "HP:0000240",
+        "HP:0000252",
+        "HP:0000707",
+        "HP:0000924",
+        "HP:0000929",
+        "HP:0002011",
+        "HP:0002060",
+        "HP:0002977",
+        "HP:0005484",
+        "HP:0007364",
+        "HP:0009121",
+        "HP:0011842",
+        "HP:0012443",
+        "HP:0012639",
+        "HP:0033127",
+        "HP:0040195",
+        "HP:0100547"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000478": {
+      "label": "Abnormality of the eye",
+      "ic": 0.0821,
+      "specificity": 0.0013,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000479": {
+      "label": "Abnormal retinal morphology",
+      "ic": 0.2446,
+      "specificity": 0.1228,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000488": {
+      "label": "Retinopathy",
+      "ic": 0.5245,
+      "specificity": 0.6716,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000479",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000501": {
+      "label": "Glaucoma",
+      "ic": 0.3962,
+      "specificity": 0.4047,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0012373"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000504": {
+      "label": "Abnormality of vision",
+      "ic": 0.2084,
+      "specificity": 0.0699,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0012373"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000505": {
+      "label": "Visual impairment",
+      "ic": 0.2294,
+      "specificity": 0.0905,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000504",
+        "HP:0012373"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000510": {
+      "label": "Rod-cone dystrophy",
+      "ic": 0.4258,
+      "specificity": 0.4686,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000479",
+        "HP:0000556",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000512": {
+      "label": "Abnormal electroretinogram",
+      "ic": 0.4573,
+      "specificity": 0.5386,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0012373",
+        "HP:0030453"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000517": {
+      "label": "Abnormal lens morphology",
+      "ic": 0.2731,
+      "specificity": 0.1521,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0004328",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000518": {
+      "label": "Cataract",
+      "ic": 0.2783,
+      "specificity": 0.1587,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000517",
+        "HP:0004328",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000529": {
+      "label": "Progressive visual loss",
+      "ic": 0.5134,
+      "specificity": 0.6545,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000504",
+        "HP:0000505",
+        "HP:0000572",
+        "HP:0012373"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000546": {
+      "label": "Retinal degeneration",
+      "ic": 0.4096,
+      "specificity": 0.4316,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000479",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000550": {
+      "label": "Undetectable electroretinogram",
+      "ic": 0.6129,
+      "specificity": 0.8013,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000512",
+        "HP:0012373",
+        "HP:0030453"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000556": {
+      "label": "Retinal dystrophy",
+      "ic": 0.3701,
+      "specificity": 0.3479,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000479",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000572": {
+      "label": "Visual loss",
+      "ic": 0.4161,
+      "specificity": 0.4439,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000504",
+        "HP:0000505",
+        "HP:0012373"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000580": {
+      "label": "Pigmentary retinopathy",
+      "ic": 0.436,
+      "specificity": 0.4878,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000479",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0007703",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000587": {
+      "label": "Abnormal optic nerve morphology",
+      "ic": 0.2625,
+      "specificity": 0.1405,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000608": {
+      "label": "Macular degeneration",
+      "ic": 0.4941,
+      "specificity": 0.6192,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000479",
+        "HP:0000546",
+        "HP:0001098",
+        "HP:0001103",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000618": {
+      "label": "Blindness",
+      "ic": 0.4386,
+      "specificity": 0.4922,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000504",
+        "HP:0000505",
+        "HP:0007663",
+        "HP:0012373"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000648": {
+      "label": "Optic atrophy",
+      "ic": 0.3177,
+      "specificity": 0.2331,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000587",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372",
+        "HP:0012795"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000654": {
+      "label": "Decreased light- and dark-adapted electroretinogram amplitude",
+      "ic": 0.6946,
+      "specificity": 0.881,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000512",
+        "HP:0008323",
+        "HP:0012373",
+        "HP:0030453",
+        "HP:0030466"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000707": {
+      "label": "Abnormality of the nervous system",
+      "ic": 0.0445,
+      "specificity": 0.0003,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000709": {
+      "label": "Psychosis",
+      "ic": 0.4824,
+      "specificity": 0.6008,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:5200423",
+        "HP:5200430"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000716": {
+      "label": "Depression",
+      "ic": 0.3856,
+      "specificity": 0.3849,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0000745",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025766",
+        "HP:0025780",
+        "HP:0100851"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000726": {
+      "label": "Dementia",
+      "ic": 0.4092,
+      "specificity": 0.4301,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001268",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0100543"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000737": {
+      "label": "Irritability",
+      "ic": 0.408,
+      "specificity": 0.4276,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025766",
+        "HP:0031467",
+        "HP:0100851"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000738": {
+      "label": "Hallucinations",
+      "ic": 0.4881,
+      "specificity": 0.6078,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:5200423"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000739": {
+      "label": "Anxiety",
+      "ic": 0.3666,
+      "specificity": 0.3417,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:5200230",
+        "HP:5200401",
+        "HP:5200423"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000745": {
+      "label": "Abnormal diminished volition",
+      "ic": 0.3274,
+      "specificity": 0.2573,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025766",
+        "HP:0025780"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000750": {
+      "label": "Delayed speech and language development",
+      "ic": 0.2264,
+      "specificity": 0.0866,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002167",
+        "HP:0002463",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0012758",
+        "HP:0012759",
+        "HP:0025792",
+        "HP:0034434",
+        "HP:4000072"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000924": {
+      "label": "Abnormality of the skeletal system",
+      "ic": 0.0679,
+      "specificity": 0.0007,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0000929": {
+      "label": "Abnormal skull morphology",
+      "ic": 0.1178,
+      "specificity": 0.0035,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000152",
+        "HP:0000234",
+        "HP:0000924",
+        "HP:0009121",
+        "HP:0011842",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001098": {
+      "label": "Abnormal fundus morphology",
+      "ic": 0.1967,
+      "specificity": 0.0617,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001103": {
+      "label": "Abnormal macular morphology",
+      "ic": 0.385,
+      "specificity": 0.3814,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000479",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001249": {
+      "label": "Intellectual disability",
+      "ic": 0.1412,
+      "specificity": 0.0096,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0012759"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001250": {
+      "label": "Seizure",
+      "ic": 0.1495,
+      "specificity": 0.0233,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001251": {
+      "label": "Ataxia",
+      "ic": 0.2312,
+      "specificity": 0.1016,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011442",
+        "HP:0011443",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001252": {
+      "label": "Hypotonia",
+      "ic": 0.1622,
+      "specificity": 0.0417,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0003011",
+        "HP:0003808",
+        "HP:0011804",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001257": {
+      "label": "Spasticity",
+      "ic": 0.2402,
+      "specificity": 0.1098,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001276",
+        "HP:0002493",
+        "HP:0003011",
+        "HP:0003808",
+        "HP:0011442",
+        "HP:0011804",
+        "HP:0012638",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001260": {
+      "label": "Dysarthria",
+      "ic": 0.2919,
+      "specificity": 0.1793,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002167",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025792",
+        "HP:0034434",
+        "HP:4000072"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001263": {
+      "label": "Global developmental delay",
+      "ic": 0.1584,
+      "specificity": 0.0332,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638",
+        "HP:0012758",
+        "HP:0012759"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001268": {
+      "label": "Mental deterioration",
+      "ic": 0.3463,
+      "specificity": 0.2903,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0100543"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001272": {
+      "label": "Cerebellar atrophy",
+      "ic": 0.3169,
+      "specificity": 0.2308,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001317",
+        "HP:0002011",
+        "HP:0011282",
+        "HP:0011283",
+        "HP:0012443",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001276": {
+      "label": "Hypertonia",
+      "ic": 0.2121,
+      "specificity": 0.0736,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0003011",
+        "HP:0003808",
+        "HP:0011804",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001288": {
+      "label": "Gait disturbance",
+      "ic": 0.2091,
+      "specificity": 0.0714,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638",
+        "HP:0100022"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001290": {
+      "label": "Generalized hypotonia",
+      "ic": 0.3019,
+      "specificity": 0.1985,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001252",
+        "HP:0003011",
+        "HP:0003808",
+        "HP:0011804",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001300": {
+      "label": "Parkinsonism",
+      "ic": 0.4524,
+      "specificity": 0.5268,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002071",
+        "HP:0011442",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001311": {
+      "label": "Abnormal nervous system electrophysiology",
+      "ic": 0.276,
+      "specificity": 0.154,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001317": {
+      "label": "Abnormal cerebellum morphology",
+      "ic": 0.2289,
+      "specificity": 0.0894,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0011282",
+        "HP:0011283",
+        "HP:0012443",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001336": {
+      "label": "Myoclonus",
+      "ic": 0.3658,
+      "specificity": 0.3368,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0004305",
+        "HP:0011442",
+        "HP:0012638",
+        "HP:0100022"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001371": {
+      "label": "Flexion contracture",
+      "ic": 0.275,
+      "specificity": 0.1533,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000924",
+        "HP:0003011",
+        "HP:0003549",
+        "HP:0011729",
+        "HP:0011805",
+        "HP:0011842",
+        "HP:0011843",
+        "HP:0033127",
+        "HP:0034392",
+        "HP:0034430",
+        "HP:0100261"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001626": {
+      "label": "Abnormality of the cardiovascular system",
+      "ic": 0.1007,
+      "specificity": 0.0024,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001627": {
+      "label": "Abnormal heart morphology",
+      "ic": 0.1791,
+      "specificity": 0.0475,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626",
+        "HP:0030680"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001637": {
+      "label": "Abnormal myocardium morphology",
+      "ic": 0.303,
+      "specificity": 0.2006,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626",
+        "HP:0001627",
+        "HP:0030680"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001638": {
+      "label": "Cardiomyopathy",
+      "ic": 0.313,
+      "specificity": 0.2239,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626",
+        "HP:0001627",
+        "HP:0001637",
+        "HP:0030680"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001639": {
+      "label": "Hypertrophic cardiomyopathy",
+      "ic": 0.4145,
+      "specificity": 0.4418,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626",
+        "HP:0001627",
+        "HP:0001637",
+        "HP:0001638",
+        "HP:0030680"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001871": {
+      "label": "Abnormality of blood and blood-forming tissues",
+      "ic": 0.1763,
+      "specificity": 0.047,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001881": {
+      "label": "Abnormal leukocyte morphology",
+      "ic": 0.281,
+      "specificity": 0.164,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001871",
+        "HP:0002715",
+        "HP:0010987",
+        "HP:0032251"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001922": {
+      "label": "Vacuolated lymphocytes",
+      "ic": 0.7211,
+      "specificity": 0.9012,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001871",
+        "HP:0001881",
+        "HP:0002715",
+        "HP:0004332",
+        "HP:0010987",
+        "HP:0032251"
+      ],
+      "aspect": "P"
+    },
+    "HP:0001939": {
+      "label": "Abnormality of metabolism/homeostasis",
+      "ic": 0.1092,
+      "specificity": 0.0027,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002011": {
+      "label": "Morphological central nervous system abnormality",
+      "ic": 0.0988,
+      "specificity": 0.0021,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002059": {
+      "label": "Cerebral atrophy",
+      "ic": 0.2963,
+      "specificity": 0.1866,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0002060",
+        "HP:0002977",
+        "HP:0007367",
+        "HP:0007369",
+        "HP:0012443",
+        "HP:0012444",
+        "HP:0012639",
+        "HP:0100547"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002060": {
+      "label": "Abnormal cerebral morphology",
+      "ic": 0.1416,
+      "specificity": 0.0142,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0012443",
+        "HP:0012639",
+        "HP:0100547"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002069": {
+      "label": "Bilateral tonic-clonic seizure",
+      "ic": 0.3452,
+      "specificity": 0.2855,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001250",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002071": {
+      "label": "Abnormality of extrapyramidal motor function",
+      "ic": 0.3726,
+      "specificity": 0.3539,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011442",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002074": {
+      "label": "Increased neuronal autofluorescent lipopigment",
+      "ic": 0.7567,
+      "specificity": 0.9251,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0007367",
+        "HP:0011813",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002123": {
+      "label": "Generalized myoclonic seizure",
+      "ic": 0.4786,
+      "specificity": 0.5893,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001250",
+        "HP:0002197",
+        "HP:0012638",
+        "HP:0020219",
+        "HP:0032677",
+        "HP:0032794"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002167": {
+      "label": "Abnormal speech pattern",
+      "ic": 0.174,
+      "specificity": 0.0466,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025792",
+        "HP:0034434",
+        "HP:4000072"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002180": {
+      "label": "Neurodegeneration",
+      "ic": 0.5845,
+      "specificity": 0.7607,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0007367",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002197": {
+      "label": "Generalized-onset seizure",
+      "ic": 0.3528,
+      "specificity": 0.3064,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001250",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002333": {
+      "label": "Motor deterioration",
+      "ic": 0.6834,
+      "specificity": 0.8705,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001268",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0100543"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002353": {
+      "label": "EEG abnormality",
+      "ic": 0.3166,
+      "specificity": 0.2292,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001311",
+        "HP:0012638",
+        "HP:0030178"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002360": {
+      "label": "Sleep disturbance",
+      "ic": 0.3138,
+      "specificity": 0.2275,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002361": {
+      "label": "Psychomotor deterioration",
+      "ic": 0.7138,
+      "specificity": 0.8957,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001268",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0100543"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002371": {
+      "label": "Loss of speech",
+      "ic": 0.6184,
+      "specificity": 0.8087,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002167",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025792",
+        "HP:0034434",
+        "HP:4000072"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002376": {
+      "label": "Developmental regression",
+      "ic": 0.3632,
+      "specificity": 0.3281,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638",
+        "HP:0012759"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002463": {
+      "label": "Language impairment",
+      "ic": 0.222,
+      "specificity": 0.0836,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025792",
+        "HP:0034434"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002493": {
+      "label": "Upper motor neuron dysfunction",
+      "ic": 0.2117,
+      "specificity": 0.0728,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011442",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002505": {
+      "label": "Loss of ambulation",
+      "ic": 0.4664,
+      "specificity": 0.5588,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001288",
+        "HP:0002540",
+        "HP:0012638",
+        "HP:0100022"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002540": {
+      "label": "Inability to walk",
+      "ic": 0.3528,
+      "specificity": 0.3064,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001288",
+        "HP:0012638",
+        "HP:0100022"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002597": {
+      "label": "Abnormality of the vasculature",
+      "ic": 0.1485,
+      "specificity": 0.0174,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002715": {
+      "label": "Abnormality of the immune system",
+      "ic": 0.14,
+      "specificity": 0.0049,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0002977": {
+      "label": "Aplasia/Hypoplasia involving the central nervous system",
+      "ic": 0.1523,
+      "specificity": 0.028,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0003011": {
+      "label": "Abnormality of the musculature",
+      "ic": 0.0907,
+      "specificity": 0.0019,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0003204": {
+      "label": "Intracellular accumulation of autofluorescent lipopigment storage material",
+      "ic": 0.7374,
+      "specificity": 0.9126,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001939",
+        "HP:0011017",
+        "HP:0025354"
+      ],
+      "aspect": "P"
+    },
+    "HP:0003205": {
+      "label": "Curvilinear intracellular accumulation of autofluorescent lipopigment storage material",
+      "ic": 0.7466,
+      "specificity": 0.9189,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001939",
+        "HP:0003204",
+        "HP:0011017",
+        "HP:0025354"
+      ],
+      "aspect": "P"
+    },
+    "HP:0003208": {
+      "label": "Fingerprint intracellular accumulation of autofluorescent lipopigment storage material",
+      "ic": 0.7678,
+      "specificity": 0.9315,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001939",
+        "HP:0003204",
+        "HP:0011017",
+        "HP:0025354"
+      ],
+      "aspect": "P"
+    },
+    "HP:0003463": {
+      "label": "Increased extraneuronal autofluorescent lipopigment",
+      "ic": 0.9268,
+      "specificity": 0.9863,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0007367",
+        "HP:0011813",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0003549": {
+      "label": "Abnormality of connective tissue",
+      "ic": 0.1734,
+      "specificity": 0.0462,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0003577": {
+      "label": "Congenital onset",
+      "ic": 0.2381,
+      "specificity": 0.1051,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0003674",
+        "HP:0012823",
+        "HP:0031797"
+      ],
+      "aspect": "C"
+    },
+    "HP:0003581": {
+      "label": "Adult onset",
+      "ic": 0.2599,
+      "specificity": 0.1334,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0003674",
+        "HP:0012823",
+        "HP:0031797"
+      ],
+      "aspect": "C"
+    },
+    "HP:0003593": {
+      "label": "Infantile onset",
+      "ic": 0.2195,
+      "specificity": 0.0824,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0003674",
+        "HP:0012823",
+        "HP:0031797",
+        "HP:0410280"
+      ],
+      "aspect": "C"
+    },
+    "HP:0003621": {
+      "label": "Juvenile onset",
+      "ic": 0.2869,
+      "specificity": 0.1722,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0003674",
+        "HP:0012823",
+        "HP:0031797",
+        "HP:0410280"
+      ],
+      "aspect": "C"
+    },
+    "HP:0003623": {
+      "label": "Neonatal onset",
+      "ic": 0.3264,
+      "specificity": 0.2572,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0003674",
+        "HP:0012823",
+        "HP:0031797"
+      ],
+      "aspect": "C"
+    },
+    "HP:0003657": {
+      "label": "Vascular granular osmiophilic material deposition",
+      "ic": 0.7803,
+      "specificity": 0.9386,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626",
+        "HP:0002597",
+        "HP:0025015",
+        "HP:0030680"
+      ],
+      "aspect": "P"
+    },
+    "HP:0003674": {
+      "label": "Onset",
+      "ic": 0.108,
+      "specificity": 0.0025,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0012823",
+        "HP:0031797"
+      ],
+      "aspect": "C"
+    },
+    "HP:0003808": {
+      "label": "Abnormal muscle tone",
+      "ic": 0.1342,
+      "specificity": 0.0045,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0003011",
+        "HP:0011804",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0004305": {
+      "label": "Involuntary movements",
+      "ic": 0.2307,
+      "specificity": 0.0995,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011442",
+        "HP:0012638",
+        "HP:0100022"
+      ],
+      "aspect": "P"
+    },
+    "HP:0004328": {
+      "label": "Abnormal anterior eye segment morphology",
+      "ic": 0.2037,
+      "specificity": 0.0688,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0004329": {
+      "label": "Abnormal posterior eye segment morphology",
+      "ic": 0.1959,
+      "specificity": 0.0616,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0004332": {
+      "label": "Abnormal lymphocyte morphology",
+      "ic": 0.3783,
+      "specificity": 0.3641,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001871",
+        "HP:0001881",
+        "HP:0002715",
+        "HP:0010987",
+        "HP:0032251"
+      ],
+      "aspect": "P"
+    },
+    "HP:0005157": {
+      "label": "Concentric hypertrophic cardiomyopathy",
+      "ic": 0.7567,
+      "specificity": 0.9251,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626",
+        "HP:0001627",
+        "HP:0001637",
+        "HP:0001638",
+        "HP:0001639",
+        "HP:0030680"
+      ],
+      "aspect": "P"
+    },
+    "HP:0005484": {
+      "label": "Secondary microcephaly",
+      "ic": 0.4088,
+      "specificity": 0.4288,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000152",
+        "HP:0000234",
+        "HP:0000240",
+        "HP:0000252",
+        "HP:0000707",
+        "HP:0000924",
+        "HP:0000929",
+        "HP:0002011",
+        "HP:0002060",
+        "HP:0002977",
+        "HP:0007364",
+        "HP:0009121",
+        "HP:0011842",
+        "HP:0012443",
+        "HP:0012639",
+        "HP:0033127",
+        "HP:0040195",
+        "HP:0100547"
+      ],
+      "aspect": "P"
+    },
+    "HP:0007364": {
+      "label": "Aplasia/Hypoplasia of the cerebrum",
+      "ic": 0.1749,
+      "specificity": 0.0469,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0002060",
+        "HP:0002977",
+        "HP:0012443",
+        "HP:0012639",
+        "HP:0100547"
+      ],
+      "aspect": "P"
+    },
+    "HP:0007367": {
+      "label": "Atrophy/Degeneration affecting the central nervous system",
+      "ic": 0.259,
+      "specificity": 0.1334,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0007369": {
+      "label": "Atrophy/Degeneration affecting the cerebrum",
+      "ic": 0.2917,
+      "specificity": 0.1779,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0002060",
+        "HP:0002977",
+        "HP:0007367",
+        "HP:0012443",
+        "HP:0012444",
+        "HP:0012639",
+        "HP:0100547"
+      ],
+      "aspect": "P"
+    },
+    "HP:0007663": {
+      "label": "Reduced visual acuity",
+      "ic": 0.3074,
+      "specificity": 0.2099,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000504",
+        "HP:0000505",
+        "HP:0012373"
+      ],
+      "aspect": "P"
+    },
+    "HP:0007703": {
+      "label": "Abnormal retinal pigmentation",
+      "ic": 0.3901,
+      "specificity": 0.3941,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000479",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0008323": {
+      "label": "Abnormal light- and dark-adapted electroretinogram",
+      "ic": 0.6184,
+      "specificity": 0.8087,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000512",
+        "HP:0012373",
+        "HP:0030453",
+        "HP:0030466"
+      ],
+      "aspect": "P"
+    },
+    "HP:0009121": {
+      "label": "Abnormal axial skeleton morphology",
+      "ic": 0.0949,
+      "specificity": 0.002,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000924",
+        "HP:0011842",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0010987": {
+      "label": "Abnormal cellular immune system morphology",
+      "ic": 0.2808,
+      "specificity": 0.1625,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0002715",
+        "HP:0032251"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011017": {
+      "label": "Abnormal cellular physiology",
+      "ic": 0.2801,
+      "specificity": 0.1613,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001939",
+        "HP:0025354"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011282": {
+      "label": "Abnormal hindbrain morphology",
+      "ic": 0.2277,
+      "specificity": 0.0889,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0012443",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011283": {
+      "label": "Abnormal metencephalon morphology",
+      "ic": 0.2279,
+      "specificity": 0.089,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0011282",
+        "HP:0012443",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011442": {
+      "label": "Abnormal central motor function",
+      "ic": 0.1453,
+      "specificity": 0.0147,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011443": {
+      "label": "Abnormality of coordination",
+      "ic": 0.2215,
+      "specificity": 0.0834,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011442",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011446": {
+      "label": "Abnormality of mental function",
+      "ic": 0.0861,
+      "specificity": 0.0018,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011463": {
+      "label": "Childhood onset",
+      "ic": 0.2551,
+      "specificity": 0.1323,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0003674",
+        "HP:0012823",
+        "HP:0031797",
+        "HP:0410280"
+      ],
+      "aspect": "C"
+    },
+    "HP:0011729": {
+      "label": "Abnormality of joint mobility",
+      "ic": 0.1824,
+      "specificity": 0.0479,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0011843",
+        "HP:0033127",
+        "HP:0034430"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011804": {
+      "label": "Abnormal muscle physiology",
+      "ic": 0.1101,
+      "specificity": 0.0029,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0003011",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011805": {
+      "label": "Abnormal skeletal muscle morphology",
+      "ic": 0.1494,
+      "specificity": 0.0185,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0003011",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011813": {
+      "label": "Increased cerebral lipofuscin",
+      "ic": 0.7374,
+      "specificity": 0.9126,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0007367",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011842": {
+      "label": "Abnormal skeletal morphology",
+      "ic": 0.0707,
+      "specificity": 0.001,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000924",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0011843": {
+      "label": "Abnormal musculoskeletal physiology",
+      "ic": 0.1577,
+      "specificity": 0.0283,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012372": {
+      "label": "Abnormal eye morphology",
+      "ic": 0.1114,
+      "specificity": 0.0034,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012373": {
+      "label": "Abnormal eye physiology",
+      "ic": 0.1142,
+      "specificity": 0.0035,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012443": {
+      "label": "Abnormal brain morphology",
+      "ic": 0.1104,
+      "specificity": 0.0032,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012444": {
+      "label": "Brain atrophy",
+      "ic": 0.2734,
+      "specificity": 0.1524,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0007367",
+        "HP:0012443",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012638": {
+      "label": "Abnormal nervous system physiology",
+      "ic": 0.0552,
+      "specificity": 0.0005,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012639": {
+      "label": "Abnormal nervous system morphology",
+      "ic": 0.0937,
+      "specificity": 0.002,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012758": {
+      "label": "Neurodevelopmental delay",
+      "ic": 0.1281,
+      "specificity": 0.0042,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638",
+        "HP:0012759"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012759": {
+      "label": "Neurodevelopmental abnormality",
+      "ic": 0.0981,
+      "specificity": 0.002,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012795": {
+      "label": "Abnormal optic disc morphology",
+      "ic": 0.2813,
+      "specificity": 0.1685,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000587",
+        "HP:0001098",
+        "HP:0004329",
+        "HP:0012372"
+      ],
+      "aspect": "P"
+    },
+    "HP:0012823": {
+      "label": "Clinical modifier",
+      "ic": 0.1008,
+      "specificity": 0.0025,
+      "ancestors": [
+        "HP:0000001"
+      ],
+      "aspect": "M"
+    },
+    "HP:0020219": {
+      "label": "Motor seizure",
+      "ic": 0.3278,
+      "specificity": 0.2584,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001250",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0025015": {
+      "label": "Abnormal vascular morphology",
+      "ic": 0.2189,
+      "specificity": 0.0813,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626",
+        "HP:0002597",
+        "HP:0030680"
+      ],
+      "aspect": "P"
+    },
+    "HP:0025354": {
+      "label": "Abnormal cellular phenotype",
+      "ic": 0.2687,
+      "specificity": 0.1448,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0025766": {
+      "label": "Abnormal affect",
+      "ic": 0.2251,
+      "specificity": 0.0839,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0025780": {
+      "label": "Abnormal volitional state",
+      "ic": 0.238,
+      "specificity": 0.1051,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025766"
+      ],
+      "aspect": "P"
+    },
+    "HP:0025792": {
+      "label": "Abnormal cognitive process",
+      "ic": 0.1693,
+      "specificity": 0.0458,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0030178": {
+      "label": "Abnormality of central nervous system electrophysiology",
+      "ic": 0.3012,
+      "specificity": 0.1955,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001311",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0030453": {
+      "label": "Abnormal visual electrophysiology",
+      "ic": 0.4213,
+      "specificity": 0.4559,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0012373"
+      ],
+      "aspect": "P"
+    },
+    "HP:0030466": {
+      "label": "Abnormal full-field electroretinogram",
+      "ic": 0.5557,
+      "specificity": 0.719,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000478",
+        "HP:0000512",
+        "HP:0012373",
+        "HP:0030453"
+      ],
+      "aspect": "P"
+    },
+    "HP:0030680": {
+      "label": "Abnormal cardiovascular system morphology",
+      "ic": 0.1486,
+      "specificity": 0.0179,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001626"
+      ],
+      "aspect": "P"
+    },
+    "HP:0031467": {
+      "label": "Dysregulated negative emotional state",
+      "ic": 0.4057,
+      "specificity": 0.4221,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025766",
+        "HP:0100851"
+      ],
+      "aspect": "P"
+    },
+    "HP:0031797": {
+      "label": "Clinical course",
+      "ic": 0.1015,
+      "specificity": 0.0025,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0012823"
+      ],
+      "aspect": "C"
+    },
+    "HP:0032251": {
+      "label": "Abnormal immune system morphology",
+      "ic": 0.2751,
+      "specificity": 0.154,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0002715"
+      ],
+      "aspect": "P"
+    },
+    "HP:0032677": {
+      "label": "Generalized-onset motor seizure",
+      "ic": 0.4209,
+      "specificity": 0.4545,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001250",
+        "HP:0002197",
+        "HP:0012638",
+        "HP:0020219"
+      ],
+      "aspect": "P"
+    },
+    "HP:0032794": {
+      "label": "Myoclonic seizure",
+      "ic": 0.3991,
+      "specificity": 0.4117,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0001250",
+        "HP:0012638",
+        "HP:0020219"
+      ],
+      "aspect": "P"
+    },
+    "HP:0033127": {
+      "label": "Abnormality of the musculoskeletal system",
+      "ic": 0.0436,
+      "specificity": 0,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118"
+      ],
+      "aspect": "P"
+    },
+    "HP:0034345": {
+      "label": "Mendelian inheritance",
+      "ic": 0.048,
+      "specificity": 0.0005,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000005"
+      ],
+      "aspect": "I"
+    },
+    "HP:0034392": {
+      "label": "Joint contracture",
+      "ic": 0.2446,
+      "specificity": 0.1228,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000924",
+        "HP:0003011",
+        "HP:0003549",
+        "HP:0011729",
+        "HP:0011805",
+        "HP:0011842",
+        "HP:0011843",
+        "HP:0033127",
+        "HP:0034430",
+        "HP:0100261"
+      ],
+      "aspect": "P"
+    },
+    "HP:0034430": {
+      "label": "Abnormal joint physiology",
+      "ic": 0.1824,
+      "specificity": 0.0479,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0011843",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0034434": {
+      "label": "Abnormal communication",
+      "ic": 0.1707,
+      "specificity": 0.0461,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025792"
+      ],
+      "aspect": "P"
+    },
+    "HP:0034684": {
+      "label": "Abnormal enzyme concentration or activity",
+      "ic": 0.2805,
+      "specificity": 0.1625,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001939"
+      ],
+      "aspect": "P"
+    },
+    "HP:0040195": {
+      "label": "Decreased head circumference",
+      "ic": 0.1968,
+      "specificity": 0.0617,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000152",
+        "HP:0000234",
+        "HP:0000240",
+        "HP:0000924",
+        "HP:0000929",
+        "HP:0009121",
+        "HP:0011842",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0100022": {
+      "label": "Abnormality of movement",
+      "ic": 0.1425,
+      "specificity": 0.0145,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0100261": {
+      "label": "Abnormal tendon morphology",
+      "ic": 0.2414,
+      "specificity": 0.1112,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000924",
+        "HP:0011842",
+        "HP:0033127"
+      ],
+      "aspect": "P"
+    },
+    "HP:0100543": {
+      "label": "Cognitive impairment",
+      "ic": 0.2428,
+      "specificity": 0.1171,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:0100547": {
+      "label": "Abnormal forebrain morphology",
+      "ic": 0.1404,
+      "specificity": 0.0049,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0002011",
+        "HP:0012443",
+        "HP:0012639"
+      ],
+      "aspect": "P"
+    },
+    "HP:0100851": {
+      "label": "Abnormal emotional state",
+      "ic": 0.3278,
+      "specificity": 0.2584,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025766"
+      ],
+      "aspect": "P"
+    },
+    "HP:0410280": {
+      "label": "Pediatric onset",
+      "ic": 0.1654,
+      "specificity": 0.0452,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0003674",
+        "HP:0012823",
+        "HP:0031797"
+      ],
+      "aspect": "C"
+    },
+    "HP:4000072": {
+      "label": "Abnormal language feature",
+      "ic": 0.174,
+      "specificity": 0.0466,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:0025792",
+        "HP:0034434"
+      ],
+      "aspect": "P"
+    },
+    "HP:5200230": {
+      "label": "Maladaptive fear-related cognitions",
+      "ic": 0.3664,
+      "specificity": 0.341,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:5200401",
+        "HP:5200423"
+      ],
+      "aspect": "P"
+    },
+    "HP:5200401": {
+      "label": "Abnormal judgment",
+      "ic": 0.36,
+      "specificity": 0.3201,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:5200423"
+      ],
+      "aspect": "P"
+    },
+    "HP:5200423": {
+      "label": "Abnormal experience of reality",
+      "ic": 0.3267,
+      "specificity": 0.2573,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638"
+      ],
+      "aspect": "P"
+    },
+    "HP:5200430": {
+      "label": "Abnormal psychotic pattern",
+      "ic": 0.4684,
+      "specificity": 0.5645,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0000707",
+        "HP:0011446",
+        "HP:0012638",
+        "HP:5200423"
+      ],
+      "aspect": "P"
+    },
+    "HP:6000231": {
+      "label": "Abnormal tissue enzyme concentration or activity",
+      "ic": 0.5113,
+      "specificity": 0.6512,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001939",
+        "HP:0034684"
+      ],
+      "aspect": "P"
+    },
+    "HP:6000571": {
+      "label": "Reduced tissue tripeptidyl peptidase 1 activity",
+      "ic": 1,
+      "specificity": 0.9955,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001939",
+        "HP:0034684",
+        "HP:6000231"
+      ],
+      "aspect": "P"
+    },
+    "HP:6000783": {
+      "label": "Reduced tissue palmitoyl-protein thioesterase activity",
+      "ic": 1,
+      "specificity": 0.9955,
+      "ancestors": [
+        "HP:0000001",
+        "HP:0000118",
+        "HP:0001939",
+        "HP:0034684",
+        "HP:6000231"
+      ],
+      "aspect": "P"
+    }
+  }
+}

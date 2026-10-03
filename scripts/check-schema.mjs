@@ -1,6 +1,6 @@
 // Validates schema.json, its embedded examples, and any graph files passed as arguments
-// (default: public/graph.json when it exists). JSON Schema cannot check cross-references,
-// so unique ids and edge endpoints are checked here too.
+// (default: public/graph.json and public/graph.sample.json, each when it exists). JSON Schema
+// cannot check cross-references, so unique ids and edge endpoints are checked here too.
 import { existsSync, readFileSync } from "node:fs";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
@@ -37,7 +37,7 @@ function integrityErrors(doc) {
 }
 
 const targets = (schema.examples ?? []).map((doc, i) => [`schema.json examples[${i}]`, doc]);
-const files = process.argv.length > 2 ? process.argv.slice(2) : ["public/graph.json"];
+const files = process.argv.length > 2 ? process.argv.slice(2) : ["public/graph.json", "public/graph.sample.json"];
 for (const file of files) {
   if (existsSync(file)) targets.push([file, readJson(file)]);
   else if (process.argv.length > 2) targets.push([file, null]);

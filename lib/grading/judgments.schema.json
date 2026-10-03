@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/vihuynh72/research-os/blob/main/lib/grading/judgments.schema.json",
+  "title": "Atlas grader judgments",
+  "description": "Output of the AI grading workflow (judgments.json). A judgment can only lower a tier or add caveats; every number is computed by lib/grading. Mirrors Judgment and JudgmentsDoc in lib/grading/types.ts.",
+  "type": "object",
+  "required": [
+    "meta",
+    "judgments"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "generated_at",
+        "workflow",
+        "prompt_version",
+        "models",
+        "engine_version",
+        "bundles_hash"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "workflow": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "models": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "engine_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bundles_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256 of the bundles file the workflow judged."
+        },
+        "runs_per_judgment": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "judgments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/judgment"
+      }
+    }
+  },
+  "$defs": {
+    "flag": {
+      "enum": [
+        "generic_symptoms_only",
+        "few_annotations",
+        "uncalibrated",
+        "same_gene_allelic",
+        "variant_type_conflict",
+        "variant_effect_unknown",
+        "derived_from_variant_notation",
+        "via_mechanism",
+        "keyword_match_only",
+        "name_match_only",
+        "inferred_only",
+        "contradicted_evidence",
+        "umbrella_resource",
+        "inactive_or_withdrawn",
+        "no_data",
+        "needs_expert_review",
+        "family_level_only",
+        "sources_disagree"
+      ]
+    },
+    "judgment": {
+      "type": "object",
+      "required": [
+        "a",
+        "b",
+        "dimension",
+        "verdict",
+        "confidence",
+        "rationale",
+        "cited_edges",
+        "caveats",
+        "runs",
+        "agreement"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "a": {
+          "type": "string",
+          "minLength": 1
+        },
+        "b": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dimension": {
+          "enum": [
+            "gene",
+            "variant",
+            "mechanism",
+            "phenotype",
+            "disease",
+            "patient_org",
+            "paper",
+            "trial",
+            "grant",
+            "investigator",
+            "asset",
+            "overall"
+          ]
+        },
+        "verdict": {
+          "enum": [
+            "supports",
+            "weakens",
+            "contradicts",
+            "insufficient"
+          ]
+        },
+        "confidence": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "cap_tier": {
+          "enum": [
+            "moderate",
+            "exploratory",
+            "none"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "cited_edges": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "uniqueItems": true
+        },
+        "caveats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/flag"
+          },
+          "uniqueItems": true
+        },
+        "runs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "agreement": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

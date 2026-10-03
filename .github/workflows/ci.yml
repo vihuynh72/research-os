@@ -31,6 +31,10 @@ jobs:
       - run: npm ci
       - name: Validate schema.json and graph data
         run: npm run check:schema
+      - name: Unit tests and the grading answer key
+        run: npm test
+      - name: Committed grades match the engine
+        run: npm run grade:check
       - name: Build (also generates Next.js types)
         run: npm run build
       - name: Typecheck

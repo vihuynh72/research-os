@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "rated_by": "literature",
+  "rated_on": "2026-10-03",
+  "how_to_update": "A mentor or clinician can change any 'expected' value (high, medium, low) and set rated_by to their name. lib/grading/answer-key.test.ts then holds the engine to their ratings.",
+  "scale": {
+    "high": "Same kind of broken protein in the same place; a therapy or study design could plausibly transfer.",
+    "medium": "Same broad kind of protein but a different place or job; some shared research questions.",
+    "low": "Same disease family only (lipofuscin storage), different kind of protein; therapies do not transfer directly."
+  },
+  "sources": {
+    "zhang2025": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11808193/",
+    "nelvagal2022": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9566914/"
+  },
+  "biology": [
+    { "a": "MONDO:0009744", "b": "MONDO:0008769", "names": "CLN1-CLN2", "expected": "high", "why": "Both are soluble lysosomal enzymes (PPT1, TPP1); enzyme replacement and gene therapy can cross-correct.", "source": "nelvagal2022" },
+    { "a": "MONDO:0008767", "b": "MONDO:0012588", "names": "CLN3-CLN7", "expected": "high", "why": "Both are transmembrane proteins of the lysosome and endosome that move molecules or ions across its membrane.", "source": "zhang2025" },
+    { "a": "MONDO:0008767", "b": "MONDO:0011144", "names": "CLN3-CLN6", "expected": "medium", "why": "Both transmembrane proteins, but CLN6 works in the ER and CLN3 at the lysosome.", "source": "zhang2025" },
+    { "a": "MONDO:0011144", "b": "MONDO:0012588", "names": "CLN6-CLN7", "expected": "medium", "why": "Both transmembrane proteins, but CLN6 works in the ER and CLN7 at the lysosome.", "source": "zhang2025" },
+    { "a": "MONDO:0009744", "b": "MONDO:0008767", "names": "CLN1-CLN3", "expected": "low", "why": "Soluble enzyme versus membrane protein.", "source": "zhang2025" },
+    { "a": "MONDO:0009744", "b": "MONDO:0011144", "names": "CLN1-CLN6", "expected": "low", "why": "Soluble enzyme versus ER membrane protein.", "source": "zhang2025" },
+    { "a": "MONDO:0009744", "b": "MONDO:0012588", "names": "CLN1-CLN7", "expected": "low", "why": "Soluble enzyme versus membrane protein.", "source": "zhang2025" },
+    { "a": "MONDO:0008769", "b": "MONDO:0008767", "names": "CLN2-CLN3", "expected": "low", "why": "Soluble enzyme versus membrane protein.", "source": "zhang2025" },
+    { "a": "MONDO:0008769", "b": "MONDO:0011144", "names": "CLN2-CLN6", "expected": "low", "why": "Soluble enzyme versus ER membrane protein.", "source": "zhang2025" },
+    { "a": "MONDO:0008769", "b": "MONDO:0012588", "names": "CLN2-CLN7", "expected": "low", "why": "Soluble enzyme versus membrane protein.", "source": "zhang2025" }
+  ]
+}

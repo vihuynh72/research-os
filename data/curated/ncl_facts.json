@@ -1,0 +1,254 @@
+{
+  "checked": "2026-10-03",
+  "curated_by": "Vi (app lane), for the 5 seed genes only",
+  "method": "Hand-curated from the sources below. Every link carries a sentence copied verbatim from its source. Replace with UniProt and Gene Ontology data when the pipeline covers more genes. Read by scripts/seed-to-graph.ts.",
+  "sources": {
+    "zhang2025": {
+      "label": "Zhang et al. 2025, Neuronal Ceroid Lipofuscinosis: Concepts, Classification, and Avenues for Therapy (CNS Neuroscience & Therapeutics)",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11808193/",
+      "date": "2025-02-10"
+    },
+    "nelvagal2022": {
+      "label": "Cross-species efficacy of enzyme replacement therapy for CLN1 disease in mice and sheep (J Clin Invest 2022)",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9566914/",
+      "date": "2022-10-17"
+    },
+    "hpo_omim": {
+      "label": "HPO annotations (phenotype.hpoa, OMIM records), release 2026-09-02",
+      "url": "https://hpo.jax.org/data/annotations",
+      "date": "2026-09-02"
+    }
+  },
+  "mechanisms": [
+    {
+      "id": "PW:NCL-SOLUBLE-ENZYME",
+      "label": "Soluble lysosomal enzyme missing",
+      "description": "The missing protein is an enzyme that floats inside the lysosome. Cells can take it up from outside (cross-correction), which is why enzyme replacement and gene therapy can also help neighbouring cells.",
+      "source": "nelvagal2022",
+      "quote": "These are soluble lysosomal enzymes that can be secreted and taken up by cells via mannose-6-phosphate receptors (MPRs) in a process named “cross-correction”"
+    },
+    {
+      "id": "PW:NCL-MEMBRANE-PROTEIN",
+      "label": "Membrane protein missing",
+      "description": "The missing protein sits in a cell membrane, so it cannot pass from one cell to another. A therapy has to reach each cell.",
+      "source": "zhang2025",
+      "quote": "five encoding transmembrane proteins with various subcellular locations ( CLN3 , CLN6 , CLN7/MFSD8, CLN8 , and CLN12 / ATP13A2 )"
+    },
+    {
+      "id": "PW:NCL-LYSOSOMAL-MEMBRANE",
+      "label": "Lysosomal membrane protein",
+      "description": "The missing protein works in the membrane of the lysosome or the late endosome.",
+      "source": "zhang2025",
+      "quote": "CLN7 is located in lysosomes and endosomes and is considered as an endolysosomal chloride channel"
+    },
+    {
+      "id": "PW:NCL-LYSOSOMAL-TRANSPORT",
+      "label": "Transport across the lysosomal membrane",
+      "description": "The missing protein moves molecules or ions across the lysosomal membrane.",
+      "source": "zhang2025",
+      "quote": "CLN3 is required for the efflux of GPDs from the lysosome"
+    },
+    {
+      "id": "PW:NCL-ER-ENZYME-EXPORT",
+      "label": "Sending new lysosomal enzymes out of the ER",
+      "description": "The missing protein sits in the endoplasmic reticulum and helps send newly made lysosomal enzymes on towards the lysosome.",
+      "source": "zhang2025",
+      "quote": "CLN6 and CLN8 are obligate partners for the recruitment of newly synthesized lysosomal enzymes at the ER"
+    },
+    {
+      "id": "PW:NCL-DEPALMITOYLATION",
+      "label": "Removing palmitate from proteins",
+      "description": "The enzyme cuts a fatty acid (palmitate) off proteins so the lysosome can break them down.",
+      "source": "zhang2025",
+      "quote": "In the lysosome, PPT1 cleaves the thioester linkage of the fatty acid palmitate‐to‐cysteine residues of palmitoylated proteins (constituents of ceroid), a crucial step for their degradation within lysosomes"
+    },
+    {
+      "id": "PW:NCL-PEPTIDE-BREAKDOWN",
+      "label": "Trimming small peptides",
+      "description": "The enzyme trims three amino acids at a time off small proteins being broken down in the lysosome.",
+      "source": "zhang2025",
+      "quote": "The mature enzyme cleaves tripeptides from the amino terminus of small polypeptides undergoing degradation in the lysosomes."
+    }
+  ],
+  "genes": [
+    {
+      "id": "HGNC:9325",
+      "symbol": "PPT1",
+      "links": [
+        {
+          "mechanism": "PW:NCL-SOLUBLE-ENZYME",
+          "source": "zhang2025",
+          "quote": "In the lysosome, PPT1 cleaves the thioester linkage of the fatty acid palmitate‐to‐cysteine residues of palmitoylated proteins (constituents of ceroid), a crucial step for their degradation within lysosomes"
+        },
+        {
+          "mechanism": "PW:NCL-DEPALMITOYLATION",
+          "source": "zhang2025",
+          "quote": "In the lysosome, PPT1 cleaves the thioester linkage of the fatty acid palmitate‐to‐cysteine residues of palmitoylated proteins (constituents of ceroid), a crucial step for their degradation within lysosomes"
+        }
+      ]
+    },
+    {
+      "id": "HGNC:2073",
+      "symbol": "TPP1",
+      "links": [
+        {
+          "mechanism": "PW:NCL-SOLUBLE-ENZYME",
+          "source": "zhang2025",
+          "quote": "TPP1 is a lysosomal exopeptidase."
+        },
+        {
+          "mechanism": "PW:NCL-PEPTIDE-BREAKDOWN",
+          "source": "zhang2025",
+          "quote": "The mature enzyme cleaves tripeptides from the amino terminus of small polypeptides undergoing degradation in the lysosomes."
+        }
+      ]
+    },
+    {
+      "id": "HGNC:2074",
+      "symbol": "CLN3",
+      "links": [
+        {
+          "mechanism": "PW:NCL-MEMBRANE-PROTEIN",
+          "source": "zhang2025",
+          "quote": "CLN3 Lysosomal/Endosomal transmembrane protein"
+        },
+        {
+          "mechanism": "PW:NCL-LYSOSOMAL-MEMBRANE",
+          "source": "zhang2025",
+          "quote": "CLN3 Lysosomal/Endosomal transmembrane protein"
+        },
+        {
+          "mechanism": "PW:NCL-LYSOSOMAL-TRANSPORT",
+          "source": "zhang2025",
+          "quote": "CLN3 is required for the efflux of GPDs from the lysosome so that GPDs can be degraded by glycerophosphodiesterase (GDE) in the cytosol"
+        }
+      ]
+    },
+    {
+      "id": "HGNC:2077",
+      "symbol": "CLN6",
+      "links": [
+        {
+          "mechanism": "PW:NCL-MEMBRANE-PROTEIN",
+          "source": "zhang2025",
+          "quote": "CLN6 transmembrane ER protein"
+        },
+        {
+          "mechanism": "PW:NCL-ER-ENZYME-EXPORT",
+          "source": "zhang2025",
+          "quote": "CLN6, which also resides in the ER, partners with CLN8 to recruit newly synthesized LEs."
+        }
+      ]
+    },
+    {
+      "id": "HGNC:28486",
+      "symbol": "MFSD8",
+      "links": [
+        {
+          "mechanism": "PW:NCL-MEMBRANE-PROTEIN",
+          "source": "zhang2025",
+          "quote": "five encoding transmembrane proteins with various subcellular locations ( CLN3 , CLN6 , CLN7/MFSD8, CLN8 , and CLN12 / ATP13A2 )"
+        },
+        {
+          "mechanism": "PW:NCL-LYSOSOMAL-MEMBRANE",
+          "source": "zhang2025",
+          "quote": "CLN7 is located in lysosomes and endosomes and is considered as an endolysosomal chloride channel"
+        },
+        {
+          "mechanism": "PW:NCL-LYSOSOMAL-TRANSPORT",
+          "source": "zhang2025",
+          "quote": "CLN7 functions as an endolysosomal chloride channel, promoting lysosomal calcium release through transient receptor potential mucolipin 1 (TRPML1)"
+        }
+      ]
+    }
+  ],
+  "diseases": [
+    {
+      "id": "MONDO:0009744",
+      "short": "CLN1",
+      "onset": {
+        "hpo": "HP:0003593",
+        "label": "Infantile onset",
+        "source": "zhang2025",
+        "quote": "6–24 months",
+        "context": "Table 1, CLN1 row, onset column; the row also says \"It manifests clinically as INCL\""
+      },
+      "inheritance": {
+        "hpo": "HP:0000007",
+        "label": "Autosomal recessive inheritance",
+        "source": "hpo_omim",
+        "quote": "OMIM:256730 HP:0000007 (aspect I)"
+      }
+    },
+    {
+      "id": "MONDO:0008769",
+      "short": "CLN2",
+      "onset": {
+        "hpo": "HP:0011463",
+        "label": "Childhood onset",
+        "source": "zhang2025",
+        "quote": "late‐infantile NCL (LINCL, onset from 2 to 4 years)",
+        "conflict": "The same review's table lists CLN2 onset as 4–8 years; its text defines late-infantile onset as 2 to 4 years. A clinician should confirm.",
+        "context": "Text, NCL classification by age at onset; CLN2 disease is classic late-infantile NCL"
+      },
+      "inheritance": {
+        "hpo": "HP:0000007",
+        "label": "Autosomal recessive inheritance",
+        "source": "hpo_omim",
+        "quote": "OMIM:204500 HP:0000007 (aspect I)"
+      }
+    },
+    {
+      "id": "MONDO:0008767",
+      "short": "CLN3",
+      "onset": {
+        "hpo": "HP:0003621",
+        "label": "Juvenile onset",
+        "source": "zhang2025",
+        "quote": "4–8 years",
+        "context": "Table 1, CLN3 row, onset column"
+      },
+      "inheritance": {
+        "hpo": "HP:0000007",
+        "label": "Autosomal recessive inheritance",
+        "source": "hpo_omim",
+        "quote": "OMIM:204200 HP:0000007 (aspect I)"
+      }
+    },
+    {
+      "id": "MONDO:0011144",
+      "short": "CLN6",
+      "onset": {
+        "hpo": "HP:0011463",
+        "label": "Childhood onset",
+        "source": "zhang2025",
+        "quote": "From 18 months to 8 years",
+        "context": "Table 1, CLN6 row, onset column"
+      },
+      "inheritance": {
+        "hpo": "HP:0000007",
+        "label": "Autosomal recessive inheritance",
+        "source": "hpo_omim",
+        "quote": "OMIM:601780 HP:0000007 (aspect I)"
+      }
+    },
+    {
+      "id": "MONDO:0012588",
+      "short": "CLN7",
+      "onset": {
+        "hpo": "HP:0003621",
+        "label": "Juvenile onset",
+        "source": "zhang2025",
+        "quote": "Juvenile and adult",
+        "conflict": "Many clinical sources describe classic CLN7 disease as variant late-infantile; the review and the HPO annotation for OMIM:610951 both say juvenile. A clinician should confirm.",
+        "context": "Table 1, CLN7 row, onset column"
+      },
+      "inheritance": {
+        "hpo": "HP:0000007",
+        "label": "Autosomal recessive inheritance",
+        "source": "hpo_omim",
+        "quote": "OMIM:610951 HP:0000007 (aspect I)"
+      }
+    }
+  ]
+}
