@@ -1,0 +1,406 @@
+{
+  "parent": "MONDO:0024458",
+  "checked": 269,
+  "kept": [
+    {
+      "id": "MONDO:0007077",
+      "name": "Tietz syndrome",
+      "orpha": "42665",
+      "gene": "MITF",
+      "gene_id": "HGNC:7105",
+      "phenotypes": 12
+    },
+    {
+      "id": "MONDO:0007097",
+      "name": "Finnish type amyloidosis",
+      "orpha": "85448",
+      "gene": "GSN",
+      "gene_id": "HGNC:4620",
+      "phenotypes": 55
+    },
+    {
+      "id": "MONDO:0007375",
+      "name": "epithelial basement membrane dystrophy",
+      "orpha": "98956",
+      "gene": "TGFBI",
+      "gene_id": "HGNC:11771",
+      "phenotypes": 4
+    },
+    {
+      "id": "MONDO:0007380",
+      "name": "lattice corneal dystrophy type I",
+      "orpha": "98964",
+      "gene": "TGFBI",
+      "gene_id": "HGNC:11771",
+      "phenotypes": 18
+    },
+    {
+      "id": "MONDO:0007176",
+      "name": "helicoid peripapillary chorioretinal degeneration",
+      "orpha": "86813",
+      "gene": "TEAD1",
+      "gene_id": "HGNC:11714",
+      "phenotypes": 3
+    },
+    {
+      "id": "MONDO:0007376",
+      "name": "fleck corneal dystrophy",
+      "orpha": "98970",
+      "gene": "PIKFYVE",
+      "gene_id": "HGNC:23785",
+      "phenotypes": 2
+    },
+    {
+      "id": "MONDO:0007640",
+      "name": "Sorsby fundus dystrophy",
+      "orpha": "59181",
+      "gene": "TIMP3",
+      "gene_id": "HGNC:11822",
+      "phenotypes": 19
+    },
+    {
+      "id": "MONDO:0007931",
+      "name": "vitelliform macular dystrophy 2",
+      "orpha": "1243",
+      "gene": "BEST1",
+      "gene_id": "HGNC:12703",
+      "phenotypes": 10
+    },
+    {
+      "id": "MONDO:0008061",
+      "name": "nail-patella syndrome",
+      "orpha": "2614",
+      "gene": "LMX1B",
+      "gene_id": "HGNC:6654",
+      "phenotypes": 98
+    },
+    {
+      "id": "MONDO:0008133",
+      "name": "optic atrophy 3",
+      "orpha": "67036",
+      "gene": "OPA3",
+      "gene_id": "HGNC:8142",
+      "phenotypes": 40
+    },
+    {
+      "id": "MONDO:0008134",
+      "name": "autosomal dominant optic atrophy, classic form",
+      "orpha": "98673",
+      "gene": "OPA1",
+      "gene_id": "HGNC:8140",
+      "phenotypes": 54
+    },
+    {
+      "id": "MONDO:0008136",
+      "name": "isolated optic nerve hypoplasia",
+      "orpha": "137902",
+      "gene": "PAX6",
+      "gene_id": "HGNC:8620",
+      "phenotypes": 7
+    },
+    {
+      "id": "MONDO:0008745",
+      "name": "oculocutaneous albinism type 1A",
+      "orpha": "79431",
+      "gene": "TYR",
+      "gene_id": "HGNC:12442",
+      "phenotypes": 25
+    },
+    {
+      "id": "MONDO:0008777",
+      "name": "gelatinous drop-like corneal dystrophy",
+      "orpha": "98957",
+      "gene": "TACSTD2",
+      "gene_id": "HGNC:11530",
+      "phenotypes": 13
+    },
+    {
+      "id": "MONDO:0008795",
+      "name": "aniridia-cerebellar ataxia-intellectual disability syndrome",
+      "orpha": "1065",
+      "gene": "ITPR1",
+      "gene_id": "HGNC:6180",
+      "phenotypes": 62
+    },
+    {
+      "id": "MONDO:0008853",
+      "name": "Barber-Say syndrome",
+      "orpha": "1231",
+      "gene": "TWIST2",
+      "gene_id": "HGNC:20670",
+      "phenotypes": 60
+    },
+    {
+      "id": "MONDO:0008925",
+      "name": "cataract 46 juvenile-onset",
+      "orpha": "98987",
+      "gene": "LEMD2",
+      "gene_id": "HGNC:21244",
+      "phenotypes": 3
+    },
+    {
+      "id": "MONDO:0009255",
+      "name": "galactokinase deficiency",
+      "orpha": "79237",
+      "gene": "GALK1",
+      "gene_id": "HGNC:4118",
+      "phenotypes": 30
+    },
+    {
+      "id": "MONDO:0009258",
+      "name": "classic galactosemia",
+      "orpha": "79239",
+      "gene": "GALT",
+      "gene_id": "HGNC:4135",
+      "phenotypes": 75
+    },
+    {
+      "id": "MONDO:0009260",
+      "name": "GM1 gangliosidosis type 1",
+      "orpha": "79255",
+      "gene": "GLB1",
+      "gene_id": "HGNC:4298",
+      "phenotypes": 77
+    },
+    {
+      "id": "MONDO:0009261",
+      "name": "GM1 gangliosidosis type 2",
+      "orpha": "79256",
+      "gene": "GLB1",
+      "gene_id": "HGNC:4298",
+      "phenotypes": 34
+    },
+    {
+      "id": "MONDO:0009262",
+      "name": "GM1 gangliosidosis type 3",
+      "orpha": "79257",
+      "gene": "GLB1",
+      "gene_id": "HGNC:4298",
+      "phenotypes": 27
+    },
+    {
+      "id": "MONDO:0009499",
+      "name": "Krabbe disease",
+      "orpha": "487",
+      "gene": "GALC",
+      "gene_id": "HGNC:4115",
+      "phenotypes": 67
+    },
+    {
+      "id": "MONDO:0009549",
+      "name": "severe early-childhood-onset retinal dystrophy",
+      "orpha": "364055",
+      "gene": "ABCA4",
+      "gene_id": "HGNC:34",
+      "phenotypes": 40
+    },
+    {
+      "id": "MONDO:0009644",
+      "name": "sulfite oxidase deficiency due to molybdenum cofactor deficiency type B1",
+      "orpha": "308393",
+      "gene": "MOCS2",
+      "gene_id": "HGNC:7193",
+      "phenotypes": 39
+    },
+    {
+      "id": "MONDO:0009653",
+      "name": "mucolipidosis type IV",
+      "orpha": "578",
+      "gene": "MCOLN1",
+      "gene_id": "HGNC:13356",
+      "phenotypes": 44
+    },
+    {
+      "id": "MONDO:0009818",
+      "name": "autosomal recessive osteopetrosis 3",
+      "orpha": "2785",
+      "gene": "CA2",
+      "gene_id": "HGNC:1373",
+      "phenotypes": 69
+    },
+    {
+      "id": "MONDO:0010006",
+      "name": "Sandhoff disease",
+      "orpha": "796",
+      "gene": "HEXB",
+      "gene_id": "HGNC:4879",
+      "phenotypes": 45
+    },
+    {
+      "id": "MONDO:0010026",
+      "name": "SHORT syndrome",
+      "orpha": "3163",
+      "gene": "PIK3R1",
+      "gene_id": "HGNC:8979",
+      "phenotypes": 76
+    },
+    {
+      "id": "MONDO:0010100",
+      "name": "Tay-Sachs disease",
+      "orpha": "845",
+      "gene": "HEXA",
+      "gene_id": "HGNC:4878",
+      "phenotypes": 76
+    },
+    {
+      "id": "MONDO:0010216",
+      "name": "xeroderma pigmentosum group G",
+      "orpha": "276267",
+      "gene": "ERCC5",
+      "gene_id": "HGNC:3437",
+      "phenotypes": 13
+    },
+    {
+      "id": "MONDO:0010221",
+      "name": "CHIME syndrome",
+      "orpha": "3474",
+      "gene": "PIGL",
+      "gene_id": "HGNC:8966",
+      "phenotypes": 114
+    },
+    {
+      "id": "MONDO:0007160",
+      "name": "Stickler syndrome type 1",
+      "orpha": "90653",
+      "gene": "COL2A1",
+      "gene_id": "HGNC:2200",
+      "phenotypes": 49
+    },
+    {
+      "id": "MONDO:0007354",
+      "name": "coloboma of optic nerve",
+      "orpha": "98947",
+      "gene": "PAX6",
+      "gene_id": "HGNC:8620",
+      "phenotypes": 2
+    },
+    {
+      "id": "MONDO:0007374",
+      "name": "Schnyder corneal dystrophy",
+      "orpha": "98967",
+      "gene": "UBIAD1",
+      "gene_id": "HGNC:30791",
+      "phenotypes": 2
+    },
+    {
+      "id": "MONDO:0007381",
+      "name": "epithelial recurrent erosion dystrophy",
+      "orpha": "293381",
+      "gene": "COL17A1",
+      "gene_id": "HGNC:2194",
+      "phenotypes": 13
+    },
+    {
+      "id": "MONDO:0007410",
+      "name": "isolated cryptophthalmia",
+      "orpha": "91396",
+      "gene": "FREM2",
+      "gene_id": "HGNC:25396",
+      "phenotypes": 4
+    },
+    {
+      "id": "MONDO:0008799",
+      "name": "anophthalmia/microphthalmia-esophageal atresia syndrome",
+      "orpha": "77298",
+      "gene": "SOX2",
+      "gene_id": "HGNC:11195",
+      "phenotypes": 48
+    },
+    {
+      "id": "MONDO:0008927",
+      "name": "colobomatous optic disc-macular atrophy-chorioretinopathy syndrome",
+      "orpha": "435930",
+      "gene": "SIX6",
+      "gene_id": "HGNC:10892",
+      "phenotypes": 13
+    },
+    {
+      "id": "MONDO:0008948",
+      "name": "cerebrotendinous xanthomatosis",
+      "orpha": "909",
+      "gene": "CYP27A1",
+      "gene_id": "HGNC:2605",
+      "phenotypes": 113
+    },
+    {
+      "id": "MONDO:0009019",
+      "name": "congenital hereditary endothelial dystrophy of cornea",
+      "orpha": "293603",
+      "gene": "SLC4A11",
+      "gene_id": "HGNC:16438",
+      "phenotypes": 11
+    },
+    {
+      "id": "MONDO:0009020",
+      "name": "macular corneal dystrophy",
+      "orpha": "98969",
+      "gene": "CHST6",
+      "gene_id": "HGNC:6938",
+      "phenotypes": 13
+    },
+    {
+      "id": "MONDO:0009097",
+      "name": "persistent hyperplastic primary vitreous, autosomal recessive",
+      "orpha": "300337",
+      "gene": "ATOH7",
+      "gene_id": "HGNC:13907",
+      "phenotypes": 20
+    },
+    {
+      "id": "MONDO:0009265",
+      "name": "Gaucher disease type I",
+      "orpha": "77259",
+      "gene": "GBA1",
+      "gene_id": "HGNC:4177",
+      "phenotypes": 59
+    },
+    {
+      "id": "MONDO:0009266",
+      "name": "Gaucher disease type II",
+      "orpha": "77260",
+      "gene": "GBA1",
+      "gene_id": "HGNC:4177",
+      "phenotypes": 51
+    },
+    {
+      "id": "MONDO:0009267",
+      "name": "Gaucher disease type III",
+      "orpha": "77261",
+      "gene": "GBA1",
+      "gene_id": "HGNC:4177",
+      "phenotypes": 50
+    },
+    {
+      "id": "MONDO:0012177",
+      "name": "posterior column ataxia-retinitis pigmentosa syndrome",
+      "orpha": "88628",
+      "gene": "FLVCR1",
+      "gene_id": "HGNC:24682",
+      "phenotypes": 48
+    },
+    {
+      "id": "MONDO:0012216",
+      "name": "foveal hypoplasia - optic nerve decussation defect - anterior segment dysgenesis syndrome",
+      "orpha": "397618",
+      "gene": "SLC38A8",
+      "gene_id": "HGNC:32434",
+      "phenotypes": 11
+    },
+    {
+      "id": "MONDO:0012401",
+      "name": "congenital stromal corneal dystrophy",
+      "orpha": "101068",
+      "gene": "DCN",
+      "gene_id": "HGNC:2705",
+      "phenotypes": 8
+    },
+    {
+      "id": "MONDO:0012439",
+      "name": "Alagille syndrome due to a NOTCH2 point mutation",
+      "orpha": "261629",
+      "gene": "NOTCH2",
+      "gene_id": "HGNC:7882",
+      "phenotypes": 18
+    }
+  ]
+}
