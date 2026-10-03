@@ -1,0 +1,55 @@
+{
+  "slice": "CLN / Batten",
+  "mechanism": {
+    "id": "PW:NCL-LYSOSOME",
+    "name": "Lysosomal lipofuscin accumulation",
+    "note": "Shared process. Not a claim that one therapy treats the other CLNs."
+  },
+  "diseases": [
+    {
+      "id": "MONDO:0009744",
+      "name": "neuronal ceroid lipofuscinosis 1",
+      "orpha": "228329",
+      "title_needles": ["cln1", "ppt1"],
+      "pubmed": "CLN1 PPT1 neuronal ceroid lipofuscinosis",
+      "reporter": ["and", "CLN1 PPT1"],
+      "gene": "PPT1"
+    },
+    {
+      "id": "MONDO:0008769",
+      "name": "neuronal ceroid lipofuscinosis 2",
+      "orpha": "228349",
+      "title_needles": ["cln2", "tpp1", "cerliponase"],
+      "pubmed": "CLN2 TPP1 cerliponase neuronal ceroid lipofuscinosis",
+      "reporter": ["or", "CLN2 TPP1 cerliponase"],
+      "gene": "TPP1"
+    },
+    {
+      "id": "MONDO:0008767",
+      "name": "CLN3 disease",
+      "orpha": "228346",
+      "title_needles": ["cln3"],
+      "pubmed": "CLN3 Batten disease",
+      "reporter": ["and", "CLN3 Batten"],
+      "gene": "CLN3"
+    },
+    {
+      "id": "MONDO:0011144",
+      "name": "neuronal ceroid lipofuscinosis 6",
+      "orpha": "228363",
+      "title_needles": ["cln6"],
+      "pubmed": "CLN6 neuronal ceroid lipofuscinosis",
+      "reporter": ["and", "CLN6"],
+      "gene": "CLN6"
+    },
+    {
+      "id": "MONDO:0012588",
+      "name": "neuronal ceroid lipofuscinosis 7",
+      "orpha": "228366",
+      "title_needles": ["cln7", "mfsd8"],
+      "pubmed": "CLN7 MFSD8 neuronal ceroid lipofuscinosis",
+      "reporter": ["or", "CLN7 MFSD8"],
+      "gene": "MFSD8"
+    }
+  ]
+}
