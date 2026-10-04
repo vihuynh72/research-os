@@ -167,8 +167,9 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
   // 3D view
   const [view, setView] = useState<View>(initial.view);
   // A shared link to something RareVerse does not have opens the start screen and says so.
-  // The side panel can be folded away on tablets and desktops; any new search or selection opens it again.
-  const [panelOpen, setPanelOpen] = useState(true);
+  // The side panel (tablets and desktops) starts closed on the start screen and opens with the first search or
+  // selection; a shared link that centers something opens with it. The icon on the map folds it either way.
+  const [panelOpen, setPanelOpen] = useState(() => known(initial.focusId));
   const [staleLink, setStaleLink] = useState(() => !!initial.focusId && !known(initial.focusId));
   const mapRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -225,6 +226,7 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
   );
 
   const startOver = useCallback(() => {
+    setPanelOpen(false);
     setFocusId(null);
     setSelectedId(null);
     setExpanded(new Set());
