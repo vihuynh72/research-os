@@ -20,7 +20,7 @@ The tunable constants quoted here live in `lib/grading/config.ts`. The caps, the
 | Symptom reference | `data/reference/hpo-reference.json`: HPO labels, information content, specificity, ancestors, the random-pair null model and the same-disease anchor | `npm run data:hpo` (HPO files cached in `data/raw/hpo/`) |
 | **Graph** | `public/graph.json` (schema format): the atlas the app shows and the engine grades | `npm run data:graph` |
 | Answer key | `data/curated/answer_key.json`: expected biology rating (high, medium, low) of 14 pairs, each with a reason and a source | literature; a mentor may overwrite it |
-| AI judgments (optional) | `public/judgments.json` | the AI grading workflow (`docs/agents/grader-agent-prompt.md`) |
+| AI judgments (optional) | `public/judgments.json` | an AI review workflow (any model), validated against `lib/grading/judgments.schema.json` |
 | **Relevance** | `public/relevance.json` | `npm run grade` |
 | **Bundles** | `data/grading/bundles.json`: one evidence packet per pair in the relevance file, for the AI workflow | `npm run grade` |
 
@@ -353,7 +353,7 @@ To update it, a mentor or clinician edits `expected` for any pair (and `why`, `s
 
 For every pair in the relevance file, `npm run grade` writes a `PairBundle` (`buildBundles` in `lib/grading/grade.ts`): both labels, the eleven `DimensionResult`s, every edge behind a shared item plus the edges a dimension lists in its details (contradicted edges, and the two onset claims compared), and every node they refer to. The bundles are always built from the judgment-free baseline, and the file carries `meta.bundles_hash` (sha256 of the canonical JSON of the bundles array), so a judgments file is tied to exactly the evidence it judged.
 
-The AI workflow (`docs/agents/grader-agent-prompt.md`) returns judgments: a verdict (`supports`, `weakens`, `contradicts`, `insufficient`), a confidence, an optional `cap_tier`, coded caveats from `FLAGS`, a rationale and the edge ids it relies on. They are validated against `lib/grading/judgments.schema.json` and applied after the engine's own caps:
+An AI review workflow (any model or agent setup; none ships in this repository) returns judgments: a verdict (`supports`, `weakens`, `contradicts`, `insufficient`), a confidence, an optional `cap_tier`, coded caveats from `FLAGS`, a rationale and the edge ids it relies on. They are validated against `lib/grading/judgments.schema.json` and applied after the engine's own caps:
 
 | Judgment | On a biology dimension, or `overall` | On a clinical or collaboration dimension |
 |---|---|---|

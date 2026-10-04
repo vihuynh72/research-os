@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/vihuynh72/research-os/blob/main/schema.json",
-  "title": "CVI Atlas graph",
+  "title": "RareVerse graph",
   "description": "DRAFT 0.1.0, proposed by Vi for agreement with Jaspaal and Paul. The contract for graph.json: typed nodes and typed edges, every edge sourced. Ids, never names. Changes only with all three at the table.",
   "type": "object",
   "required": ["meta", "nodes", "edges"],
