@@ -22,7 +22,7 @@ import type { HpoAspect, HpoReference, HpoTerm } from "../lib/grading/types.ts";
 const ROOT = resolve(import.meta.dirname, "..");
 const RAW_DIR = join(ROOT, "data/raw/hpo");
 const OUT = join(ROOT, "data/reference/hpo-reference.json");
-const SEED_GRAPH = join(ROOT, "data/seed/cln_graph.json");
+const SEED_GRAPH = join(ROOT, "data/seed/rare_graph.json");
 const CURATED_FACTS = join(ROOT, "data/curated/ncl_facts.json");
 const OPTIONAL_GRAPHS = [join(ROOT, "public/graph.sample.json"), join(ROOT, "public/graph.json")];
 

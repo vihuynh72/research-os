@@ -255,7 +255,7 @@ export function PersonaCard({ mode, onMode }: { mode: Mode; onMode(mode: Mode): 
         onClick={() => onMode(parent ? "researcher" : "parent")}
         className="mt-2 text-[0.8125rem] font-medium text-accent-ink hover:underline"
       >
-        {parent ? "Switch to researcher view" : "Switch to parent view"}
+        {parent ? "Switch to researcher view" : "Switch to caregiver view"}
       </button>
     </div>
   );

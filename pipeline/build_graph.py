@@ -81,13 +81,21 @@ def groups(orpha: str, name: str, symbol: str) -> list[dict]:
     return found[:6]
 
 
-def phenotypes(entity: dict) -> list[tuple[str, str]]:
-    labels = entity.get("has_phenotype_label") or []
+def phenotype_labels() -> dict[str, str]:
+    """HPO labels keyed by id. Monarch's has_phenotype_label list is not in the same order as has_phenotype, so it is not used."""
+    path = ROOT / "data" / "reference" / "hpo-reference.json"
+    if not path.exists():
+        return {}
+    terms = json.loads(path.read_text()).get("terms") or {}
+    return {term_id: term["label"] for term_id, term in terms.items() if term.get("label")}
+
+
+def phenotypes(entity: dict, labels: dict[str, str]) -> list[tuple[str, str]]:
     rows = []
-    for index, phenotype_id in enumerate(entity.get("has_phenotype") or []):
+    for phenotype_id in entity.get("has_phenotype") or []:
         if phenotype_id == "HP:0000007":
             continue
-        rows.append((phenotype_id, labels[index] if index < len(labels) else phenotype_id))
+        rows.append((phenotype_id, labels.get(phenotype_id, phenotype_id)))
     return rows
 
 def add(graph: dict, seen: set[str], node_id: str, node_type: str, name: str | None, url: str | None) -> None:
@@ -113,7 +121,7 @@ def main() -> None:
     by_gene: dict[str, list[str]] = defaultdict(list)
     by_parent: dict[str, list[str]] = defaultdict(list)
     cluster_phenotypes: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
-    labels: dict[str, str] = {}
+    labels = phenotype_labels()
 
     for row in selected:
         mondo = row["id"]
@@ -161,9 +169,9 @@ def main() -> None:
             node_id = f"ORPHA-ORG:{item['id']}"
             add(graph, seen, node_id, "patient_group", item["name"], item["url"])
             edge(graph, node_id, mondo, "works_on", item["url"])
-        for phenotype_id, label in phenotypes(entity):
+        for phenotype_id, label in phenotypes(entity, labels):
             cluster_phenotypes[row["gene_id"]][phenotype_id].append(mondo)
-            labels[phenotype_id] = label
+            labels.setdefault(phenotype_id, label)
         print(row["name"], gaps, flush=True)
 
     for diseases in by_gene.values():

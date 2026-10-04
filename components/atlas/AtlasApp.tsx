@@ -40,7 +40,7 @@ interface Props {
 const TYPE_ORDER: NodeType[] = ["Disease", "Gene", "Variant", "Mechanism", "Phenotype", "PatientOrg", "Asset", "Trial", "Paper", "Grant", "Investigator"];
 
 const PERSONAS: SegmentOption<Mode>[] = [
-  { value: "parent", label: "Parent" },
+  { value: "parent", label: "Caregiver" },
   { value: "researcher", label: "Researcher" },
 ];
 

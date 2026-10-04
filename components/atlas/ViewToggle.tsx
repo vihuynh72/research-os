@@ -1,7 +1,7 @@
 "use client";
 
 // Segmented control: a group of toggle buttons where exactly one is pressed. Used for the
-// 2D | 3D | List switch and for the Parent | Researcher persona switch.
+// 2D | 3D | List switch and for the Caregiver | Researcher persona switch.
 import type { View } from "./format";
 
 export interface SegmentOption<T extends string> {
