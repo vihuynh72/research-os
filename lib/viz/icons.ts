@@ -1,6 +1,6 @@
-// Stroke icons for node types on a 24x24 grid. One source for the SVG map (as <path d>) and the
-// 3D canvas (as new Path2D(d)), so a type looks the same in both views. Draw with fill none,
-// round caps and joins, stroke width about 1.8.
+// Stroke icons for node types on a 24x24 grid. One source for the map, the panel, the list and the
+// search box, so a type looks the same everywhere. Draw with fill none, round caps and joins,
+// stroke width about 1.8.
 import type { NodeType } from "../graph/types.ts";
 
 export const ICON_PATH: Record<NodeType, string> = {

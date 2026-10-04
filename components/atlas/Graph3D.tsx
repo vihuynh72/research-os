@@ -1,16 +1,17 @@
 "use client";
 
-// The atlas in 3D, in two layouts. "cloud": before a search, every disease at its MDS position
+// RareVerse in 3D, in two layouts. "cloud": before a search, every disease at its MDS position
 // (closer = more shared biology). "disc": after a search, the same knowledge graph as the 2D map,
 // laid on a tilted disc around what was searched: distance from the center is relevance, direction
-// is the kind of thing, and each kind floats at its own height. Kind colors and icons, opacity by
-// relevance, faint ghosts, glowing strong lines and dashed inferred lines match the 2D map.
+// is the kind of thing, and each kind floats at its own height. The searched node's white disc,
+// kind colors and icons, the emphasized top five, the label budget, faint ghosts, glowing strong
+// lines and dashed inferred lines match the 2D map (scene3d.ts builds both from the same helpers).
 // Plain Canvas 2D with the projection math in lib/viz/project3d.ts, so there is no 3D library to
 // ship. AtlasApp loads this through next/dynamic with ssr: false; even so, nothing here touches
 // window or document during render.
 
 import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { sentenceLabel } from "../../lib/graph/labels.ts";
 import {
   PITCH_LIMIT,
@@ -39,7 +40,7 @@ import {
 export interface Graph3DNode {
   id: string;
   label: string;
-  shortLabel: string;
+  shortLabel: string; // the name on the map, lines joined with "\n"
   coords: [number, number, number];
   color: string; // fill: CSS color or "var(--series-1)"
   size: number; // 0..1
@@ -52,6 +53,7 @@ export interface Graph3DNode {
   ghost?: boolean; // just under the filter: faint and unlabelled
   radius?: number; // dot radius in px before perspective; default from size and emphasis
   labelled?: boolean; // name shown without hovering (default: everything but context nodes)
+  strong?: boolean; // an emphasized mark: its name is bolder and darker
   detail?: string; // tooltip line under the name
   hint?: string; // tooltip line on what a click does
 }
@@ -94,10 +96,12 @@ export interface Graph3DProps {
   rings?: Graph3DRing[];
   sectors?: Graph3DSector[];
   caption?: string;
+  legend?: ReactNode; // drawn in the bottom-left corner of the disc on wide screens
+  insetTop?: number; // px at the top kept clear (the start card floats there): the scene fits below it
   className?: string;
 }
 
-const CAPTION = "3D layout: distance reflects shared biology. Drag to rotate, scroll to zoom.";
+const CAPTION = "Drag to rotate, scroll to zoom. Height shows the kind of thing; distance from the center is relevance.";
 const DISC_PITCH = 0.95; // rad: the disc seen from above at an angle, its far side (diseases) on top
 const MORPH_MS = 750; // nodes glide to their places when the center changes
 
@@ -129,8 +133,9 @@ const FOG = 0.3; // how far the farthest highlighted nodes blend into the backgr
 const DIM_UNSELECTED = 0.3; // other links while one is selected
 const DASH = [6, 5]; // same rhythm as the 2D map's inferred links
 const MAX_BACKING_PIXELS = 12e6; // beyond this, extra sharpness is invisible and costs memory
+const LINE_FOCUS = 17;
 const LINE_MAIN = 15;
-const LINE_SUB = 13;
+const LINE_SUB = 14;
 const LABEL_PAD = 3; // px each side of a label box: the 2 px halo plus air between neighbors
 const LABEL_SLIDE_S = 0.12;
 const TAU = Math.PI * 2;
@@ -181,6 +186,7 @@ interface SceneNode {
   ghost: boolean;
   radius?: number;
   labelled: boolean;
+  strong: boolean;
   detail?: string;
   hint?: string;
   size: number;
@@ -280,6 +286,7 @@ function buildScene(
       ghost: Boolean(n.ghost),
       radius: n.radius,
       labelled: n.labelled ?? role !== "context",
+      strong: role === "focus" || Boolean(n.strong),
       detail: n.detail,
       hint: n.hint,
       size: clamp(finite(n.size), 0, 1),
@@ -360,7 +367,7 @@ interface Palette {
   halo: Rgba; // whatever is actually behind the canvas
   colors: Map<string, Rgba>;
   family: string;
-  fonts: { focus: string; main: string; sub: string; rim: string };
+  fonts: { focus: string; strong: string; main: string; sub: string; rim: string };
 }
 
 function parseRgb(value: string): Rgba | null {
@@ -442,7 +449,8 @@ function resolvePalette(canvas: HTMLCanvasElement, colors: readonly string[]): P
     halo: backdrop(canvas) ?? token("--surface"),
     colors: new Map(colors.map((c) => [c, resolve(c) ?? GRAY])),
     family,
-    fonts: { focus: `600 13px ${family}`, main: `500 12px ${family}`, sub: `400 11px ${family}`, rim: `500 10.5px ${family}` },
+    // The 2D map's type: the searched name largest, emphasized names semibold, the rest regular.
+    fonts: { focus: `650 14px ${family}`, strong: `600 12.5px ${family}`, main: `450 12px ${family}`, sub: `400 11.5px ${family}`, rim: `500 11px ${family}` },
   };
 }
 
@@ -536,6 +544,8 @@ interface OrbitView {
   setScene(scene: Scene): void;
   setKeyTarget(id: string | null): void;
   setListOpen(open: boolean, listWidth: number): void;
+  setLegendWidth(legendWidth: number): void;
+  setInsetTop(px: number): void;
   invalidate(): void;
   destroy(): void;
 }
@@ -571,8 +581,11 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
   let vYaw = 0;
   let vPitch = 0;
   let fly: Fly | null = null;
-  let shift = 0; // px the scene slides right to clear the keyboard list
+  let shift = 0; // px the scene slides right to clear the keyboard list or the legend
   let shiftGoal = 0;
+  let listShift = 0;
+  let legendWidth = 0;
+  let insetTop = 0;
   let dim = 0;
   let linkAlpha = 1;
   let fading: { links: SceneLink[]; alpha: number } | null = null;
@@ -581,6 +594,7 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
   const anim = new Map<string, Anim>();
   const labelSides = new Map<string, { side: LabelSide; compact: boolean; dx: number; dy: number }>();
   const textWidths = new Map<string, number>();
+  const rimBoxes: { x: number; y: number; w: number; h: number }[] = []; // the disc's own words this frame: names keep off them
   const icons = new Map<string, Path2D>();
   let palette: Palette | null = null;
 
@@ -608,6 +622,15 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
 
   function invalidate() {
     if (!raf && onScreen && !destroyed) raf = requestAnimationFrame(tick);
+  }
+
+  // The open keyboard list, else the legend in the lower-left corner, covers the left of the canvas:
+  // the scene slides into the space beside it when there is enough.
+  function updateShift() {
+    const legendShift = legendWidth > 0 && width - legendWidth >= 480 ? (legendWidth + 12) / 2 : 0;
+    shiftGoal = listOpen ? listShift : legendShift;
+    if (reduceMotion) shift = shiftGoal;
+    invalidate();
   }
 
   function tick(now: number) {
@@ -788,20 +811,19 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     if (hover || n.selected) alpha = Math.max(alpha, 0.9);
     let ring: string | null = null;
     let ringWidth = 0;
-    if (s > 0.01) {
+    // The searched node carries its own accent outline (drawNode), so only a selection or a hover
+    // rings a dot.
+    if (s > 0.01 && f < 0.5) {
       ring = rgba(pal.accent, s);
       ringWidth = 2.5;
-    } else if (f > 0.01) {
-      ring = rgba(pal.ink, f);
-      ringWidth = 2.5;
-    } else if (hover) {
+    } else if (hover && f < 0.5) {
       ring = rgba(pal.ink2);
       ringWidth = 1.5;
     }
     const ink = n.ink ? (pal.colors.get(n.ink) ?? pal.ink) : null;
     return {
       r,
-      outer: r + (ring ? 2 + ringWidth : 1),
+      outer: r + (ring ? 2 + ringWidth : f > 0.5 ? 3 : 1),
       fill: rgba(color, alpha),
       band: e * alpha,
       ring,
@@ -816,6 +838,7 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
   // Rings in the disc's plane (the relevance tiers and the person's filter) and the kind of thing
   // each direction holds, written at the rim. Drawn first, under everything else.
   function drawDisc(pal: Palette, view: View) {
+    rimBoxes.length = 0;
     if (scene.layout !== "disc") return;
     const at = (x: number, z: number) => project([x - pivot[0], -pivot[1], z - pivot[2]], view);
     const ringPath = (r: number) => {
@@ -851,9 +874,10 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       const a = (18 * Math.PI) / 180; // the same spot as on the 2D map, just right of the front
       const q = at(Math.cos(a) * ring.r, Math.sin(a) * ring.r);
       drawText(ring.label, `600 11.5px ${pal.family}`, q.x + 6, q.y, "left", pal.accentInk, pal.halo, 1);
+      rimBoxes.push({ x: q.x + 4, y: q.y - 8, w: measure(`600 11.5px ${pal.family}`, ring.label) + 4, h: 16 });
     }
     for (const s of scene.sectors) {
-      const q = at(Math.cos(s.angle) * 1.08, Math.sin(s.angle) * 1.08);
+      const q = at(Math.cos(s.angle) * 0.99, Math.sin(s.angle) * 0.99);
       const cos = Math.cos(s.angle);
       const text = s.label.toUpperCase();
       const align: CanvasTextAlign = cos > 0.3 ? "left" : cos < -0.3 ? "right" : "center";
@@ -864,6 +888,7 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       // Farther labels fade a little, like the dots behind them.
       const back = depthT(q.depth, view.distance, span);
       drawText(text, pal.fonts.rim, q.x + dx, clamp(q.y, 10, height - 10), align, pal.ink2, pal.halo, lerp(1, 0.6, back));
+      rimBoxes.push({ x: left + dx - 2, y: clamp(q.y, 10, height - 10) - 8, w: w + 4, h: 16 });
     }
     g.textBaseline = "top";
   }
@@ -921,7 +946,41 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     return path;
   }
 
+  // The searched node, as on the 2D map: a soft accent glow, a white disc ringed in the accent and
+  // its kind's icon in the accent.
+  function drawFocus(n: SceneNode, l: Look, p: Projected, pal: Palette) {
+    const reach = l.r * 2.05;
+    const glow = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, reach);
+    glow.addColorStop(0.4, rgba(pal.accent, 0.16));
+    glow.addColorStop(1, rgba(pal.accent, 0));
+    g.beginPath();
+    g.arc(p.x, p.y, reach, 0, TAU);
+    g.fillStyle = glow;
+    g.fill();
+    g.beginPath();
+    g.arc(p.x, p.y, l.r, 0, TAU);
+    g.fillStyle = l.fill;
+    g.fill();
+    g.lineWidth = 3;
+    g.strokeStyle = rgba(pal.accent);
+    g.stroke();
+    const path = n.icon ? iconPath(n.icon) : null;
+    if (path) {
+      const scale = l.r / 24;
+      g.save();
+      g.translate(p.x - l.r * 0.5, p.y - l.r * 0.5);
+      g.scale(scale, scale);
+      g.lineWidth = 1.8 / scale;
+      g.lineCap = "round";
+      g.lineJoin = "round";
+      g.strokeStyle = rgba(pal.accent);
+      g.stroke(path);
+      g.restore();
+    }
+  }
+
   function drawNode(n: SceneNode, l: Look, p: Projected, pal: Palette) {
+    if (n.role === "focus") return drawFocus(n, l, p, pal);
     if (l.band > 0.01) {
       g.beginPath();
       g.arc(p.x, p.y, l.r + 2, 0, TAU);
@@ -993,8 +1052,10 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     g.fillText(text, x, y);
   }
 
-  // Names for the focus, its neighbors, the selection and whatever is hovered. Every colored dot
-  // keeps a label: several series colors are below 3:1 contrast, so color alone never identifies.
+  // Names for the focus, the label budget's picks, the selection and whatever is hovered. The
+  // focus, the selection and the hovered dot are always named; the rest, most important first (the
+  // emphasized marks, then the others, nearest first), only where a name covers no other name and
+  // cannot be read as another dot's. A dropped name shows on hover, as on the 2D map.
   function drawLabels(pal: Palette, points: Projected[], depths: number[], looks: Look[]) {
     const nodes = scene.nodes;
     const wanted: number[] = [];
@@ -1005,22 +1066,26 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       if (x < -r || y < -r || x > width + r || y > height + r) return;
       if ((n.labelled && !n.ghost && looks[i].e > 0.5) || looks[i].hover || n.selected) wanted.push(i);
     });
-    const rank = (i: number) => (nodes[i].role === "focus" ? 0 : nodes[i].selected ? 1 : looks[i].hover ? 2 : 3);
+    const rank = (i: number) => (nodes[i].role === "focus" ? 0 : nodes[i].selected ? 1 : looks[i].hover ? 2 : nodes[i].strong ? 3 : 4);
     wanted.sort((i, j) => rank(i) - rank(j) || points[i].depth - points[j].depth || i - j);
     const blocks = wanted.map((i) => {
       const n = nodes[i];
       const sub = n.role !== "context" && n.tier ? n.tier : "";
-      const font = n.role === "focus" ? pal.fonts.focus : pal.fonts.main;
-      const main = measure(font, n.short);
+      const font = n.role === "focus" ? pal.fonts.focus : n.strong ? pal.fonts.strong : pal.fonts.main;
+      const lines = n.short.split("\n");
+      const lineHeight = n.role === "focus" ? LINE_FOCUS : LINE_MAIN;
+      const main = Math.max(...lines.map((line) => measure(font, line)));
       const text = Math.max(main, sub ? measure(pal.fonts.sub, sub) : 0);
       return {
         i,
         sub,
         font,
+        lines,
+        lineHeight,
         w: Math.ceil(text) + 2 * LABEL_PAD,
-        h: LINE_MAIN + (sub ? LINE_SUB : 0),
+        h: lineHeight * lines.length + (sub ? LINE_SUB : 0),
         // In a crowd the tier word goes first; it stays in the tooltip and the side panel.
-        compact: sub ? { w: Math.ceil(main) + 2 * LABEL_PAD, h: LINE_MAIN } : undefined,
+        compact: sub ? { w: Math.ceil(main) + 2 * LABEL_PAD, h: lineHeight * lines.length } : undefined,
       };
     });
     const placed = placeLabels(
@@ -1035,11 +1100,13 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
           compact: b.compact,
           prefer: before?.side,
           preferCompact: before?.compact,
+          optional: rank(b.i) > 2,
         };
       }),
       width,
       height,
       3,
+      rimBoxes,
     );
     // Labels follow their dot exactly, but a move to another side glides: what is smoothed is the
     // offset from the dot, never the position, so a label cannot trail behind during a drag.
@@ -1052,6 +1119,7 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     g.miterLimit = 2;
     blocks.forEach((b, k) => {
       const box = placed[k];
+      if (box.dropped) return;
       const n = nodes[b.i];
       const l = looks[b.i];
       const p = points[b.i];
@@ -1070,8 +1138,10 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
       const left = p.x + dx;
       const top = p.y + dy;
       const x = align === "left" ? left + LABEL_PAD : align === "right" ? left + box.w - LABEL_PAD : left + box.w / 2;
-      drawText(n.short, b.font, x, top, align, pal.ink, pal.halo, alpha);
-      if (b.sub && !box.compact) drawText(b.sub, pal.fonts.sub, x, top + LINE_MAIN, align, pal.ink2, pal.halo, alpha);
+      // Emphasized and pointed-at names in full ink, the rest a step quieter, as on the 2D map.
+      const ink = n.strong || n.selected || l.hover ? pal.ink : pal.ink2;
+      b.lines.forEach((line, k) => drawText(line, b.font, x, top + k * b.lineHeight, align, ink, pal.halo, alpha));
+      if (b.sub && !box.compact) drawText(b.sub, pal.fonts.sub, x, top + b.lines.length * b.lineHeight, align, pal.ink2, pal.halo, alpha);
     });
     if (sliding) invalidate();
   }
@@ -1112,13 +1182,15 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     g.clearRect(0, 0, width, height);
 
     const distance = CAMERA_DISTANCE * span;
+    // The top kept clear for the start card, only while the rest still holds a readable scene.
+    const inset = height - insetTop >= 240 ? insetTop : 0;
     const view: View = {
       yaw,
       pitch,
       distance,
-      scale: fitScale(width, height, distance, span, FIT_PADDING) * zoom,
+      scale: fitScale(width, height - inset, distance, span, FIT_PADDING) * zoom,
       cx: width / 2 + shift,
-      cy: height / 2,
+      cy: inset + (height - inset) / 2,
     };
     const nodes = scene.nodes;
     const now = performance.now();
@@ -1406,6 +1478,7 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     height = box ? box.blockSize : entry.contentRect.height;
     const device = entry.devicePixelContentBoxSize?.[0];
     deviceSize = device ? { w: device.inlineSize, h: device.blockSize } : null;
+    updateShift();
     render(); // now, before the browser paints the stretched old bitmap
   });
   try {
@@ -1544,10 +1617,16 @@ function createOrbitView(canvas: HTMLCanvasElement, tooltip: HTMLElement, hooks:
     },
     setListOpen(open, listWidth) {
       listOpen = open;
-      // The list covers the left of the canvas: slide the scene into the space beside it, when
-      // there is enough, so the dot a row describes stays visible.
-      shiftGoal = open && width - listWidth >= 280 ? (listWidth + 8) / 2 : 0;
-      if (reduceMotion) shift = shiftGoal;
+      // So the dot a row describes stays visible.
+      listShift = open && width - listWidth >= 280 ? (listWidth + 8) / 2 : 0;
+      updateShift();
+    },
+    setLegendWidth(w) {
+      legendWidth = w;
+      updateShift();
+    },
+    setInsetTop(px) {
+      insetTop = px;
       invalidate();
     },
     invalidate,
@@ -1662,11 +1741,14 @@ export default function Graph3D({
   rings = NO_RINGS,
   sectors = NO_SECTORS,
   caption = CAPTION,
+  legend,
+  insetTop = 0,
   className,
 }: Graph3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const legendRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<OrbitView | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [keyId, setKeyId] = useState<string | null>(null);
@@ -1702,6 +1784,22 @@ export default function Graph3D({
   useEffect(() => {
     viewRef.current?.setListOpen(listOpen, listOpen ? (listRef.current?.offsetWidth ?? 0) : 0);
   }, [listOpen]);
+  // The legend sits in the lower-left corner on wide screens (hidden, it measures 0): keep the disc
+  // beside it.
+  const showLegend = Boolean(legend) && layout === "disc";
+  useEffect(() => {
+    const el = legendRef.current;
+    if (!el) {
+      viewRef.current?.setLegendWidth(0);
+      return;
+    }
+    const observer = new ResizeObserver(() => viewRef.current?.setLegendWidth(el.offsetWidth));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [showLegend]);
+  useEffect(() => {
+    viewRef.current?.setInsetTop(insetTop);
+  }, [insetTop]);
   // The tooltip's size follows its text: place it again once React has rendered the new one.
   useEffect(() => {
     viewRef.current?.invalidate();
@@ -1791,7 +1889,7 @@ export default function Graph3D({
                   >
                     {sentenceLabel(n.label)}
                     {n.tier ? <span style={MUTED}> · {n.tier}</span> : null}
-                    {n.role === "focus" ? <span style={MUTED}> · in focus</span> : null}
+                    {n.role === "focus" ? <span style={MUTED}> · what you searched</span> : null}
                   </button>
                   {n.role === "focus" || n.count !== undefined ? null : (
                     <button
@@ -1810,8 +1908,13 @@ export default function Graph3D({
             </ul>
           </div>
         ) : null}
+        {showLegend ? (
+          <div ref={legendRef} className="absolute bottom-3 left-3 hidden lg:block">
+            {legend}
+          </div>
+        ) : null}
       </div>
-      <p className="mt-2 text-xs leading-4 text-pretty" style={MUTED}>
+      <p className="px-3 pt-1.5 pb-2 text-xs leading-4 text-pretty" style={MUTED}>
         {caption}
       </p>
       <p id={hintId} style={VISUALLY_HIDDEN}>

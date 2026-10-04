@@ -1,11 +1,12 @@
 // Plain-language names for node types and relations, shared by the map, the panels and docs.
+// A Mechanism node is a Reactome pathway, and a Variant a change in a gene.
 import type { NodeType } from "./types.ts";
 
 export const TYPE_NAME: Record<NodeType, { one: string; many: string }> = {
   Disease: { one: "disease", many: "diseases" },
   Gene: { one: "gene", many: "genes" },
-  Variant: { one: "variant", many: "variants" },
-  Mechanism: { one: "mechanism", many: "mechanisms" },
+  Variant: { one: "gene change", many: "gene changes" },
+  Mechanism: { one: "pathway", many: "pathways" },
   Phenotype: { one: "symptom", many: "symptoms" },
   PatientOrg: { one: "patient group", many: "patient groups" },
   Paper: { one: "paper", many: "papers" },
@@ -22,7 +23,7 @@ export function countLabel(type: NodeType, n: number): string {
 const RELATION: Record<string, string> = {
   causes: "causes",
   has_phenotype: "has symptom",
-  variant_of: "is a variant in",
+  variant_of: "is a change in",
   disrupts_process: "disrupts",
   has_mechanism: "involves",
   in_pathway: "is in pathway",

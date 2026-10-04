@@ -34,7 +34,7 @@ export function ClinicalBadge({ tier, value, className = "" }: { tier: ClinicalT
   // A grade file from another engine may use a word this app does not know: name it as written.
   const word = CLINICAL_TIER_WORD[tier] ?? (tier ? `${String(tier).charAt(0).toUpperCase()}${String(tier).slice(1).replace(/_/g, " ")}` : "Not graded");
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-ink ${className}`}>
+    <span className={`inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full bg-surface-2 px-2.5 text-xs font-medium whitespace-nowrap text-ink ${className}`}>
       {tier in CLINICAL_LEVEL ? <ClinicalIcon tier={tier} /> : <NeutralIcon />}
       {word}
       {value !== undefined && <span className="font-normal text-ink-2 tabular-nums">· {formatPercent(value)}</span>}
@@ -76,7 +76,7 @@ export function TierIcon({ tier }: { tier: Tier }) {
 
 export function TierBadge({ tier, value, className = "" }: { tier: Tier; value?: number; className?: string }) {
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-ink ${className}`}>
+    <span className={`inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full bg-surface-2 px-2.5 text-xs font-medium whitespace-nowrap text-ink ${className}`}>
       <TierIcon tier={tier} />
       {tierWord(tier)}
       {value !== undefined && <span className="font-normal text-ink-2 tabular-nums">· {formatPercent(value)}</span>}
@@ -99,35 +99,49 @@ export interface DiseaseRow {
   short: string;
   full: string; // the full name, shown under the short one when it differs
   color: string;
-  badge: ReactNode;
-  reason: string;
+  badge: ReactNode; // null when the reason already says it all
+  meter?: number; // 0..1, drawn as a small bar beside the badge
+  reason?: ReactNode; // one cited sentence; kept outside the button so its citations stay their own links
+}
+
+// How far a score reaches on its 0–100% scale; the badge beside it says the number in words.
+function Meter({ value }: { value: number }) {
+  return (
+    <span aria-hidden="true" className="inline-block h-1.5 w-14 shrink-0 overflow-hidden rounded-full bg-line">
+      <span className="block h-full rounded-full bg-accent" style={{ width: `${Math.max(4, Math.min(100, value * 100))}%` }} />
+    </span>
+  );
 }
 
 // A compact list of related diseases; selecting one opens the pair's evidence.
-export default function DiseaseRows({ rows, selectedId, onSelect, empty }: { rows: DiseaseRow[]; selectedId: string | null; onSelect(id: string): void; empty?: string }) {
-  if (!rows.length) return empty ? <p className="text-sm text-ink-2 text-pretty">{empty}</p> : null;
+export default function DiseaseRows({ rows, selectedId, onSelect, empty }: { rows: DiseaseRow[]; selectedId: string | null; onSelect(id: string): void; empty?: ReactNode }) {
+  if (!rows.length) return empty ? <div className="text-sm text-ink-2 text-pretty">{empty}</div> : null;
   return (
     <ul role="list" className="-mx-2">
       {rows.map((r) => (
-        <li key={r.id}>
+        <li key={r.id} className={`rounded-lg px-2 py-2 hover:bg-surface-2 ${r.id === selectedId ? "bg-surface-2" : ""}`}>
           <button
             type="button"
             onClick={() => onSelect(r.id)}
             aria-current={r.id === selectedId ? "true" : undefined}
-            className="flex w-full items-start gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-surface-2 aria-[current=true]:bg-surface-2"
+            className="group flex w-full items-start gap-3 rounded-md text-left"
           >
-            <span className="mt-1.5">
+            {/* A flex box, so the dot sits centered on the name's first line instead of a taller text line. */}
+            <span className="mt-[5px] flex shrink-0">
               <Dot color={r.color} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-                <span className="min-w-0 text-sm font-medium text-pretty break-words">{r.short}</span>
-                {r.badge}
-              </span>
-              {r.full !== r.short && <span className="mt-0.5 block truncate text-xs text-ink-2">{r.full}</span>}
-              {r.reason && <span className="mt-0.5 block text-xs text-ink-2 text-pretty">{r.reason}</span>}
+              <span className="block text-sm font-medium text-ink text-pretty break-words group-hover:underline">{r.short}</span>
+              {r.full !== r.short && <span className="mt-0.5 block text-xs text-ink-2 text-pretty">{r.full}</span>}
+              {(r.badge || r.meter !== undefined) && (
+                <span className="mt-1 flex flex-wrap items-center gap-2">
+                  {r.badge}
+                  {r.meter !== undefined && <Meter value={r.meter} />}
+                </span>
+              )}
             </span>
           </button>
+          {r.reason && <div className="mt-1 pl-[22px]">{r.reason}</div>}
         </li>
       ))}
     </ul>

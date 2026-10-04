@@ -5,11 +5,14 @@
 // relevant first. Before a search it lists every disease by cluster, ready to be mapped.
 import type { GraphNode, NodeType } from "@/lib/graph/types";
 import type { HoodNode, Neighborhood, ThresholdResult } from "@/lib/graph/neighborhood";
+import { sentenceLabel } from "@/lib/graph/labels";
 import { sectorOf, type SectorId } from "@/lib/viz/radialLayout";
 import { TYPE_NAME } from "@/lib/graph/vocab";
-import { KIND_WORD, TYPE_WORD, diseaseColor, formatPercent, nodeName, nodeOf, type AtlasModel, type ClusterRow, type Mode } from "./format";
+import { TYPE_WORD, diseaseColor, engineText, formatPercent, nodeOf, type AtlasModel, type ClusterRow, type Mode } from "./format";
 import { KIND_STYLE, type Kind } from "./kinds";
 import { KindSwatch } from "./ClusterPanel";
+import { nodeBadge } from "./evidence";
+import EvidenceBadge from "./EvidenceBadge";
 import { compactSynonym } from "./names";
 import { Dot, TierBadge } from "./NeighborList";
 
@@ -28,7 +31,7 @@ interface Props {
 
 const SECTIONS: { id: SectorId; kind: Kind; title: string; where: string }[] = [
   { id: "diseases", kind: "disease", title: "Diseases", where: "top of the map" },
-  { id: "biology", kind: "biology", title: "Genes and mechanisms", where: "left" },
+  { id: "biology", kind: "biology", title: "Genes and pathways", where: "left" },
   { id: "symptoms", kind: "clinical", title: "Symptoms", where: "bottom" },
   { id: "community", kind: "community", title: "Groups and registries", where: "lower right" },
   { id: "research", kind: "research", title: "Research", where: "upper right" },
@@ -45,7 +48,7 @@ function AtlasList({ model, clusters, onFocus }: Props) {
   return (
     <div className="h-full overflow-y-auto px-4 py-4 lg:px-6">
       <p className="text-sm text-ink-2 text-pretty">
-        Every disease in this atlas ({model.index.diseases.length}), grouped by the biology they share. Select one to map it.
+        Every disease in RareVerse ({model.index.diseases.length}), grouped by the biology they share. Select one to map it.
       </p>
       {clusters.map((row) => (
         <section key={row.id} aria-labelledby={`list-${row.id}`} className="mt-5">
@@ -77,7 +80,6 @@ function AtlasList({ model, clusters, onFocus }: Props) {
 function HoodList({ model, hood, filtered, threshold, selectedId, mode, onSelect, onFocus, onToggleBubble }: Props & { hood: Neighborhood; filtered: ThresholdResult }) {
   const focus = nodeOf(model, hood.focus);
   if (!focus) return null;
-  const center = nodeName(focus, 40);
   const ghosts = new Set(filtered.ghosts.map((n) => n.id));
   const items = [...filtered.nodes, ...filtered.ghosts].filter((n) => n.role !== "focus");
   const hiddenTypes = [...new Set(hood.nodes.filter((n) => n.role !== "focus").map(typeOf))].filter((t) => !filtered.byType[t]?.shown && !items.some((n) => typeOf(n) === t));
@@ -85,7 +87,7 @@ function HoodList({ model, hood, filtered, threshold, selectedId, mode, onSelect
   return (
     <div className="h-full overflow-y-auto px-4 py-4 lg:px-6">
       <p className="text-sm text-ink-2 text-pretty">
-        <span className="font-medium text-ink">{sentence(center)}</span> is in the center. Below:{" "}
+        <span className="font-medium text-ink">{sentenceLabel(focus.label)}</span> is in the center. Below:{" "}
         {filtered.shown} of {filtered.total} linked items at {formatPercent(threshold)} relevance or more, grouped as on the map, most relevant first.
         {filtered.ghosts.length > 0 && " Items just under the filter are marked."}
       </p>
@@ -109,6 +111,7 @@ function HoodList({ model, hood, filtered, threshold, selectedId, mode, onSelect
                 const ghost = ghosts.has(n.id);
                 const isBubble = n.role === "bubble";
                 const type = typeOf(n);
+                const record = model.index.byId.get(n.id);
                 return (
                   <li key={n.id} className={`flex items-start gap-3 py-2 ${ghost ? "opacity-70" : ""}`}>
                     <span className="mt-1">
@@ -117,7 +120,7 @@ function HoodList({ model, hood, filtered, threshold, selectedId, mode, onSelect
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                         {isBubble ? (
-                          <span className="text-sm font-medium">{sentence(n.label)}</span>
+                          <span className="text-sm font-medium">{sentenceLabel(n.label)}</span>
                         ) : (
                           <button
                             type="button"
@@ -125,18 +128,23 @@ function HoodList({ model, hood, filtered, threshold, selectedId, mode, onSelect
                             aria-current={n.id === selectedId ? "true" : undefined}
                             className="text-left text-sm font-medium hover:underline aria-[current=true]:text-accent-ink"
                           >
-                            {n.type === "Disease" ? (compactSynonym({ label: n.label, synonyms: model.index.byId.get(n.id)?.synonyms }) ?? n.label) : n.label}
+                            {sentenceLabel(n.type === "Disease" ? (compactSynonym({ label: n.label, synonyms: record?.synonyms }) ?? n.label) : n.label)}
                           </button>
                         )}
                         <span className="text-xs text-ink-2">{isBubble ? `${TYPE_NAME[type].many}, folded` : TYPE_WORD[type]}</span>
                       </div>
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-2">
                         {n.role === "related" && n.tier ? <TierBadge tier={n.tier} value={n.relevance} /> : <span className="tabular-nums">{formatPercent(n.relevance)} relevant</span>}
-                        {n.kind && <span>{KIND_WORD[n.kind]}</span>}
+                        <EvidenceBadge badge={nodeBadge(hood, n.id, model.edgeById)} />
                         {ghost && <span className="font-medium">just under your filter</span>}
                       </p>
-                      <p className="mt-0.5 text-xs text-ink-2 text-pretty">{n.why}</p>
-                      {mode === "researcher" && !isBubble && <p className="mt-0.5 font-mono text-[0.6875rem] text-ink-2">{n.id}</p>}
+                      <p className="mt-0.5 text-xs text-ink-2 text-pretty">{engineText(n.why)}</p>
+                      {mode === "researcher" && record && (
+                        <a href={record.url} target="_blank" rel="noopener noreferrer" className="mt-0.5 inline-block font-mono text-[0.6875rem] text-ink-2 hover:underline">
+                          {record.id}
+                          <span className="visually-hidden"> (opens in a new tab)</span>
+                        </a>
+                      )}
                     </div>
                     {isBubble ? (
                       <button type="button" onClick={() => onToggleBubble(n.id)} className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-xs font-medium hover:bg-surface-2">
@@ -166,8 +174,4 @@ function HoodList({ model, hood, filtered, threshold, selectedId, mode, onSelect
 
 function TypeDot({ kind }: { kind: { fill: string; ink: string } }) {
   return <span aria-hidden="true" className="inline-block size-2.5 shrink-0 rounded-full border" style={{ background: kind.fill, borderColor: kind.ink }} />;
-}
-
-function sentence(text: string): string {
-  return text.length ? text[0].toUpperCase() + text.slice(1) : text;
 }

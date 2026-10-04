@@ -1,6 +1,7 @@
-// Projection math for the 3D atlas view (components/atlas/Graph3D.tsx). Pure and DOM-free so
-// it runs under node:test. Conventions: world y points up, the camera sits on the +z axis
-// looking at the origin, screen y points down, angles are in radians.
+// Projection math written for the former 3D view; the map uses `separate` to spread the start
+// screen's disease dots. Pure and DOM-free so it runs under node:test. Conventions: world y
+// points up, the camera sits on the +z axis looking at the origin, screen y points down, angles
+// are in radians.
 
 export type Vec3 = readonly [number, number, number];
 
@@ -246,6 +247,7 @@ export interface LabelRequest {
   compact?: { w: number; h: number }; // a shorter form (e.g. without its second line) for tight spots
   prefer?: LabelSide; // last frame's side: sticking to it stops labels jumping while the scene turns
   preferCompact?: boolean;
+  optional?: boolean; // may be left out rather than cover a label placed before it (requests come in priority order)
 }
 
 export interface PlacedLabel {
@@ -255,6 +257,7 @@ export interface PlacedLabel {
   h: number;
   side: LabelSide;
   compact: boolean;
+  dropped: boolean; // an optional label with no clear spot: not drawn this frame
 }
 
 // Costs in px^2 of overlap. Text over text is the worst outcome, so it outweighs the preferred
@@ -309,11 +312,20 @@ function sideBox(q: { x: number; y: number; r: number }, w: number, h: number, s
 
 // Greedy label placement. Requests come in priority order and earlier labels keep their spot.
 // Each label takes the position (and, in a crowd, the shorter form) that overlaps the fewest
-// labels already placed and other labelled dots, pushed inside the viewport. No label is ever
-// dropped: every colored node keeps a visible name, because color alone does not identify it.
-export function placeLabels(requests: readonly LabelRequest[], width: number, height: number, gap = 4): PlacedLabel[] {
+// labels already placed and other labelled dots, pushed inside the viewport. A required label is
+// always drawn; an optional one is dropped when its best spot still covers a label or another dot,
+// or sits as close to another dot as to its own (it would name the wrong one), and its name shows
+// on hover instead.
+export function placeLabels(
+  requests: readonly LabelRequest[],
+  width: number,
+  height: number,
+  gap = 4,
+  taken: readonly { x: number; y: number; w: number; h: number }[] = [], // text already drawn (ring and sector names)
+): PlacedLabel[] {
   const dots = requests.map((q) => ({ x: q.x - q.r, y: q.y - q.r, w: 2 * q.r, h: 2 * q.r }));
-  const placed: PlacedLabel[] = [];
+  const out: PlacedLabel[] = [];
+  const placed: PlacedLabel[] = taken.map((t) => ({ ...t, side: "below", compact: false, dropped: false })); // the text drawn so far
   for (let i = 0; i < requests.length; i++) {
     const q = requests[i];
     const forms = q.compact ? [false, true] : [false];
@@ -332,6 +344,7 @@ export function placeLabels(requests: readonly LabelRequest[], width: number, he
           h,
           side,
           compact,
+          dropped: false,
         };
         let cost = rank * SIDE_COST + SHIFT_COST * (Math.abs(box.x - ideal.x) + Math.abs(box.y - ideal.y));
         if (compact) cost += q.preferCompact ? COMPACT_KEEP_COST : COMPACT_COST;
@@ -350,7 +363,18 @@ export function placeLabels(requests: readonly LabelRequest[], width: number, he
         }
       }
     }
-    if (best !== null) placed.push(best);
+    if (best === null) continue;
+    const box = best;
+    const own = dotGap(q.x, q.y, q.r, box);
+    const clash =
+      placed.some((other) => overlap(box, other) > 0) ||
+      requests.some((o, j) => j !== i && (overlap(box, dots[j]) > 0 || dotGap(o.x, o.y, o.r, box) < own + AMBIGUITY_MARGIN / 2));
+    if (q.optional && clash) {
+      out.push({ ...box, dropped: true });
+      continue;
+    }
+    out.push(box);
+    placed.push(box);
   }
-  return placed;
+  return out;
 }

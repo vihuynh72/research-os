@@ -1,23 +1,27 @@
-// The atlas state that lives in the address bar, so any view can be linked to or screenshotted:
+// The app state that lives in the address bar, so any view can be linked to or screenshotted:
 // ?d=<what is in the center>&sel=<a node or a line>&view=3d&mode=researcher&r=<relevance filter, %>
 // &hide=<types>&open=<opened groups>&list=1. No ?d= means the blank start screen. No r= means the
 // filter a new search opens at (defaultThreshold), so a link only pins the filter someone chose.
+// No view= means the 2D map; view=3d opens the same map in 3D.
 // Pure: the server page parses it for the first render, the app writes it back as things change.
 import { NODE_TYPES, type NodeType } from "../../lib/graph/types.ts";
-import type { Mode, View } from "./format";
+import type { Mode } from "./format";
 
 export const DEFAULT_THRESHOLD = 0.8;
 
-// The filter a new search opens at. 80% when a related disease reaches it (strong links first).
-// Otherwise the moderate cutoff of the grade file, so every disease the engine grades at least
-// "moderate" is on the map at first sight; and when even the best is under that, the best one
-// rounded down to 5%. With no related disease it stays at 80%.
-export function defaultThreshold(related: readonly { relevance: number }[], moderate?: number): number {
+// How the map is drawn: flat (the default) or the same map in 3D.
+export type View = "2d" | "3d";
+// How many related diseases a new search shows at first.
+export const DEFAULT_RELATED = 5;
+
+// The filter a new search opens at: just low enough for its five most related diseases (the fifth
+// one's relevance, rounded down to a whole percent, so every disease tied with it comes in too),
+// never above 80% and never below 5%. With no related disease it stays at 80%.
+export function defaultThreshold(related: readonly { relevance: number }[]): number {
   if (!related.length) return DEFAULT_THRESHOLD;
-  const best = Math.max(...related.map((r) => r.relevance));
-  if (best >= DEFAULT_THRESHOLD - 1e-9) return DEFAULT_THRESHOLD;
-  if (moderate !== undefined && moderate > 0 && moderate < DEFAULT_THRESHOLD && best >= moderate - 1e-9) return Math.round(moderate * 100) / 100;
-  return Math.max(0.05, Math.floor(best * 20 + 1e-6) / 20);
+  const best = related.map((r) => r.relevance).sort((a, b) => b - a);
+  const fifth = best[Math.min(DEFAULT_RELATED, best.length) - 1];
+  return Math.min(DEFAULT_THRESHOLD, Math.max(0.05, Math.floor(fifth * 100 + 1e-6) / 100));
 }
 
 export interface AtlasState {
@@ -67,7 +71,7 @@ export function stateQuery(state: AtlasState): string {
     if (state.hidden.length) params.push(`hide=${value(NODE_TYPES.filter((t) => state.hidden.includes(t)).join(","))}`);
     if (state.open.length) params.push(`open=${value([...state.open].sort().join(","))}`);
   }
-  if (state.view !== "2d") params.push(`view=${state.view}`);
+  if (state.view === "3d") params.push("view=3d");
   if (state.mode !== "parent") params.push(`mode=${state.mode}`);
   if (state.list) params.push("list=1");
   return params.length ? `?${params.join("&")}` : "";

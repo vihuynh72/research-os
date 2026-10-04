@@ -2,15 +2,17 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CVI Atlas",
-  description: "Find the rare diseases that share your biology, what work already exists, and who to work with next. Every link is sourced.",
+  title: "RareVerse",
+  description:
+    "RareVerse maps rare diseases by the biology they share and links each one to the patient groups, papers and grants already working on it. Every link shows its source.",
 };
 
+// The browser bar matches the header (--surface).
 export const viewport: Viewport = {
   colorScheme: "light dark",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: dark)", color: "#16171c" },
   ],
 };
 

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import type { AtlasGraph, GraphEdge, GraphNode, NodeType } from "./types.ts";
 import type { Dimension, DimensionResult, PairGrade, RelevanceDoc, SharedItem } from "../grading/types.ts";
 import { DIMENSIONS, DIMENSION_FAMILY } from "../grading/types.ts";
-import { HOOD, MAP_CAP, SHARED_BUBBLE_OWNER, applyThreshold, bubbleId, buildNeighborhood, relevanceHistogram } from "./neighborhood.ts";
+import { HOOD, MAP_CAP, applyThreshold, bubbleId, buildNeighborhood, linkGroupOf, relevanceHistogram } from "./neighborhood.ts";
 
 const node = (id: string, type: NodeType, label = id, attributes?: Record<string, unknown>): GraphNode => ({
   id,
@@ -187,14 +187,15 @@ test("indirect evidence: a related disease brings its own gene and research, sca
   assert.equal(g2.relevance, 0.82);
   assert.equal(g2.owner, "D2");
   assert.match(g2.why, /Through disease two, 82% related/);
-  const studies = hood.nodes.find((x) => x.id === bubbleId("D2", "Trial"))!;
-  assert.equal(studies.relevance, 0.82);
+  const studies = hood.nodes.find((x) => x.id === bubbleId("D1", "Trial"))!;
+  assert.deepEqual(studies.memberOwners, ["D1", "D1", "D2"], "one bubble per kind gathers the related disease's study too");
+  assert.equal(studies.memberRelevance![2], 0.82);
 });
 
 test("research and variants start folded; expanding shows the members", () => {
   const hood = buildNeighborhood(graph, relevance, "D1");
-  assert.equal(hood.nodes.find((x) => x.id === bubbleId("D1", "Trial"))!.label, "2 clinical studies");
-  assert.equal(hood.nodes.find((x) => x.id === bubbleId("G1", "Variant"))!.owner, "G1");
+  assert.equal(hood.nodes.find((x) => x.id === bubbleId("D1", "Trial"))!.label, "3 clinical studies");
+  assert.equal(hood.nodes.find((x) => x.id === bubbleId("D1", "Variant"))!.owner, "G1", "gene changes hang off their gene");
   const open = buildNeighborhood(graph, relevance, "D1", { expanded: new Set([bubbleId("D1", "Trial")]) });
   assert.ok(open.nodes.some((x) => x.id === "T1") && open.nodes.some((x) => x.id === "T2"));
 });
@@ -228,29 +229,68 @@ test("a group focus reaches diseases through its mechanism, one step removed", (
   assert.ok(hood.nodes.some((x) => x.id === "M1"));
 });
 
+test("each line is named after the farther-out thing it reaches", () => {
+  assert.equal(linkGroupOf("Disease", "Gene"), "gene");
+  assert.equal(linkGroupOf("Gene", "Mechanism"), "pathway");
+  assert.equal(linkGroupOf("Mechanism", "PatientOrg"), "group");
+  assert.equal(linkGroupOf("Grant", "Investigator"), "research");
+  assert.equal(linkGroupOf("Disease", "Disease"), "biology");
+  const hood = buildNeighborhood(graph, relevance, "D1");
+  assert.equal(hood.edges.find((e) => e.a === "D1" && e.b === "G1")!.group, "gene");
+  assert.equal(hood.edges.find((e) => e.role === "bridge")!.group, "bridge");
+});
+
 test("contradicted edges never put a node on the map", () => {
   assert.ok(!buildNeighborhood(graph, relevance, "D1").nodes.some((x) => x.id === "D4"));
 });
 
-test("threshold: shown, faint ghosts just below, hidden further down", () => {
+test("threshold: the bar picks the diseases, faint ghosts just below, hidden further down", () => {
   const hood = buildNeighborhood(graph, relevance, "D1");
   const at80 = applyThreshold(hood, 0.8);
   const shown = new Set(at80.nodes.map((x) => x.id));
-  const ghosts = new Set(at80.ghosts.map((x) => x.id));
   assert.ok(shown.has("D2") && !shown.has("D3"));
-  assert.ok(shown.has("HP:0000001") && !shown.has("HP:0000002"));
-  assert.ok(ghosts.has("HP:0000017") || ghosts.size > 0, "something just below 80% stays as a ghost");
-  assert.ok(!ghosts.has("D3"), "30% is far below the ghost band");
+  assert.ok(shown.has("HP:0000001"));
+  assert.equal(at80.ghosts.length, 0, "30% is far below the ghost band");
   assert.deepEqual(at80.closestHidden, { id: "D3", relevance: 0.3 });
-  assert.ok(at80.edges.every((e) => shown.has(e.a) && shown.has(e.b) && e.relevance >= 0.8 - 1e-9));
+  assert.ok(at80.edges.every((e) => shown.has(e.a) && shown.has(e.b)));
+
+  const at85 = applyThreshold(hood, 0.85);
+  assert.deepEqual(at85.ghosts.map((x) => x.id), ["D2"], "82% stays as a ghost under an 85% bar");
+  assert.ok(at85.faintEdges.every((e) => e.role === "similarity"), "only the ghost's biology line is drawn, faintly");
 
   const all = applyThreshold(hood, 0);
   assert.equal(all.shown, all.total);
   assert.ok(all.shown > at80.shown, "lowering the bar shows more");
-  assert.equal(relevanceHistogram(hood).reduce((s, x) => s + x, 0), all.total);
+  assert.equal(relevanceHistogram(hood).reduce((s, x) => s + x, 0), hood.related.length, "the histogram counts the related diseases the bar filters");
 
   const direct = applyThreshold(hood, 1, new Set(), 0);
-  assert.ok(direct.nodes.every((x) => x.relevance === 1), "100% keeps only direct facts");
+  assert.equal(direct.relatedShown, 0, "100% keeps only what you searched and its own facts");
+  assert.ok(!direct.nodes.some((x) => x.id === "G2"));
+});
+
+test("everything but diseases follows the disease that brings it, whatever its own relevance", () => {
+  const hood = buildNeighborhood(graph, relevance, "D1");
+  // The searched disease's rarest symptoms stay at any bar: they are what a parent recognizes.
+  for (const bar of [0.3, 0.8, 0.95]) {
+    const ids = new Set(applyThreshold(hood, bar).nodes.map((x) => x.id));
+    assert.ok(ids.has("HP:0000001") && ids.has(bubbleId("D1", "Phenotype")), `symptoms at ${bar}`);
+  }
+  // A related disease's own gene comes and goes with it.
+  assert.ok(applyThreshold(hood, 0.8).nodes.some((x) => x.id === "G2"));
+  assert.ok(!applyThreshold(hood, 0.85).nodes.some((x) => x.id === "G2"));
+});
+
+test("the Links menu hides a kind of line and whatever only that line held", () => {
+  const hood = buildNeighborhood(graph, relevance, "D1");
+  const noSymptoms = applyThreshold(hood, 0, new Set(), HOOD.ghostBand, new Set(["symptom"]));
+  assert.ok(!noSymptoms.nodes.some((x) => x.type === "Phenotype" || x.bubbleType === "Phenotype"));
+  assert.ok(noSymptoms.edges.every((e) => e.group !== "symptom"));
+  // D3 shares nothing but a biology score: without biology lines it would float, so it goes.
+  const noBiology = applyThreshold(hood, 0, new Set(), HOOD.ghostBand, new Set(["biology"]));
+  assert.ok(applyThreshold(hood, 0).nodes.some((x) => x.id === "D3"));
+  assert.ok(!noBiology.nodes.some((x) => x.id === "D3"));
+  assert.ok(noBiology.nodes.some((x) => x.id === "D2"), "D2 still shares a pathway and a symptom on the map");
+  assert.equal(hood.edges.find((e) => e.role === "similarity")!.tier, "strong");
 });
 
 test("hiding a type hides only that type: what hangs off it stays", () => {
@@ -323,24 +363,40 @@ test("a gene behind many diseases maps the best connected and folds the rest int
   assert.equal(bubble.label, "3 more diseases");
   assert.deepEqual([...bubble.members!].sort(), ["A0", "A1", "A2"], "the least connected fold first");
   assert.ok(hood.edges.some((x) => x.role === "bubble" && x.a === "GX" && x.b === bubble.id));
-  // Symptoms of all those diseases: at most MAP_CAP single nodes, the rest in numbered bubbles.
+  // Symptoms of all those diseases: at most MAP_CAP single nodes, the rest in one numbered bubble.
   assert.ok(hood.nodes.filter((x) => x.type === "Phenotype").length <= MAP_CAP.Phenotype!);
   const folded = hood.nodes.filter((x) => x.role === "bubble" && x.bubbleType === "Phenotype");
-  assert.equal(folded.length, 1, "past mergeAfter owners, one shared bubble instead of one per disease");
-  assert.equal(folded[0].id, bubbleId(SHARED_BUBBLE_OWNER, "Phenotype"));
+  assert.equal(folded.length, 1, "one bubble per kind, never one per disease");
+  assert.equal(folded[0].id, bubbleId("GX", "Phenotype"));
+  assert.match(folded[0].label, /^\d+ more symptoms$/);
   const open = buildNeighborhood(g, r, "GX", { expanded: new Set([bubbleId("GX", "Disease")]) });
   assert.equal(open.nodes.filter((x) => x.role === "anchor").length, 15, "opening the bubble maps every disease");
 });
 
-test("research of many related diseases shares one bubble; one related disease keeps its own", () => {
+test("research of many related diseases shares one bubble per kind, counted at the filter", () => {
   const { graph: g, relevance: r } = crowdedGraph();
   const hood = buildNeighborhood(g, r, "F");
   const papers = hood.nodes.filter((x) => x.role === "bubble" && x.bubbleType === "Paper");
   assert.equal(papers.length, 1);
-  assert.equal(papers[0].id, bubbleId(SHARED_BUBBLE_OWNER, "Paper"));
-  assert.equal(papers[0].members!.length, 15);
+  assert.equal(papers[0].id, bubbleId("F", "Paper"));
+  assert.equal(papers[0].label, "15 papers");
   assert.equal(papers[0].relevance, 0.7, "a shared bubble sits at its best member's relevance");
   assert.equal(hood.edges.filter((x) => x.role === "bubble" && x.b === papers[0].id).length, 5, "a line from each disease it gathers papers from");
-  // The lead fixture's single related disease keeps its own per-owner bubble.
-  assert.ok(buildNeighborhood(graph, relevance, "D1").nodes.some((x) => x.id === bubbleId("D2", "Trial")));
+  // At 69% only R0 (70%) and R1 (69%) are on the map: the bubble holds their 6 papers.
+  const at69 = applyThreshold(hood, 0.69);
+  assert.equal(at69.bubbleCount[papers[0].id], 6);
+  // The bubble's name and reason say what it holds at this filter, and whose the papers are.
+  const shownPapers = at69.nodes.find((x) => x.id === papers[0].id)!;
+  assert.equal(shownPapers.label, "6 papers");
+  assert.equal(shownPapers.why, "6 papers linked to 2 related diseases on this map. Open to see each one.");
+  assert.deepEqual(at69.byType.Paper, { shown: 6, total: 15 });
+  assert.equal(hood.nodes.find((x) => x.id === bubbleId("D2", "Trial")), undefined);
+  assert.ok(buildNeighborhood(graph, relevance, "D1").nodes.some((x) => x.id === bubbleId("D1", "Trial")));
+});
+
+test("percents in the map's reasons round down, like everywhere else", () => {
+  const r2 = structuredClone(relevance);
+  r2.diseases.D1.neighbors[0].relevance = 0.629;
+  const g2 = buildNeighborhood(graph, r2, "D1").nodes.find((x) => x.id === "G2")!;
+  assert.match(g2.why, /62% related/);
 });

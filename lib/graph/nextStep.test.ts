@@ -134,6 +134,33 @@ test("no support means an honest gap with the question to ask next", () => {
   assert.equal(steps[0].evidence, null);
 });
 
+test("with nothing shared, the disease's own group, then grant, then paper comes before a gap", () => {
+  const withOwn = (extra: GraphEdge[], nodes: GraphNode[]): AtlasGraph => ({ ...graph, nodes: [...graph.nodes, ...nodes], edges: [...graph.edges, ...extra] });
+  const group = nextSteps(
+    withOwn([edge("e20", "O3", "works_on", "D3", "inferred", "Orphanet directory result, a name match."), edge("e21", "R3", "funds", "D3", "inferred")], [node("O3", "PatientOrg", "D3 families"), node("R3", "Grant", "a D3 grant")]),
+    relevance,
+    "D3",
+  );
+  assert.equal(group.length, 1);
+  assert.equal(group[0].kind, "group");
+  assert.equal(group[0].target?.id, "O3");
+  assert.equal(group[0].text, "Connect with D3 families, a patient group on record for disease three.");
+  assert.equal(group[0].caveat, "Orphanet directory result, a name match.");
+  const paper = nextSteps(withOwn([edge("e22", "P3", "about", "D3", "inferred")], [node("P3", "Paper", "A paper on D3")]), relevance, "D3");
+  assert.equal(paper[0].kind, "paper");
+  assert.match(paper[0].text, /^Read "A paper on D3", on record for disease three\. Its authors are a natural first contact\.$/);
+});
+
+test("names and titles are quoted whole, never cut", () => {
+  const disease = "mild spondyloepiphyseal dysplasia due to COL2A1 mutation with early-onset osteoarthritis";
+  const study = "A natural history study of mild spondyloepiphyseal dysplasia, its early-onset osteoarthritis and its care";
+  const renamed: AtlasGraph = { ...graph, nodes: graph.nodes.map((n) => (n.id === "D2" ? { ...n, label: disease } : n.id === "T1" ? { ...n, label: study } : n)) };
+  const steps = nextSteps(renamed, relevance, "D1", null, 4);
+  assert.ok(steps[0].text.endsWith(`both disease one and ${disease}.`), steps[0].text);
+  assert.ok(steps[1].because.includes(`with ${disease}, and this registry works on that pathway`), steps[1].because);
+  assert.ok(steps[3].text.includes(`"${study}"`), steps[3].text);
+});
+
 test("deterministic and limited", () => {
   assert.equal(JSON.stringify(nextSteps(graph, relevance, "D1")), JSON.stringify(nextSteps(graph, relevance, "D1")));
   assert.equal(nextSteps(graph, relevance, "D1", null, 2).length, 2);

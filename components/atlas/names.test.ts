@@ -1,6 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { displayName, distinctNames, fitName, wrapName } from "./names.ts";
+import type { AtlasGraph } from "../../lib/graph/types.ts";
+import { cleanGraph, decodeEntities, displayName, distinctNames, fitName, wrapName } from "./names.ts";
+
+test("HTML entities in source records become plain text", () => {
+  assert.equal(decodeEntities("CATS - The Cure &amp; Action for Tay-Sachs (CATS) Foundation"), "CATS - The Cure & Action for Tay-Sachs (CATS) Foundation");
+  assert.equal(decodeEntities("&lt;5% &quot;rare&quot; &#38; &#x26; &#X2014; caf&eacute; &Ouml;GG"), '<5% "rare" & & — café ÖGG');
+  assert.equal(decodeEntities("Smith &amp;amp; Jones"), "Smith & Jones", "escaped twice");
+  assert.equal(decodeEntities("A &unknown; entity, &#0; and a bare & stay"), "A &unknown; entity, &#0; and a bare & stay");
+  assert.equal(decodeEntities("Tay-Sachs disease"), "Tay-Sachs disease");
+});
+
+test("the cleaned graph decodes labels, synonyms and evidence once and reuses the rest", () => {
+  const graph: AtlasGraph = {
+    meta: { schema_version: "0.1.0", generated_at: "2026-10-03T00:00:00Z" },
+    nodes: [
+      { id: "O1", type: "PatientOrg", label: "Cure &amp; Action", synonyms: ["C&amp;A"], source: "Orphanet", url: "https://example.org/o1" },
+      { id: "D1", type: "Disease", label: "Tay-Sachs disease", source: "Monarch", url: "https://example.org/d1" },
+    ],
+    edges: [
+      { id: "e1", type: "works_on", subject: "O1", object: "D1", source: "Orphanet", url: "https://example.org", date: "2026-10-03", confidence: 0.5, kind: "inferred", evidence: "name contains &quot;Tay&quot;" },
+    ],
+  };
+  const clean = cleanGraph(graph);
+  assert.equal(clean.nodes[0].label, "Cure & Action");
+  assert.deepEqual(clean.nodes[0].synonyms, ["C&A"]);
+  assert.equal(clean.edges[0].evidence, 'name contains "Tay"');
+  assert.equal(clean.nodes[1], graph.nodes[1], "an unchanged node is the same object");
+  assert.equal(graph.nodes[0].label, "Cure &amp; Action", "the input is left as it was");
+  const plain = { ...graph, nodes: [graph.nodes[1]], edges: [] };
+  assert.equal(cleanGraph(plain), plain, "nothing to decode: the same graph");
+});
 
 test("a long name keeps the end that tells it apart", () => {
   assert.equal(fitName("oculocutaneous albinism type 1A", 24), "oculocutaneous… type 1A");

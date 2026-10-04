@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, test } from "node:test";
-import { buildGraphIndex } from "./index.ts";
+import { buildGraphIndex, type SearchAliases } from "./index.ts";
 import type { AtlasGraph, EdgeKind, GraphEdge, GraphNode, NodeType } from "./types.ts";
 
 const node = (id: string, type: NodeType, label: string, synonyms?: string[]): GraphNode => ({
@@ -219,6 +219,206 @@ describe("buildGraphIndex on a fixture", () => {
     assert.ok(!symptoms.some((h) => h.node.id === "HP:0002133"), "a symptom reached only through a disputed edge is not suggested");
     assert.deepEqual(index.suggest([], 5), []);
     assert.equal(index.suggest(["Phenotype"], 1).length, 1);
+  });
+});
+
+describe("search forgives", () => {
+  const aliases: SearchAliases = {
+    [CLN3]: ["Batten disease", "juvenile neuronal ceroid lipofuscinosis", "CLN3"],
+    "HP:0001250": ["Seizures", "Epileptic seizure"],
+    "HGNC:9325": ["palmitoyl-protein thioesterase 1"],
+    "nope:1": ["ignored: no such node"],
+  };
+  const index = buildGraphIndex(fixture, { aliases });
+
+  test("plurals fold, in the query and in names", () => {
+    const hits = index.search("seizures");
+    assert.equal(hits[0].node.id, "HP:0001250");
+    assert.equal(hits[0].matched, "Seizure", "the label matched, so no other name is noted");
+    assert.deepEqual(ids(index.search("Seizure")), ids(hits));
+    assert.deepEqual(ids(index.search("neuronal ceroid lipofuscinoses")), [CLN1, CLN3, CLN10]);
+  });
+
+  test("typos: one for words of 4-7 letters, two from 8, none in shorter words or numbers", () => {
+    assert.equal(index.search("siezure")[0].node.id, "HP:0001250", "a swap of two letters is one edit");
+    assert.equal(index.search("sezure")[0].node.id, "HP:0001250");
+    assert.deepEqual(ids(index.search("stive")), [SWS]);
+    assert.deepEqual(index.search("stibe"), [], "two edits in a 5-letter word");
+    assert.deepEqual(ids(index.search("weidemen")), [SWS], "two edits in an 8-letter word");
+    assert.deepEqual(index.search("ppt2"), [], "numbers never bend: PPT2 is not PPT1");
+    assert.deepEqual(index.search("cnl"), [], "no typo in a 3-letter word");
+  });
+
+  test("short words stay strict: no typo into a shorter word, a slipped start or a stem inside a word", () => {
+    const noisy = buildGraphIndex(
+      graphOf(
+        [
+          node("D:1", "Disease", "sulfite oxidase deficiency"),
+          node("D:2", "Disease", "Witschel dystrophy"),
+          node("HP:1", "Phenotype", "Microtia, first degree"),
+          node("NIH:1", "Grant", "Notochord vacuoles: investigating its role"),
+        ],
+        [edge("x1", "has_phenotype", "D:1", "HP:1"), edge("x2", "funds", "NIH:1", "D:2")],
+      ),
+    );
+    assert.deepEqual(noisy.search("fits"), [], "not “its”, “firs(t)”, “Wits(chel)” or “sul-fit-e”");
+    assert.deepEqual(ids(noisy.search("frist")), ["HP:1"], "a five-letter word still forgives a swap");
+  });
+
+  test("a word that exists is taken as typed, not as a typo for another", () => {
+    // "status" is a real word here, so it does not also reach "stuve" or "stive".
+    assert.deepEqual(index.search("status"), []);
+  });
+
+  test("words in any order, only the last one a prefix", () => {
+    assert.deepEqual(ids(index.search("lipofuscinosis neuronal")), [CLN1, CLN3, CLN10]);
+    assert.deepEqual(ids(index.search("ceroid neur")), [CLN1, CLN3, CLN10]);
+    assert.deepEqual(index.search("neur ceroid"), []);
+  });
+
+  test("an alias typed in full is exact; otherwise every label match ranks first", () => {
+    const full = index.search("batten disease");
+    assert.equal(full[0].node.id, CLN3);
+    assert.equal(full[0].matched, "Batten disease");
+    // Label prefix, then label word prefixes (by type), then the alias prefix.
+    assert.deepEqual(ids(index.search("batten")), ["ORPHA-REG:1", "ORPHA-ORG:3", "PMID:1", CLN3]);
+    assert.equal(index.search("batten").at(-1)?.matched, "Batten disease");
+    assert.equal(index.search("thioesterase")[0].matched, "palmitoyl-protein thioesterase 1");
+  });
+
+  test("words may come from two names of one node; the shorter one explains the match", () => {
+    const hits = index.search("juvenile batten");
+    assert.deepEqual(ids(hits), [CLN3]);
+    assert.equal(hits[0].matched, "Batten disease");
+  });
+
+  test("aliases change no other answer", () => {
+    const plain = buildGraphIndex(fixture);
+    for (const q of ["cln3", "PPT1", "seizure", "juvenile", "HP:0001250", "stüve"]) assert.deepEqual(ids(index.search(q)), ids(plain.search(q)), q);
+    assert.equal(index.search("cln3")[0].matched, "CLN3", "a duplicate alias adds nothing");
+    assert.deepEqual(index.diseasesFor("HP:0001250"), plain.diseasesFor("HP:0001250"));
+    assert.deepEqual(buildGraphIndex(fixture, { aliases: null }).search("batten disease")[0].node.id, "ORPHA-REG:1");
+  });
+
+  test("didYouMean offers close names when search finds nothing", () => {
+    assert.deepEqual(index.search("wideman"), []);
+    assert.deepEqual(ids(index.didYouMean("wideman")), [SWS]);
+    assert.deepEqual(ids(index.didYouMean("wideman syndrome")), [SWS], "generic words do not pick names");
+    assert.deepEqual(index.didYouMean("wideman", 3, ["Gene"]), []);
+    assert.deepEqual(index.didYouMean("xyzzy"), []);
+    assert.deepEqual(index.didYouMean(""), []);
+    assert.deepEqual(index.didYouMean("wideman", 0), []);
+    // Three edits: too many for search, close enough to suggest; equal suggestions in label order.
+    assert.deepEqual(index.search("lypofusinosys"), []);
+    assert.deepEqual(ids(index.didYouMean("lypofusinosys")), [CLN1, CLN3, CLN10]);
+    assert.deepEqual(ids(index.didYouMean("lypofusinosys", 2)), [CLN1, CLN3]);
+  });
+});
+
+// The real graph and the alias file (scripts/build-search-aliases.ts), when present. What a query
+// finds depends on what MONDO and HPO actually list; each test says so.
+const GRAPH = new URL("../../public/graph.json", import.meta.url);
+const ALIASES = new URL("../../public/search-aliases.json", import.meta.url);
+const real = existsSync(GRAPH) && existsSync(ALIASES);
+
+describe("search on public/graph.json with public/search-aliases.json", { skip: real ? false : "graph or alias file not built" }, () => {
+  const graph: AtlasGraph = real ? JSON.parse(readFileSync(GRAPH, "utf8")) : graphOf([], []);
+  const aliases: Record<string, string[]> = real ? JSON.parse(readFileSync(ALIASES, "utf8")).aliases : {};
+  const index = buildGraphIndex(graph, { aliases });
+  const top = (q: string) => index.search(q)[0];
+  const folded = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const anyAlias = (re: RegExp) => Object.values(aliases).flat().filter((name) => re.test(name));
+
+  test("“Best disease”: MONDO's name for vitelliform macular dystrophy 2, and not the gene's", () => {
+    const hits = index.search("Best disease");
+    assert.deepEqual(ids(hits), ["MONDO:0007931"]);
+    assert.equal(hits[0].matched, "Best disease");
+    assert.ok(!aliases["HGNC:12703"].includes("Best disease"), "Monarch lists it for BEST1 too; the alias script leaves it out");
+  });
+
+  test("no gene goes by a disease's name", () => {
+    const diseaseNames = new Set(graph.nodes.filter((n) => n.type === "Disease").flatMap((n) => [n.label, ...(aliases[n.id] ?? [])].map(folded)));
+    for (const gene of graph.nodes.filter((n) => n.type === "Gene")) {
+      for (const name of aliases[gene.id] ?? []) {
+        assert.ok(!/\b(disease|syndrome|dystrophy)\b/i.test(name), `${gene.label}: ${name}`);
+        assert.ok(!diseaseNames.has(folded(name)), `${gene.label}: ${name}`);
+      }
+    }
+  });
+
+  test("“globoid cell leukodystrophy”: a MONDO synonym of Krabbe disease", () => {
+    assert.equal(top("globoid cell leukodystrophy").node.id, "MONDO:0009499");
+    assert.equal(top("globoid cell leukodystrophy").matched, "globoid cell leukodystrophy");
+    assert.equal(top("cell globoid leuko").node.id, "MONDO:0009499", "any order, last word a prefix");
+  });
+
+  test("“gauchr”: one typo still finds the five Gaucher diseases first", () => {
+    const hits = index.search("gauchr");
+    assert.deepEqual(ids(hits).slice(0, 5).sort(), ["MONDO:0009265", "MONDO:0009266", "MONDO:0009267", "MONDO:0009268", "MONDO:0011945"]);
+    assert.ok(hits.slice(0, 5).every((h) => h.matched === h.node.label));
+  });
+
+  test("“seizures”: the plural folds onto Seizure (HPO also lists “Seizures”)", () => {
+    assert.equal(top("seizures").node.id, "HP:0001250");
+    assert.ok(aliases["HP:0001250"].includes("Seizures"));
+  });
+
+  test("“vision loss”: HPO has no such synonym, but two of Visual impairment's names hold the words", () => {
+    assert.ok(!anyAlias(/vision loss/i).length, "no node here is called “vision loss” in HPO");
+    const hit = top("vision loss");
+    assert.equal(hit.node.id, "HP:0000505");
+    assert.equal(hit.matched, "Impaired vision", "one name explains the match: the shorter of the two");
+  });
+
+  test("“fits”: a four-letter word finds no noise in long titles", () => {
+    assert.deepEqual(index.search("fits"), []);
+  });
+
+  test("“costeff”: MONDO's “Costeff syndrome” finds 3-methylglutaconic aciduria type 3", () => {
+    const hits = index.search("costeff");
+    // The GeneReviews chapter is titled “Costeff Syndrome.”: a label prefix, so it ranks above
+    // the disease, which only an alias names that way.
+    assert.deepEqual(ids(hits).slice(0, 2), ["PMID:20301646", "MONDO:0009787"]);
+    assert.equal(hits[1].matched, "Costeff syndrome");
+    assert.equal(top("costeff syndrome").node.id, "MONDO:0009787", "typed in full, the alias is exact and the disease leads");
+  });
+
+  test("“morquio”: MONDO's Morquio names lead to mucopolysaccharidosis type 4B (the only Morquio here)", () => {
+    assert.equal(top("morquio").node.id, "MONDO:0009660");
+    assert.equal(top("morquio").matched, "Morquio syndrome B");
+    assert.deepEqual(ids(index.search("morkio")), [], "two edits in a 6-letter word is too far for search");
+    assert.deepEqual(ids(index.didYouMean("morkio")), ["MONDO:0009660"], "but close enough to suggest");
+  });
+
+  test("“lysosomal storage”: a MONDO grouping, not a synonym of any disease here, so only a paper title matches", () => {
+    assert.deepEqual(anyAlias(/lysosomal storage/i), []);
+    assert.deepEqual(ids(index.search("lysosomal storage")), ["PMID:38253667"]);
+  });
+
+  test("did you mean: close names, and none when nothing is close", () => {
+    assert.deepEqual(index.search("gaushur"), []);
+    assert.deepEqual(ids(index.didYouMean("gaushur")), ["MONDO:0009265", "MONDO:0009266", "MONDO:0009267"]);
+    assert.equal(index.didYouMean("tay sax")[0].node.id, "MONDO:0010100");
+    assert.deepEqual(index.didYouMean("cancer"), []);
+  });
+
+  test("every alias belongs to a node of the graph and differs from its label", () => {
+    const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+    for (const [id, names] of Object.entries(aliases)) {
+      const node = byId.get(id);
+      assert.ok(node, id);
+      for (const name of names) assert.notEqual(folded(name), folded(node.label), `${id}: ${name}`);
+    }
+  });
+
+  test("search stays fast: well under 20 ms a query", () => {
+    const queries = ["Best disease", "globoid cell leukodystrophy", "gauchr", "seizures", "vision loss", "costeff", "morquio", "lysosomal storage", "g", "xyzzy"];
+    for (const q of queries) index.search(q); // warm up
+    const start = performance.now();
+    const rounds = 5;
+    for (let i = 0; i < rounds; i++) for (const q of queries) index.search(q);
+    const each = (performance.now() - start) / (rounds * queries.length);
+    assert.ok(each < 20, `${each.toFixed(1)} ms a query`);
   });
 });
 

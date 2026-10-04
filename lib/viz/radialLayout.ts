@@ -1,7 +1,7 @@
 // Rings and sectors: on this map placement means something. Distance from the center is relevance to
 // what was searched (100% nearest, 0% on the outer ring), and direction is what kind of thing a node
 // is: diseases at the top, research at the upper right, groups and registries at the lower right,
-// symptoms at the bottom, genes and mechanisms on the left. Inside a sector, a related disease's own
+// symptoms at the bottom, genes and pathways on the left. Inside a sector, a related disease's own
 // evidence sits together. Deterministic.
 //
 // Distance stays honest when a sector is crowded. The relevance filter moves in whole percents, so
@@ -24,9 +24,9 @@ export interface Sector {
 export const SECTORS: readonly Sector[] = [
   { id: "diseases", label: "Diseases", start: -150, end: -30 },
   { id: "research", label: "Research", start: -30, end: 18 },
-  { id: "community", label: "Groups and registries", start: 18, end: 66 },
+  { id: "community", label: "Groups", start: 18, end: 66 },
   { id: "symptoms", label: "Symptoms", start: 66, end: 150 },
-  { id: "biology", label: "Genes and mechanisms", start: 150, end: 210 },
+  { id: "biology", label: "Genes & pathways", start: 150, end: 210 },
 ];
 
 export function sectorOf(type: NodeType): SectorId {
@@ -224,6 +224,3 @@ export function radialLayout(
 function round2(x: number): number {
   return Math.round(x * 100) / 100;
 }
-
-// Depth for the 3D view: each sector becomes a layer, so the rings read the same from the front.
-export const SECTOR_DEPTH: Record<SectorId, number> = { diseases: 0, research: -60, community: 45, symptoms: 70, biology: -80 };

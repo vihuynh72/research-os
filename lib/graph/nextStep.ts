@@ -5,15 +5,15 @@
 import type { AtlasGraph, GraphEdge, GraphNode } from "./types.ts";
 import type { CollaborationDimension, PairGrade, RelevanceDoc, SharedItem } from "../grading/types.ts";
 import { TIER_ORDER, pairKey } from "../grading/types.ts";
-import { shortLabel } from "./labels.ts";
 import { kindOf, type LinkKind } from "./neighborhood.ts";
 
 export interface NextStep {
-  kind: "contact" | "registry" | "group" | "study" | "gap";
+  kind: "contact" | "registry" | "group" | "study" | "paper" | "gap";
   text: string; // the step, one plain sentence
   because: string; // why it is supported, one or two plain sentences
   caveat?: string; // what the evidence does not show, from the edge's own evidence text
   target?: { id: string; label: string; url: string; source: string };
+  relatedIds?: string[]; // the related diseases the reason names, so it can cite the biology they share
   edgeIds: string[];
   evidence: LinkKind | null;
 }
@@ -38,8 +38,8 @@ export function nextSteps(
   const edgeById = new Map(graph.edges.map((e) => [e.id, e]));
   const focus = byId.get(focusId);
   if (!focus) return [];
-  // Whole names (up to a long length): similar diseases ("... type 1A", "... type 1B") must not read the same.
-  const name = (id: string) => shortLabel(byId.get(id) ?? { label: id }, 64);
+  // Whole names, never cut: similar diseases ("... type 1A", "... type 1B") must not read the same.
+  const name = (id: string) => byId.get(id)?.label ?? id;
   const target = (node: GraphNode) => ({ id: node.id, label: node.label, url: node.url, source: node.source });
   const evidenceOf = (ids: string[]) => kindOf(ids.map((id) => edgeById.get(id)?.kind ?? "inferred"));
   const caveatOf = (ids: string[]) =>
@@ -76,11 +76,11 @@ export function nextSteps(
         dim === "investigator"
           ? `Contact ${node.label}, who already works on both ${both}.`
           : dim === "grant"
-            ? `Look at the grant "${shortLabel(node, 80)}": it already covers both ${both}. Its team is a natural first contact.`
+            ? `Look at the grant "${node.label}": it already covers both ${both}. Its team is a natural first contact.`
             : dim === "trial"
-              ? `Read the study "${shortLabel(node, 80)}": it already involves both ${both}.`
+              ? `Read the study "${node.label}": it already involves both ${both}.`
               : dim === "paper"
-                ? `Read "${shortLabel(node, 80)}", which covers both ${both}.`
+                ? `Read "${node.label}", which covers both ${both}.`
                 : `Reach out to ${node.label}, which already serves both ${both}.`;
       steps.push({
         kind: "contact",
@@ -88,6 +88,7 @@ export function nextSteps(
         because: `${name(nb.id)} shares biology with ${name(focusId)} (${nb.tier} link), and this ${dim === "investigator" ? "researcher" : "work"} already spans both.`,
         caveat: caveatOf(item.edges),
         target: target(node),
+        relatedIds: [nb.id],
         edgeIds: item.edges,
         evidence: evidenceOf(item.edges),
       });
@@ -128,9 +129,10 @@ export function nextSteps(
           kind === "registry"
             ? `Ask ${hit.node.label} whether ${name(focusId)} families can join or reuse its design.`
             : `Connect with ${hit.node.label}${country(hit.node)}, which works on ${mechanism}.`,
-        because: `${name(focusId)} shares the mechanism "${mechanism}" with ${others}, and this ${kind === "registry" ? "registry" : "group"} works on that mechanism.`,
+        because: `${name(focusId)} shares the pathway "${mechanism}" with ${others}, and this ${kind === "registry" ? "registry" : "group"} works on that pathway.`,
         caveat: caveatOf([hit.edge.id]),
         target: target(hit.node),
+        relatedIds,
         edgeIds,
         evidence: evidenceOf(edgeIds),
       });
@@ -149,7 +151,7 @@ export function nextSteps(
     const { edge, node } = studies[0];
     steps.push({
       kind: "study",
-      text: `Check whether your family is eligible for "${shortLabel(node, 80)}" (${String(node.attributes?.overall_status).toLowerCase().replace(/_/g, " ")}).`,
+      text: `Check whether your family is eligible for "${node.label}" (${String(node.attributes?.overall_status).toLowerCase().replace(/_/g, " ")}).`,
       because: `It is linked to ${name(focusId)} and is open or about to open.`,
       caveat: caveatOf([edge.id]),
       target: target(node),
@@ -158,10 +160,42 @@ export function nextSteps(
     });
   }
 
+  // 4. Nothing spans a related disease yet: start from what is on record for the disease itself (its
+  // own patient group, then a research project, then a paper), so "nothing found" is only said
+  // when it is true.
+  if (!steps.length) {
+    const own = (type: GraphNode["type"]) =>
+      graph.edges
+        .filter((e) => e.kind !== "contradicted" && (e.subject === focusId || e.object === focusId))
+        .map((e) => ({ edge: e, node: byId.get(e.subject === focusId ? e.object : e.subject) }))
+        .filter((x): x is { edge: GraphEdge; node: GraphNode } => x.node?.type === type)
+        .sort((x, y) => Number(hasWebsite(y.node)) - Number(hasWebsite(x.node)) || cmp(x.node.label, y.node.label))[0];
+    const because = `Nothing on record links ${name(focusId)} to a related disease through a shared group, grant or study yet, so this starts with the disease itself.`;
+    const group = own("PatientOrg");
+    const grant = group ? undefined : own("Grant");
+    const paper = group || grant ? undefined : own("Paper");
+    const hit = group ?? grant ?? paper;
+    if (hit) {
+      steps.push({
+        kind: group ? "group" : grant ? "contact" : "paper",
+        text: group
+          ? `Connect with ${hit.node.label}${country(hit.node)}, a patient group on record for ${name(focusId)}.`
+          : grant
+            ? `Look at the research project "${hit.node.label}", on record for ${name(focusId)}. Its team is a natural first contact.`
+            : `Read "${hit.node.label}", on record for ${name(focusId)}. Its authors are a natural first contact.`,
+        because,
+        caveat: caveatOf([hit.edge.id]),
+        target: target(hit.node),
+        edgeIds: [hit.edge.id],
+        evidence: evidenceOf([hit.edge.id]),
+      });
+    }
+  }
+
   if (!steps.length) {
     steps.push({
       kind: "gap",
-      text: `No supported next step for ${name(focusId)} in this atlas yet.`,
+      text: `No supported next step for ${name(focusId)} yet.`,
       because: `We looked for researchers, grants, studies, patient groups and registries linked to ${name(focusId)} or to a disease that shares its biology, and found none with a source. Next question: which verified group already runs a registry for ${name(focusId)}?`,
       edgeIds: [],
       evidence: null,

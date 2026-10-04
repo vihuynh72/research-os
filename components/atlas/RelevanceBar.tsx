@@ -1,55 +1,34 @@
 "use client";
 
-// The relevance bar beside the map: one threshold filters every node by its relevance to the
-// searched disease. The mini histogram shows what lowering the bar would reveal, so the user is
-// never guessing. Vertical beside the map; horizontal under it on phones.
+// The relevance slider: one threshold picks the related diseases on the map (everything else follows
+// the disease that brings it). On wide screens a slim vertical strip floating at the map's right
+// edge: the grade file's tiers are bands with their name and cutoff written inside, the value sits
+// on the handle. Horizontal under the map on small screens, with the cutoffs as ticks. The
+// researcher view adds a small histogram of the related diseases, so moving the bar is never a
+// guess.
 import { useEffect, useRef, useState } from "react";
-import type { NodeType } from "@/lib/graph/types";
-import { ICON_PATH } from "@/lib/viz/icons";
-import { TYPE_NAME } from "@/lib/graph/vocab";
-import { KIND_OF, KIND_STYLE } from "./kinds";
 import { labelledTicks } from "./barTicks";
 
 export interface RelevanceBarProps {
   value: number; // 0..1
   onChange(value: number): void;
-  histogram: number[]; // counts per bucket, bucket 0 is the least relevant
-  shown: number;
-  total: number;
+  histogram: number[]; // related diseases per bucket, bucket 0 is the least relevant
+  showHistogram?: boolean;
   relatedShown: number;
   relatedTotal: number;
   thresholds: { strong: number; moderate: number; exploratory: number };
-  types: { type: NodeType; shown: number; total: number }[];
-  hiddenTypes: ReadonlySet<NodeType>;
-  onToggleType(type: NodeType): void;
-  onOnlyType(type: NodeType): void; // show this type alone (plus what was searched)
-  onShowAllTypes(): void;
   onReset(): void;
+  resetLabel?: string; // "Top 5": the filter a search opens at
+  resetTitle?: string;
   orientation?: "vertical" | "horizontal";
-  disabled?: boolean;
   defaultValue?: number;
 }
-
-// Short names keep the type toggles on one line in a narrow column.
-const SHORT: Record<NodeType, string> = {
-  Disease: "Diseases",
-  Gene: "Genes",
-  Variant: "Variants",
-  Mechanism: "Mechanisms",
-  Phenotype: "Symptoms",
-  PatientOrg: "Groups",
-  Asset: "Registries",
-  Trial: "Studies",
-  Paper: "Papers",
-  Grant: "Grants",
-  Investigator: "Researchers",
-};
 
 const clamp = (x: number) => Math.min(1, Math.max(0, x));
 const snap = (x: number) => Math.round(clamp(x) * 100) / 100;
 
 export default function RelevanceBar(props: RelevanceBarProps) {
-  const { value, histogram, thresholds, orientation = "vertical", disabled } = props;
+  const { value, histogram, thresholds, orientation = "vertical" } = props;
   const vertical = orientation === "vertical";
   const trackRef = useRef<HTMLDivElement>(null);
   // Key repeat can outrun re-renders; step from the latest value, not the one this render saw.
@@ -58,16 +37,14 @@ export default function RelevanceBar(props: RelevanceBarProps) {
   const maxCount = Math.max(1, ...histogram);
   const pctValue = Math.round(value * 100);
   const ticks = [
-    { v: 1, label: "Direct" },
     { v: thresholds.strong, label: "Strong" },
     { v: thresholds.moderate, label: "Moderate" },
     { v: thresholds.exploratory, label: "Exploratory" },
   ];
   // The bar's length on screen, to keep tick labels apart.
-  const labelsRef = useRef<HTMLDivElement>(null);
   const [length, setLength] = useState(0);
   useEffect(() => {
-    const el = labelsRef.current;
+    const el = trackRef.current;
     if (!el) return;
     const measure = () => setLength(vertical ? el.clientHeight : el.clientWidth);
     measure();
@@ -96,76 +73,107 @@ export default function RelevanceBar(props: RelevanceBarProps) {
     props.onChange(next);
   };
 
-  const track = (
+  const shownText = props.relatedTotal ? `${props.relatedShown} of ${props.relatedTotal} related ${props.relatedTotal === 1 ? "disease" : "diseases"}` : "No related disease";
+  const pointer = {
+    onPointerDown: (event: React.PointerEvent) => {
+      event.currentTarget.setPointerCapture(event.pointerId);
+      props.onChange(fromPointer(event.clientX, event.clientY));
+    },
+    onPointerMove: (event: React.PointerEvent) => {
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+      props.onChange(fromPointer(event.clientX, event.clientY));
+    },
+  };
+  // The value sits on the handle; the handle is the slider for keyboards and screen readers.
+  const thumb = (
     <div
-      className={`relative ${vertical ? "mx-auto w-10 self-stretch" : "h-10 w-full"} ${disabled ? "opacity-40" : "cursor-pointer"} touch-none`}
-      onPointerDown={(event) => {
-        if (disabled) return;
-        event.currentTarget.setPointerCapture(event.pointerId);
-        props.onChange(fromPointer(event.clientX, event.clientY));
-      }}
-      onPointerMove={(event) => {
-        if (disabled || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
-        props.onChange(fromPointer(event.clientX, event.clientY));
-      }}
+      role="slider"
+      tabIndex={0}
+      aria-label="Relevance filter"
+      aria-orientation={orientation}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={pctValue}
+      aria-valuetext={`${pctValue} percent, showing ${shownText}`}
+      onKeyDown={onKey}
+      className="absolute z-[1] -translate-x-1/2 -translate-y-1/2 rounded-full border-[1.5px] border-accent bg-surface px-1.5 py-px text-[0.6875rem] leading-4 font-semibold whitespace-nowrap text-accent-ink tabular-nums shadow-[0_1px_4px_rgb(0_0_0/0.14)] outline-none focus-visible:ring-4 focus-visible:ring-accent/30"
+      style={vertical ? { left: "50%", ...position(value) } : { top: "50%", ...position(value) }}
     >
-      <div ref={trackRef} className={`absolute ${vertical ? "inset-y-2 left-1/2 w-1.5 -translate-x-1/2" : "inset-x-2 top-1/2 h-1.5 -translate-y-1/2"} rounded-full bg-[var(--line)]`}>
+      {pctValue}%
+    </div>
+  );
+
+  const track = (
+    <div className="relative h-9 w-full cursor-pointer touch-none" {...pointer}>
+      <div ref={vertical ? undefined : trackRef} className="absolute inset-x-4 top-1/2 h-1 -translate-y-1/2 rounded-full bg-line">
         {/* The part of the scale that is on the map. */}
-        <div
-          className="absolute rounded-full bg-[var(--accent)]"
-          style={vertical ? { left: 0, right: 0, top: 0, height: `${(1 - value) * 100}%` } : { top: 0, bottom: 0, right: 0, width: `${(1 - value) * 100}%` }}
-        />
+        <div className="absolute rounded-full bg-accent" style={{ top: 0, bottom: 0, right: 0, width: `${(1 - value) * 100}%` }} />
         {ticks.map((t) => (
-          <div
-            key={t.label}
-            className={`absolute ${vertical ? "left-1/2 h-px w-4 -translate-x-1/2" : "top-1/2 h-4 w-px -translate-y-1/2"} bg-[var(--ink-3)]`}
-            style={position(t.v)}
-          />
+          <div key={t.label} className="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-ink-3" style={position(t.v)} />
         ))}
-        <div
-          role="slider"
-          tabIndex={disabled ? -1 : 0}
-          aria-label="Relevance threshold"
-          aria-orientation={orientation}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={pctValue}
-          aria-valuetext={`${pctValue} percent, showing ${props.shown} of ${props.total} items`}
-          aria-disabled={disabled || undefined}
-          onKeyDown={onKey}
-          className={`absolute h-5 w-5 rounded-full border-2 border-[var(--accent)] bg-[var(--surface)] shadow-sm outline-none focus-visible:ring-4 focus-visible:ring-[var(--accent)]/30 ${vertical ? "left-1/2 -translate-x-1/2 -translate-y-1/2" : "top-1/2 -translate-x-1/2 -translate-y-1/2"}`}
-          style={position(value)}
-        />
+        {thumb}
       </div>
     </div>
   );
 
-  // Histogram: one bar per bucket; on the map (at or above the bar) in accent, the rest in gray.
-  const bars = (
-    <div className={`relative ${vertical ? "w-12 self-stretch" : "h-8 w-full"}`} aria-hidden>
-      <div className={`absolute ${vertical ? "inset-y-2 left-0 right-0" : "inset-x-2 top-0 bottom-0"}`}>
+  // The vertical strip: one band per tier, its name and cutoff inside it, the part of the scale on
+  // the map tinted, and a line across at the value with the value on it.
+  const bands = ticks.map((t, i) => ({ ...t, top: i === 0 ? 1 : ticks[i - 1].v }));
+  const strip = (
+    <div className="relative min-h-[150px] w-full flex-1 cursor-pointer touch-none" {...pointer}>
+      <div ref={vertical ? trackRef : undefined} className="absolute inset-x-0 inset-y-3 rounded-lg bg-surface-2">
+        <div className="absolute inset-x-0 top-0 rounded-t-lg bg-accent/12" style={{ height: `${(1 - value) * 100}%` }} />
+        {props.showHistogram && (
+          <div className="absolute inset-y-0 right-0 w-3" aria-hidden>
+            {histogram.map((count, i) => {
+              if (!count) return null;
+              const lo = i / histogram.length;
+              const on = lo + 1 / histogram.length > value + 1e-9;
+              return (
+                <div
+                  key={i}
+                  className={`absolute right-0 rounded-l-sm ${on ? "bg-accent/45" : "bg-ink-3/35"}`}
+                  style={{ bottom: `${lo * 100}%`, height: `calc(${100 / histogram.length}% - 1px)`, width: `${(count / maxCount) * 100}%`, minWidth: 2 }}
+                />
+              );
+            })}
+          </div>
+        )}
+        {ticks.map((t) => (
+          <div key={t.label} className="absolute inset-x-0 h-px bg-ink-3/40" style={position(t.v)} />
+        ))}
+        {bands.map((b) => (
+          <div
+            key={b.label}
+            aria-hidden
+            className="absolute inset-x-0 flex flex-col items-center justify-end pb-1 text-center text-[0.6875rem] leading-tight text-ink-2 transition-opacity"
+            // The handle passing over a band's name hides it, so the two never print over each other.
+            style={{ top: `${(1 - b.top) * 100}%`, height: `${(b.top - b.v) * 100}%`, opacity: length && value > b.v - 12 / length && value < b.v + 40 / length ? 0 : 1 }}
+          >
+            <span>{b.label}</span>
+            <span className="tabular-nums">{Math.round(b.v * 100)}</span>
+          </div>
+        ))}
+        <div className="absolute inset-x-0 h-0.5 -translate-y-1/2 bg-accent" style={position(value)} />
+        {thumb}
+      </div>
+    </div>
+  );
+
+  // Horizontal: the related diseases per bucket; on the map (at or above the bar) in accent, the rest in gray.
+  const bars = props.showHistogram && (
+    <div className="relative h-5 w-full" aria-hidden>
+      <div className="absolute inset-x-4 top-0 bottom-0">
         {histogram.map((count, i) => {
+          if (!count) return null;
           const lo = i / histogram.length;
-          const size = `${(count / maxCount) * 100}%`;
           const on = lo + 1 / histogram.length > value + 1e-9;
-          const slot = `${100 / histogram.length}%`;
           return (
             <div
               key={i}
-              className="absolute"
-              style={
-                vertical
-                  ? { bottom: `${lo * 100}%`, height: slot, left: 0, width: "100%", padding: "1px 0" }
-                  : { left: `${lo * 100}%`, width: slot, bottom: 0, height: "100%", padding: "0 1px" }
-              }
-            >
-              {count > 0 && (
-                <div
-                  className={`rounded-sm ${on ? "bg-[var(--accent)]" : "bg-[var(--line)]"}`}
-                  style={vertical ? { width: size, height: "100%", minWidth: 2 } : { height: size, width: "100%", minHeight: 2, marginTop: "auto", position: "absolute", bottom: 0, left: 0 }}
-                />
-              )}
-            </div>
+              className={`absolute rounded-sm ${on ? "bg-accent/70" : "bg-line"}`}
+              style={{ left: `${lo * 100}%`, width: `calc(${100 / histogram.length}% - 1px)`, bottom: 0, height: `${(count / maxCount) * 100}%`, minHeight: 2 }}
+            />
           );
         })}
       </div>
@@ -173,144 +181,59 @@ export default function RelevanceBar(props: RelevanceBarProps) {
   );
 
   const labels = (
-    <div className={`relative ${vertical ? "w-20 self-stretch" : "h-4 w-full"} text-[10.5px] leading-none text-[var(--ink-2)]`} aria-hidden>
-      <div ref={labelsRef} className={`absolute ${vertical ? "inset-y-2 right-0 left-0" : "inset-x-2 top-0 bottom-0"}`}>
-        {ticks.filter((t) => labelled.has(t.label)).map((t) => (
-          <div
-            key={t.label}
-            className={`absolute whitespace-nowrap ${vertical ? "right-0 -translate-y-1/2 text-right" : "-translate-x-1/2"}`}
-            style={position(t.v)}
-          >
-            {t.label} {Math.round(t.v * 100)}
-          </div>
-        ))}
+    <div className="relative h-7 w-full text-[0.6875rem] leading-tight text-ink-2" aria-hidden>
+      <div className="absolute inset-x-4 top-0 bottom-0">
+        {ticks
+          .filter((t) => labelled.has(t.label))
+          .map((t) => (
+            <div key={t.label} className="absolute top-0 -translate-x-1/2 text-center whitespace-nowrap" style={position(t.v)}>
+              {t.label} <span className="tabular-nums">{Math.round(t.v * 100)}</span>
+            </div>
+          ))}
       </div>
     </div>
+  );
+
+  const reset = (props.defaultValue === undefined || value !== props.defaultValue) && (
+    <button type="button" onClick={props.onReset} title={props.resetTitle} className="rounded-full px-2.5 py-1 text-[0.75rem] font-medium text-accent-ink hover:bg-surface-2">
+      {props.resetLabel ?? "Reset"}
+    </button>
   );
 
   const readout = (
-    <div className="text-[12px] leading-snug text-[var(--ink-2)]">
-      {disabled ? (
-        <span>Search to map a disease.</span>
-      ) : (
-        <>
-          <div>
-            Showing <strong className="text-[var(--ink)]">{props.shown}</strong> of {props.total}
-          </div>
-          <div>
-            {props.relatedShown} of {props.relatedTotal} related {props.relatedTotal === 1 ? "disease" : "diseases"}
-          </div>
-          <div className="mt-1 text-[11px] text-[var(--ink-3)]">The dashed circle on the map moves with this bar.</div>
-        </>
-      )}
-    </div>
-  );
-
-  // Type filters: click a row to hide or show that type, "only" to see it alone, "All" to bring
-  // everything back. Swatches match the node colors on the map.
-  const allShown = props.hiddenTypes.size === 0;
-  const typeToggles = props.types.length > 0 && (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-[var(--ink-2)]">
-        <span>Show</span>
-        <button
-          type="button"
-          onClick={props.onShowAllTypes}
-          disabled={allShown}
-          className="rounded-full px-2 py-0.5 normal-case tracking-normal text-[var(--accent-ink)] hover:bg-[var(--surface-2)] disabled:text-[var(--ink-3)] disabled:hover:bg-transparent"
-        >
-          All
-        </button>
-      </div>
-      <div className={vertical ? "grid grid-cols-1 gap-1" : "flex flex-wrap gap-1.5"}>
-        {props.types.map(({ type, shown, total }) => {
-          const hidden = props.hiddenTypes.has(type);
-          const kind = KIND_STYLE[KIND_OF[type]];
-          return (
-            // "only" sits over the count while pointed at, so the name keeps the row's width; on
-            // touch screens it stays beside the row.
-            <div key={type} className="group relative flex items-stretch gap-1">
-              <button
-                type="button"
-                aria-pressed={!hidden}
-                onClick={() => props.onToggleType(type)}
-                className={`flex min-w-0 flex-1 items-center gap-1.5 rounded-lg border px-2 py-1 text-left text-[11.5px] transition-colors ${hidden ? "border-[var(--line)] text-[var(--ink-3)]" : "border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:border-[var(--ink-3)]"}`}
-                title={`${hidden ? "Show" : "Hide"} ${TYPE_NAME[type].many}`}
-              >
-                <span
-                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: hidden ? "transparent" : type === "Disease" ? "var(--series-1)" : kind.fill, border: `1px solid ${hidden ? "var(--line)" : type === "Disease" ? "transparent" : kind.ink}` }}
-                  aria-hidden
-                >
-                  <svg viewBox="0 0 24 24" className="h-2.5 w-2.5">
-                    <path d={ICON_PATH[type]} fill="none" stroke={hidden ? "var(--ink-3)" : type === "Disease" ? "#fff" : kind.ink} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span className={`truncate ${hidden ? "line-through" : ""}`}>{SHORT[type]}</span>
-                <span className="ml-auto pl-1 tabular-nums text-[var(--ink-3)]">
-                  {shown}/{total}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => props.onOnlyType(type)}
-                className="absolute inset-y-px right-px flex items-center rounded-[7px] bg-[var(--surface-2)] px-2 text-[10.5px] font-medium text-[var(--ink)] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:static [@media(hover:none)]:rounded-lg [@media(hover:none)]:bg-transparent [@media(hover:none)]:font-normal [@media(hover:none)]:text-[var(--ink-2)] [@media(hover:none)]:opacity-100"
-                aria-label={`Show only ${TYPE_NAME[type].many}`}
-              >
-                only
-              </button>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const header = (
-    <div className={vertical ? "text-center" : "flex items-baseline gap-2"}>
-      <div className="text-[28px] font-semibold leading-none tracking-tight text-[var(--ink)]">{disabled ? "–" : `${pctValue}%`}</div>
-      <div className="text-[11px] uppercase tracking-wide text-[var(--ink-2)]">relevance</div>
-    </div>
-  );
-
-  const reset = !disabled && (props.defaultValue === undefined || value !== props.defaultValue || props.hiddenTypes.size > 0) && (
-    <button type="button" onClick={props.onReset} className="text-[12px] text-[var(--accent)] hover:underline">
-      Reset
-    </button>
+    <p className="text-[0.75rem] leading-snug text-ink-2">
+      Showing <strong className="font-semibold text-ink tabular-nums">{props.relatedShown}</strong> of <span className="tabular-nums">{props.relatedTotal}</span> related{" "}
+      {props.relatedTotal === 1 ? "disease" : "diseases"}
+    </p>
   );
 
   if (!vertical) {
     return (
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
-          {header}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[0.6875rem] font-semibold tracking-wide text-ink-2 uppercase">Relevance</span>
           {readout}
         </div>
-        <div className="flex flex-col">
-          {bars}
-          {track}
-          {labels}
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          {typeToggles}
-          {reset}
-        </div>
+        {bars}
+        {track}
+        {labels}
+        {reset && <div className="flex justify-end">{reset}</div>}
       </div>
     );
   }
 
-  // The column scrolls as a whole when it is short, so no type row is ever cut in half.
   return (
-    <div className="flex min-h-full flex-col gap-3">
-      {header}
-      <div className="flex min-h-[220px] flex-1 items-stretch">
-        {labels}
-        {track}
-        {bars}
-      </div>
-      {readout}
-      {typeToggles}
-      {reset}
+    <div className="flex h-full flex-col items-center gap-1.5 px-1.5 py-2.5">
+      <span className="text-[0.6875rem] font-semibold tracking-wide text-ink-2 uppercase">Relevance</span>
+      {strip}
+      <p className="text-center text-[0.6875rem] leading-tight text-ink-2" title={`Showing ${shownText}`}>
+        Showing
+        <br />
+        <strong className="text-[0.8125rem] font-semibold text-ink tabular-nums">
+          {props.relatedShown} of {props.relatedTotal}
+        </strong>
+      </p>
+      {reset && <div className="-mb-1">{reset}</div>}
     </div>
   );
 }

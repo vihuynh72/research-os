@@ -3,9 +3,93 @@
 // type 1A", "... type 1B", "... type 2"), so cutting a name at a fixed length removes exactly the
 // part that matters. These helpers keep that tail, wrap names over lines where there is room, and
 // make sure two different diseases never get the same short name. Pure; browser and Node.
-import type { GraphNode } from "../../lib/graph/types.ts";
+import type { AtlasGraph, GraphEdge, GraphNode } from "../../lib/graph/types.ts";
 
 type Named = Pick<GraphNode, "label" | "synonyms">;
+
+// Some source records arrive HTML-escaped ("The Cure &amp; Action for Tay-Sachs"). The named
+// entities that turn up in names and titles (names are case-sensitive, as in HTML), plus every
+// decimal and hex one. An entity not listed here is left as written.
+const ENTITIES: Record<string, string> = {
+  amp: "&",
+  AMP: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  ndash: "–",
+  mdash: "—",
+  lsquo: "‘",
+  rsquo: "’",
+  ldquo: "“",
+  rdquo: "”",
+  hellip: "…",
+  middot: "·",
+  deg: "°",
+  plusmn: "±",
+  times: "×",
+  micro: "µ",
+  alpha: "α",
+  beta: "β",
+  gamma: "γ",
+  kappa: "κ",
+  aacute: "á",
+  eacute: "é",
+  Eacute: "É",
+  egrave: "è",
+  iacute: "í",
+  oacute: "ó",
+  uacute: "ú",
+  auml: "ä",
+  Auml: "Ä",
+  ouml: "ö",
+  Ouml: "Ö",
+  uuml: "ü",
+  Uuml: "Ü",
+  ccedil: "ç",
+  ntilde: "ñ",
+  szlig: "ß",
+};
+
+function decodeOnce(text: string): string {
+  return text.replace(/&(#\d+|#[xX][\da-fA-F]+|[A-Za-z]+\d*);/g, (whole, body: string) => {
+    if (body[0] !== "#") return ENTITIES[body] ?? whole;
+    const code = body[1] === "x" || body[1] === "X" ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
+    return code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff) ? String.fromCodePoint(code) : whole;
+  });
+}
+
+// Plain text from text that may carry HTML entities. Text escaped twice ("&amp;amp;") is decoded twice.
+export function decodeEntities(text: string): string {
+  let out = text;
+  for (let pass = 0; pass < 3 && out.includes("&"); pass++) {
+    const next = decodeOnce(out);
+    if (next === out) break;
+    out = next;
+  }
+  return out;
+}
+
+// The graph with every label, synonym and evidence string decoded, built once so the map, the list,
+// the panel and search all read the same text. Unchanged nodes and edges are reused as they are.
+export function cleanGraph(graph: AtlasGraph): AtlasGraph {
+  let changed = false;
+  const nodes = graph.nodes.map((node): GraphNode => {
+    const label = decodeEntities(node.label);
+    const synonyms = node.synonyms?.map(decodeEntities);
+    if (label === node.label && (synonyms ?? []).every((s, i) => s === node.synonyms![i])) return node;
+    changed = true;
+    return { ...node, label, ...(synonyms ? { synonyms } : {}) };
+  });
+  const edges = graph.edges.map((edge): GraphEdge => {
+    const evidence = edge.evidence === undefined ? undefined : decodeEntities(edge.evidence);
+    if (evidence === edge.evidence) return edge;
+    changed = true;
+    return { ...edge, evidence };
+  });
+  return changed ? { ...graph, nodes, edges } : graph;
+}
 
 // The compact synonym rule of lib/graph/labels.ts (e.g. "CLN3"): short, capitalized, with a digit.
 const SHORT_NAME = /^[A-Z][A-Za-z0-9-]{1,9}$/;

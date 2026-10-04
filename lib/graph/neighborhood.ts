@@ -3,37 +3,34 @@
 // (anchors), the diseases related to them by the grading layer, and the evidence around all of them
 // (genes, variants, mechanisms, symptoms, groups, research), including indirect evidence that comes
 // through a related disease. Every node carries a relevance to the searched node and every line a
-// strength, so one threshold filters the whole map. Pure and deterministic; browser and Node.
+// strength. The relevance filter picks the diseases; everything else follows the disease that
+// brings it, capped by count, so a map never loses all its symptoms to the filter. Pure and
+// deterministic; browser and Node.
 import type { AtlasGraph, EdgeKind, GraphEdge, GraphNode, NodeType } from "./types.ts";
 import type { PairGrade, RelevanceDoc, Tier } from "../grading/types.ts";
 import { TIER_ORDER, pairKey } from "../grading/types.ts";
-import { shortLabel } from "./labels.ts";
-import { countLabel, relationLabel } from "./vocab.ts";
+import { TYPE_NAME, countLabel, relationLabel } from "./vocab.ts";
 
 export const HOOD = {
   direct: 1, // a disease's own gene, mechanism, variants, groups and research
   viaGene: 0.95, // a mechanism reached through the disease's gene
   viaHop: 0.9, // one step removed: a group on the disease's mechanism, a researcher on its grant
   symptomDefault: 0.5, // symptom relevance when no HPO reference is loaded
-  maxSymptoms: 8, // symptom nodes for the searched disease before the rest fold into a bubble
-  maxGroups: 4, // patient groups (and, separately, registries) for the searched disease
-  maxMechanisms: 4, // mechanisms for the searched disease, most specific first
-  maxRelatedSymptoms: 2, // the same caps for a related disease's own evidence
+  maxSymptoms: 3, // symptom nodes for the searched disease (the rarest) before the rest fold into a bubble
+  maxGroups: 3, // patient groups (and, separately, registries) for the searched disease
+  maxMechanisms: 3, // mechanisms for the searched disease, most specific first
+  maxRelatedSymptoms: 1, // the same caps for a related disease's own evidence
   maxRelatedGroups: 1,
   maxRelatedMechanisms: 1,
   maxRelated: 10, // related diseases on the map
   maxAnchors: 12, // diseases a gene, symptom or group belongs to, before the rest fold into a bubble
-  mergeAfter: 2, // more owners than this folding one type: one shared bubble instead of one each
-  ghostBand: 0.25, // items this far below the threshold still show, faintly, without labels
+  ghostBand: 0.25, // diseases this far below the threshold still show, faintly, without labels
 };
 
 // Individual nodes of a type on the whole map, whoever brings them: a ring holds only so many
 // nodes, and a crowded sector would otherwise push them away from the distance that encodes their
-// relevance. The rest fold into numbered bubbles.
-export const MAP_CAP: Partial<Record<NodeType, number>> = { Gene: 8, Mechanism: 6, Phenotype: 10, PatientOrg: 5, Asset: 3 };
-
-// The owner of a bubble that gathers one type from several diseases on the map.
-export const SHARED_BUBBLE_OWNER = "others";
+// relevance. The rest fold into one numbered bubble per type.
+export const MAP_CAP: Partial<Record<NodeType, number>> = { Gene: 8, Mechanism: 5, Phenotype: 6, PatientOrg: 4, Asset: 3 };
 
 // Variants and research always start folded into count bubbles ("3 clinical studies").
 export const FOLDED_TYPES: readonly NodeType[] = ["Variant", "Trial", "Paper", "Grant", "Investigator"];
@@ -41,6 +38,39 @@ export const FOLDED_TYPES: readonly NodeType[] = ["Variant", "Trial", "Paper", "
 export type HoodRole = "focus" | "anchor" | "related" | "attribute" | "symptom" | "group" | "research" | "bubble";
 export type HoodEdgeRole = "evidence" | "similarity" | "bridge" | "bubble";
 export type LinkKind = EdgeKind | "mixed";
+
+// The kinds of line the researcher view can hide: shared biology between diseases, disease to
+// gene (and gene changes), gene to pathway, disease to symptom, groups, research, and existing
+// collaboration (bridges).
+export type LinkGroup = "biology" | "gene" | "pathway" | "symptom" | "group" | "research" | "bridge";
+export const LINK_GROUPS: readonly LinkGroup[] = ["biology", "gene", "pathway", "symptom", "group", "research", "bridge"];
+
+const TYPE_GROUP: Partial<Record<NodeType, LinkGroup>> = {
+  Gene: "gene",
+  Variant: "gene",
+  Mechanism: "pathway",
+  Phenotype: "symptom",
+  PatientOrg: "group",
+  Asset: "group",
+  Trial: "research",
+  Paper: "research",
+  Grant: "research",
+  Investigator: "research",
+};
+
+// A line between two things is named after the farther-out of them ("gene to pathway" is a
+// pathway line, "pathway to group" a group line); between two diseases it is shared biology.
+export function linkGroupOf(a: NodeType, b: NodeType): LinkGroup {
+  const ga = TYPE_GROUP[a];
+  const gb = TYPE_GROUP[b];
+  if (!ga || !gb) return ga ?? gb ?? "biology";
+  return LINK_GROUPS.indexOf(ga) >= LINK_GROUPS.indexOf(gb) ? ga : gb;
+}
+
+// "22 papers", "3 more symptoms": a bubble's name for the members it shows.
+export function bubbleLabel(type: NodeType, count: number): string {
+  return FOLDED_TYPES.includes(type) ? countLabel(type, count) : `${count} more ${count === 1 ? TYPE_NAME[type].one : TYPE_NAME[type].many}`;
+}
 
 export interface HoodNode {
   id: string; // graph node id, or "bubble:<owner>:<type>"
@@ -58,6 +88,7 @@ export interface HoodNode {
   bubbleType?: NodeType; // bubbles
   members?: string[]; // bubbles: folded node ids, best first
   memberRelevance?: number[]; // bubbles: relevance of each member, aligned with members
+  memberOwners?: string[]; // bubbles: the disease that brings each member, aligned with members
 }
 
 export interface HoodEdge {
@@ -65,9 +96,11 @@ export interface HoodEdge {
   a: string;
   b: string;
   strength: number; // how strong this one relationship is, 0..1 (a symptom's specificity, a pair's biology score)
-  relevance: number; // strength carried to the searched node; drives width, opacity, glow and filtering
+  relevance: number; // strength carried to the searched node
   kind: LinkKind; // dashed unless observed
   role: HoodEdgeRole;
+  group: LinkGroup; // the kind of line, for the researcher's Links menu
+  tier?: Tier; // disease-to-disease lines: the pair's grade
   label: string;
   edgeIds: string[]; // graph edges behind this line, for the evidence panel
 }
@@ -126,15 +159,13 @@ function round(x: number): number {
   return Math.round(x * 10000) / 10000;
 }
 
-// "70%"; just under 100% keeps a decimal ("99.6%") so nothing reads as a perfect match.
+// "62%" for 0.629: rounded down like every percent in the app (components/atlas/format.ts
+// formatPercent), so a percent never crosses a tier cutoff; just under 100% keeps a decimal
+// ("99.6%") so nothing reads as a perfect match.
 function pct(x: number): string {
   const p = x * 100;
-  return p < 100 && Math.round(p) >= 100 ? `${(Math.floor(p * 10) / 10).toFixed(1)}%` : `${Math.round(p)}%`;
+  return p >= 99 && p < 100 ? `${(Math.floor(p * 10) / 10).toFixed(1)}%` : `${Math.floor(p + 1e-6)}%`;
 }
-
-// Names inside sentences ("Gene behind ..."): whole up to a long length, so similar diseases
-// ("... type 1A", "... type 1B") never read the same.
-const NAME_MAX = 64;
 
 export function kindOf(kinds: readonly EdgeKind[]): LinkKind {
   if (!kinds.length) return "inferred";
@@ -197,25 +228,25 @@ interface Tie {
 
 // Everything a disease brings to the map, with the strength of each relationship.
 function tiesOf(cache: GraphCache, relevance: RelevanceDoc | null, diseaseId: string): Tie[] {
-  const disease = cache.byId.get(diseaseId)!;
-  const name = shortLabel(disease, NAME_MAX);
+  // Names in these sentences are whole, so similar diseases ("... type 1A", "... type 1B") never read the same.
+  const name = cache.byId.get(diseaseId)!.label;
   const info = relevance?.node_info;
   const ties: Tie[] = [];
   const genes = adjacentOfType(cache, diseaseId, "Gene");
   for (const { node, edges } of genes) ties.push({ node, t: HOOD.direct, hop: 1, via: diseaseId, edges, why: `Gene behind ${name}.` });
   for (const { node, edges } of adjacentOfType(cache, diseaseId, "Mechanism")) {
-    ties.push({ node, t: HOOD.direct, hop: 1, via: diseaseId, edges, why: `Process disrupted in ${name}.` });
+    ties.push({ node, t: HOOD.direct, hop: 1, via: diseaseId, edges, why: `Pathway linked directly to ${name}.` });
   }
   for (const { node: gene } of genes) {
     for (const { node, edges } of adjacentOfType(cache, gene.id, "Mechanism")) {
-      ties.push({ node, t: HOOD.viaGene, hop: 2, via: gene.id, edges, why: `Mechanism of ${gene.label}, the gene behind ${name}.` });
+      ties.push({ node, t: HOOD.viaGene, hop: 2, via: gene.id, edges, why: `${gene.label}, the gene behind ${name}, takes part in this pathway.` });
     }
     for (const { node, edges } of adjacentOfType(cache, gene.id, "Variant")) {
-      ties.push({ node, t: HOOD.direct, hop: 2, via: gene.id, edges, why: `Variant in ${gene.label}, the gene behind ${name}.` });
+      ties.push({ node, t: HOOD.direct, hop: 2, via: gene.id, edges, why: `A change in ${gene.label}, the gene behind ${name}.` });
     }
   }
   for (const { node, edges } of adjacentOfType(cache, diseaseId, "Variant")) {
-    ties.push({ node, t: HOOD.direct, hop: 1, via: diseaseId, edges, why: `Variant recorded for ${name}.` });
+    ties.push({ node, t: HOOD.direct, hop: 1, via: diseaseId, edges, why: `Gene change recorded for ${name}.` });
   }
   for (const { node, edges } of adjacentOfType(cache, diseaseId, "Phenotype")) {
     const meta = info?.[node.id];
@@ -230,14 +261,14 @@ function tiesOf(cache: GraphCache, relevance: RelevanceDoc | null, diseaseId: st
   }
   for (const hub of hubs) {
     for (const { node, edges } of adjacentOfType(cache, hub.node.id, "PatientOrg", "Asset")) {
-      const what = hub.node.type === "Mechanism" ? "mechanism" : "gene";
+      const what = hub.node.type === "Mechanism" ? "pathway" : "gene";
       ties.push({
         node,
         t: hub.t * HOOD.viaHop,
         hop: hub.hop + 1,
         via: hub.node.id,
         edges,
-        why: `Works on the ${what} ${hub.node.label}, which ${name} has.`,
+        why: `Works on the ${what} ${hub.node.label}, linked to ${name}.`,
       });
     }
   }
@@ -254,7 +285,7 @@ function tiesOf(cache: GraphCache, relevance: RelevanceDoc | null, diseaseId: st
         hop: 2,
         via: item.node.id,
         edges,
-        why: `Leads ${item.node.type === "Grant" ? "a grant" : "work"} on ${name}: ${shortLabel(item.node, 60)}.`,
+        why: `Leads ${item.node.type === "Grant" ? "a grant" : "work"} on ${name}: ${item.node.label}.`,
       });
     }
   }
@@ -268,7 +299,7 @@ function anchorsOf(cache: GraphCache, focus: GraphNode): { disease: string; r: n
     const prev = out.get(disease);
     if (!prev || r > prev.r) out.set(disease, { disease, r, path });
   };
-  const name = shortLabel(focus, NAME_MAX);
+  const name = focus.label;
   const direct = adjacentOfType(cache, focus.id, "Disease");
   for (const { node, edges } of direct) offer(node.id, HOOD.direct, [{ node, t: HOOD.direct, hop: 1, via: focus.id, edges, why: `${node.label} is linked directly to ${name}.` }]);
   // One step further for nodes that reach diseases through a gene, hub or research item.
@@ -284,7 +315,7 @@ function anchorsOf(cache: GraphCache, focus: GraphNode): { disease: string; r: n
     for (const { node, edges } of adjacentOfType(cache, mid.id, "Disease")) {
       offer(node.id, t1, [
         { node: mid, t: HOOD.direct, hop: 1, via: focus.id, edges: e1, why: `${mid.label} is linked directly to ${name}.` },
-        { node, t: t1, hop: 2, via: mid.id, edges, why: `${node.label} is linked to ${name} through ${shortLabel(mid, NAME_MAX)}.` },
+        { node, t: t1, hop: 2, via: mid.id, edges, why: `${node.label} is linked to ${name} through ${mid.label}.` },
       ]);
     }
   }
@@ -306,6 +337,11 @@ export function buildNeighborhood(
   const pairs = new Map<string, PairGrade>((relevance?.pairs ?? []).map((p) => [pairKey(p.a, p.b), p]));
   const nodes = new Map<string, HoodNode>();
   const edges = new Map<string, HoodEdge>();
+  const typeOfId = (id: string): NodeType => {
+    const n = nodes.get(id);
+    if (n) return n.type === "Bubble" ? n.bubbleType! : n.type;
+    return cache.byId.get(id)?.type ?? "Disease";
+  };
   const addEdge = (edge: HoodEdge) => {
     if (edge.a === edge.b) return;
     const prev = edges.get(edge.id);
@@ -366,6 +402,7 @@ export function buildNeighborhood(
         relevance: r,
         kind: kindOf(step.edges.map((e) => e.kind)),
         role: "evidence",
+        group: linkGroupOf(typeOfId(step.via), step.node.type),
         label: relationLabel(step.edges[0].type),
         edgeIds: step.edges.map((e) => e.id).sort(cmp),
       });
@@ -380,17 +417,18 @@ export function buildNeighborhood(
     nodes.set(anchorBubble, {
       id: anchorBubble,
       type: "Bubble",
-      label: countLabel("Disease", members.length).replace(/^(\d+) /, "$1 more "),
+      label: bubbleLabel("Disease", members.length),
       relevance: round(r),
       role: "bubble",
       owner: focusId,
       ownerRank: 0,
       hop: 1,
-      why: `${countLabel("Disease", members.length)} more ${focus.type === "Phenotype" ? "have this symptom" : `${members.length === 1 ? "is" : "are"} linked to ${shortLabel(focus, NAME_MAX)}`}. Open to see each one.`,
+      why: `${countLabel("Disease", members.length)} more ${focus.type === "Phenotype" ? "have this symptom" : `${members.length === 1 ? "is" : "are"} linked to ${focus.label}`}. Open to see each one.`,
       kind,
       bubbleType: "Disease",
       members: members.map((m) => m.disease),
       memberRelevance: members.map((m) => round(m.r)),
+      memberOwners: members.map((m) => m.disease),
     });
     addEdge({
       id: `bub:${focusId}|${anchorBubble}`,
@@ -400,23 +438,26 @@ export function buildNeighborhood(
       relevance: r,
       kind,
       role: "bubble",
+      group: linkGroupOf(focus.type, "Disease"),
       label: "",
       edgeIds: [...new Set(pathEdges.map((e) => e.id))].sort(cmp),
     });
   }
 
   // 2. Related diseases from the grading layer: relevance carried from the best anchor.
-  const relatedBest = new Map<string, { r: number; tier: Tier; from: string }>();
+  const relatedBest = new Map<string, { r: number; tier: Tier; from: string; rank: number }>();
   for (const a of anchorList) {
-    for (const n of relevance?.diseases[a.disease]?.neighbors ?? []) {
-      if (diseaseR.has(n.id) || cache.byId.get(n.id)?.type !== "Disease") continue;
+    (relevance?.diseases[a.disease]?.neighbors ?? []).forEach((n, rank) => {
+      if (diseaseR.has(n.id) || cache.byId.get(n.id)?.type !== "Disease") return;
       const r = a.r * n.relevance;
       const prev = relatedBest.get(n.id);
-      if (!prev || r > prev.r) relatedBest.set(n.id, { r, tier: n.tier, from: a.disease });
-    }
+      if (!prev || r > prev.r) relatedBest.set(n.id, { r, tier: n.tier, from: a.disease, rank });
+    });
   }
+  // Best first; equal scores keep the grading layer's own order, the order the panel lists them in,
+  // so the map's emphasized five are always the panel's top five.
   const related = [...relatedBest]
-    .sort((x, y) => y[1].r - x[1].r || TIER_ORDER[y[1].tier] - TIER_ORDER[x[1].tier] || cmp(x[0], y[0]))
+    .sort((x, y) => y[1].r - x[1].r || x[1].rank - y[1].rank || cmp(x[0], y[0]))
     .slice(0, HOOD.maxRelated)
     .map(([id, v]) => ({ id, relevance: round(v.r), tier: v.tier, from: v.from }));
   related.forEach((d, i) => {
@@ -495,9 +536,7 @@ export function buildNeighborhood(
     if (type === "Mechanism") return main ? HOOD.maxMechanisms : HOOD.maxRelatedMechanisms;
     return undefined;
   };
-  // The searched disease, or the one disease a gene, symptom or group belongs to, keeps bubbles of
-  // its own; other owners share one bubble per type once more than mergeAfter of them fold it.
-  const primary = (owner: string) => owner === focusId || (anchors.length === 1 && owner === anchors[0]);
+  // A variant hangs off its gene; everything else off its disease.
   const ownerOf = (o: Offer) => (o.tie.node.type === "Variant" ? o.tie.via : o.owner);
   const shownCount = new Map<string, number>();
   const typeCount = new Map<NodeType, number>();
@@ -518,15 +557,8 @@ export function buildNeighborhood(
       typeCount.set(type, total + 1);
     }
   }
-  const sharers = new Map<NodeType, Set<string>>();
-  for (const o of toFold) {
-    if (primary(o.owner)) continue;
-    const set = sharers.get(o.tie.node.type) ?? new Set<string>();
-    set.add(ownerOf(o));
-    sharers.set(o.tie.node.type, set);
-  }
-  const bubbleOf = (o: Offer) =>
-    !primary(o.owner) && (sharers.get(o.tie.node.type)?.size ?? 0) > HOOD.mergeAfter ? bubbleId(SHARED_BUBBLE_OWNER, o.tie.node.type) : bubbleId(ownerOf(o), o.tie.node.type);
+  // One bubble per type for the whole map ("22 papers"), never one per disease.
+  const bubbleOf = (o: Offer) => bubbleId(focusId, o.tie.node.type);
   const folded = new Map<string, Offer[]>();
   for (const o of toFold) {
     const bubble = bubbleOf(o);
@@ -541,7 +573,7 @@ export function buildNeighborhood(
 
   for (const o of ordered) {
     if (foldedInto.has(o.tie.node.id) || nodes.has(o.tie.node.id)) continue;
-    const ownerName = shortLabel(cache.byId.get(o.owner) ?? focus, NAME_MAX);
+    const ownerName = (cache.byId.get(o.owner) ?? focus).label;
     const indirect = !anchors.includes(o.owner) && o.owner !== focusId;
     nodes.set(o.tie.node.id, {
       id: o.tie.node.id,
@@ -558,29 +590,22 @@ export function buildNeighborhood(
   }
   for (const [bubble, members] of [...folded].sort((x, y) => cmp(x[0], y[0]))) {
     const type = members[0].tie.node.type;
-    const shared = bubble === bubbleId(SHARED_BUBBLE_OWNER, type);
-    const owner = shared ? focusId : ownerOf(members[0]);
-    const ownerNode = cache.byId.get(owner) ?? focus;
-    // Folded because the map already shows some ("3 more symptoms"), or because the type always folds.
-    const capped = !FOLDED_TYPES.includes(type);
-    const label = capped ? countLabel(type, members.length).replace(/^(\d+) /, "$1 more ") : countLabel(type, members.length);
-    const owners = new Set(members.map((m) => m.owner)).size;
     nodes.set(bubble, {
       id: bubble,
       type: "Bubble",
-      label,
+      // Folded because the map already shows some ("3 more symptoms"), or because the type always folds.
+      label: bubbleLabel(type, members.length),
       relevance: round(Math.max(...members.map((m) => m.r))),
       role: "bubble",
-      owner: anchor(owner),
+      owner: anchor(ownerOf(members[0])),
       ownerRank: rankOf(members[0].owner),
       hop: (nodes.get(members[0].owner)?.hop ?? 0) + Math.min(...members.map((m) => m.tie.hop)),
-      why: shared
-        ? `${countLabel(type, members.length)} linked to ${owners} of the diseases on this map. Open to see each one.`
-        : `${countLabel(type, members.length)} linked to ${shortLabel(ownerNode, NAME_MAX)}. Open to see each one.`,
+      why: "", // said once the neighborhood is complete (bubbleWhy), from the diseases that bring its members
       kind: kindOf(members.flatMap((m) => m.tie.edges.map((e) => e.kind))),
       bubbleType: type,
       members: members.map((m) => m.tie.node.id),
       memberRelevance: members.map((m) => round(m.r)),
+      memberOwners: members.map((m) => m.owner),
     });
   }
 
@@ -608,6 +633,7 @@ export function buildNeighborhood(
       relevance: round(r),
       kind: kindOf(edgeIds.map((e) => cache.edgeById.get(e)?.kind ?? "inferred")),
       role,
+      group: linkGroupOf(typeOfId(from), typeOfId(target)),
       label: role === "bubble" ? "" : relationLabel(o.tie.edges[0].type),
       edgeIds,
     });
@@ -641,6 +667,8 @@ export function buildNeighborhood(
         relevance: Math.min(diseaseR.get(onMap[i])!, diseaseR.get(onMap[j])!) * (touchesFocus ? 1 : p.biology),
         kind: p.support === "observed" ? "observed" : "inferred",
         role: "similarity",
+        group: "biology",
+        tier: p.tier,
         label: `Shares biology (${p.tier})`,
         edgeIds: evidence,
       });
@@ -657,12 +685,13 @@ export function buildNeighborhood(
       relevance: Math.min(diseaseR.get(bridge.a)!, diseaseR.get(bridge.b)!),
       kind: kindOf(bridge.edges.map((id) => cache.edgeById.get(id)?.kind ?? "inferred")),
       role: "bridge",
+      group: "bridge",
       label: bridge.reason,
       edgeIds: [...bridge.edges].sort(cmp),
     });
   }
 
-  return {
+  const hood: Neighborhood = {
     focus: focusId,
     focusType: focus.type,
     nodes: [...nodes.values()].sort((x, y) => x.hop - y.hop || y.relevance - x.relevance || cmp(x.id, y.id)),
@@ -670,73 +699,156 @@ export function buildNeighborhood(
     anchors,
     related: related.map(({ id, relevance: r, tier }) => ({ id, relevance: r, tier })),
   };
+  for (const n of hood.nodes) if (n.role === "bubble" && !n.why) n.why = bubbleWhy(hood, n, n.memberOwners ?? []);
+  return hood;
 }
 
 export interface ThresholdResult {
-  nodes: HoodNode[]; // at or above the threshold
-  ghosts: HoodNode[]; // within HOOD.ghostBand below it: drawn faintly, without labels
-  edges: HoodEdge[]; // both ends shown and the line itself at or above the threshold
-  faintEdges: HoodEdge[]; // lines just under the threshold, or touching a ghost
-  shown: number; // items on the map, bubbles counted by their members, focus excluded
+  nodes: HoodNode[]; // on the map
+  ghosts: HoodNode[]; // related diseases within HOOD.ghostBand under the bar: drawn faintly, without labels
+  edges: HoodEdge[]; // both ends shown
+  faintEdges: HoodEdge[]; // the biology lines to the ghosts
+  shown: number; // items on the map, bubbles counted by the members they show, focus excluded
   total: number;
   relatedShown: number;
   relatedTotal: number;
   byType: Partial<Record<NodeType, { shown: number; total: number }>>;
+  bubbleCount: Record<string, number>; // members a shown bubble holds at this filter
   closestHidden: { id: string; relevance: number } | null; // best related disease below the threshold
 }
 
-// Filters the neighborhood by relevance and by type. Items a little under the threshold stay as
-// ghosts so the user sees there is more; a node whose links all run through nodes under the
-// threshold is dropped. A type filter only hides that type: a hidden node still holds what hangs
-// off it, so "only genes" shows every gene that passes the bar, including a related disease's.
+// What a folded bubble holds at this filter, counted from the same members as its name, and whose
+// they are, so a bubble beside the center never reads as the searched disease's own: "15 papers:
+// 3 linked to Tay-Sachs disease, 12 to 7 related diseases."
+function bubbleWhy(hood: Neighborhood, bubble: HoodNode, owners: readonly string[]): string {
+  const labelOf = (id: string) => hood.nodes.find((n) => n.id === id)?.label ?? id;
+  const focusLabel = labelOf(hood.focus);
+  const main = owners.filter((o) => o === hood.focus || hood.anchors.includes(o));
+  const others = owners.filter((o) => o !== hood.focus && !hood.anchors.includes(o));
+  const mainWho = (ids: string[]) => (ids.length === 1 ? labelOf(ids[0]) : `${ids.length} of the diseases linked to ${focusLabel}`);
+  const otherWho = (ids: string[]) => (ids.length === 1 ? `${labelOf(ids[0])}, a related disease` : `${ids.length} related diseases`);
+  const head = bubbleLabel(bubble.bubbleType!, owners.length);
+  const who = !others.length
+    ? ` linked to ${mainWho([...new Set(main)])}`
+    : !main.length
+      ? ` linked to ${otherWho([...new Set(others)])} on this map`
+      : `: ${main.length} linked to ${mainWho([...new Set(main)])}, ${others.length} to ${otherWho([...new Set(others)])}`;
+  return `${head}${who}. Open to see each one.`;
+}
+
+// Filters the neighborhood. The relevance bar picks the diseases: those at or above it are shown,
+// those a little under it stay as faint ghosts so the user sees there is more. Everything else
+// follows the disease that brings it (its count was capped when the neighborhood was built), so a
+// disease's symptoms never vanish while the disease is on the map. Only what is reachable from the
+// searched node through visible lines stays, so nothing floats. A type filter only hides that
+// type: a hidden node still holds what hangs off it, so "only genes" shows every gene of the
+// diseases on the map. `hiddenLinks` hides kinds of line (the researcher's Links menu).
 export function applyThreshold(
   hood: Neighborhood,
   threshold: number,
   hiddenTypes: ReadonlySet<NodeType> = new Set(),
   ghostBand: number = HOOD.ghostBand,
+  hiddenLinks: ReadonlySet<LinkGroup> = new Set(),
 ): ThresholdResult {
   const cut = threshold - 1e-9;
   const typeOf = (n: HoodNode): NodeType => (n.type === "Bubble" ? n.bubbleType! : n.type);
-  const reach = new Map<string, "shown" | "ghost">();
+  const nodeById = new Map(hood.nodes.map((n) => [n.id, n]));
+
+  // 1. Diseases pass the bar or not.
+  const diseases = new Map<string, "shown" | "ghost">();
   for (const n of hood.nodes) {
-    if (n.role === "focus" || n.relevance >= cut) reach.set(n.id, "shown");
-    else if (n.relevance >= cut - ghostBand) reach.set(n.id, "ghost");
+    if (n.role !== "focus" && typeOf(n) !== "Disease") continue;
+    if (n.role === "focus" || n.relevance >= cut) diseases.set(n.id, "shown");
+    else if (n.relevance >= cut - ghostBand) diseases.set(n.id, "ghost");
   }
-  // Drop nodes left without a link toward the searched node's side of the map.
-  for (let changed = true; changed; ) {
-    changed = false;
-    for (const n of hood.nodes) {
-      if (n.role === "focus" || !reach.has(n.id)) continue;
-      const anchored = hood.edges.some(
-        (e) => e.role !== "bridge" && ((e.a === n.id && reach.has(e.b)) || (e.b === n.id && reach.has(e.a))),
-      );
-      if (!anchored) {
-        reach.delete(n.id);
-        changed = true;
+  // The disease (or the searched node) a node hangs off, through a gene for a gene change.
+  const diseaseOf = (n: HoodNode): string => {
+    let current = n;
+    for (let hops = 0; hops < 4 && current.role !== "focus" && typeOf(current) !== "Disease"; hops++) {
+      const next = nodeById.get(current.owner);
+      if (!next || next === current) return current.owner;
+      current = next;
+    }
+    return current.id;
+  };
+  const bubbleCount: Record<string, number> = {};
+  const bubbleOwners = new Map<string, string[]>(); // the disease behind each member a bubble holds now
+  const candidate = new Set<string>();
+  for (const n of hood.nodes) {
+    if (diseases.has(n.id)) {
+      if (diseases.get(n.id) === "shown") candidate.add(n.id);
+      if (n.role === "bubble") bubbleCount[n.id] = n.members?.length ?? 0;
+      continue;
+    }
+    if (typeOf(n) === "Disease") continue;
+    if (n.role === "bubble") {
+      const owners = (n.memberOwners ?? []).filter((owner) => diseases.get(owner) === "shown");
+      if (owners.length) {
+        candidate.add(n.id);
+        bubbleCount[n.id] = owners.length;
+        bubbleOwners.set(n.id, owners);
+      }
+    } else if (diseases.get(diseaseOf(n)) === "shown") candidate.add(n.id);
+  }
+  // A bubble's name and reason say what it holds at this filter, never everything folded into it.
+  const atFilter = (n: HoodNode): HoodNode => {
+    const owners = bubbleOwners.get(n.id);
+    return owners ? { ...n, label: bubbleLabel(n.bubbleType!, owners.length), why: bubbleWhy(hood, n, owners) } : n;
+  };
+
+  // 2. Reachable from the searched node through visible lines (bridges join two diseases already
+  // on the map, so they hold nothing up).
+  const lineOn = (e: HoodEdge) => !hiddenLinks.has(e.group);
+  const neighbors = new Map<string, string[]>();
+  const link = (from: string, to: string) => {
+    const list = neighbors.get(from);
+    if (list) list.push(to);
+    else neighbors.set(from, [to]);
+  };
+  for (const e of hood.edges) {
+    if (e.role === "bridge" || !lineOn(e)) continue;
+    link(e.a, e.b);
+    link(e.b, e.a);
+  }
+  const reach = new Set<string>([hood.focus]);
+  const queue = [hood.focus];
+  while (queue.length) {
+    for (const next of neighbors.get(queue.shift()!) ?? []) {
+      if (candidate.has(next) && !reach.has(next)) {
+        reach.add(next);
+        queue.push(next);
       }
     }
   }
-  const nodeById = new Map(hood.nodes.map((n) => [n.id, n]));
-  const level = new Map(
-    [...reach].filter(([id]) => {
-      const n = nodeById.get(id)!;
-      return n.role === "focus" || !hiddenTypes.has(typeOf(n));
-    }),
+  // A ghost hangs on its biology line to a disease on the map.
+  const biology = hood.edges.filter((e) => e.role === "similarity" && lineOn(e));
+  const ghosts = new Set(
+    [...diseases]
+      .filter(([id, lv]) => lv === "ghost" && biology.some((e) => (e.a === id && reach.has(e.b)) || (e.b === id && reach.has(e.a))))
+      .map(([id]) => id),
   );
+  const typeShown = (id: string) => {
+    const n = nodeById.get(id)!;
+    return n.role === "focus" || !hiddenTypes.has(typeOf(n));
+  };
+  const level = new Map<string, "shown" | "ghost">([
+    ...[...reach].filter(typeShown).map((id): [string, "shown"] => [id, "shown"]),
+    ...[...ghosts].filter(typeShown).map((id): [string, "ghost"] => [id, "ghost"]),
+  ]);
 
   const byType: Partial<Record<NodeType, { shown: number; total: number }>> = {};
   let shown = 0;
   let total = 0;
   for (const n of hood.nodes) {
     if (n.role === "focus") continue;
-    const type = typeOf(n);
+    const row = (byType[typeOf(n)] ??= { shown: 0, total: 0 });
     const size = n.members?.length ?? 1;
-    const row = (byType[type] ??= { shown: 0, total: 0 });
     row.total += size;
     total += size;
     if (level.get(n.id) === "shown") {
-      row.shown += size;
-      shown += size;
+      const on = n.role === "bubble" ? (bubbleCount[n.id] ?? 0) : 1;
+      row.shown += on;
+      shown += on;
     }
   }
   const edgesShown: HoodEdge[] = [];
@@ -744,15 +856,15 @@ export function applyThreshold(
   for (const e of hood.edges) {
     const la = level.get(e.a);
     const lb = level.get(e.b);
-    if (!la || !lb) continue;
-    if (la === "shown" && lb === "shown" && e.relevance >= cut) edgesShown.push(e);
-    else if (e.relevance >= cut - ghostBand) faint.push(e);
+    if (!la || !lb || !lineOn(e)) continue;
+    if (la === "shown" && lb === "shown") edgesShown.push(e);
+    else if (e.role === "similarity") faint.push(e);
   }
   const relatedShown = hood.related.filter((r) => level.get(r.id) === "shown").length;
   // Only a disease under the bar can be brought in by lowering it; one hidden by a type filter cannot.
   const below = hood.related.filter((r) => r.relevance < cut).sort((x, y) => y.relevance - x.relevance || cmp(x.id, y.id));
   return {
-    nodes: hood.nodes.filter((n) => level.get(n.id) === "shown"),
+    nodes: hood.nodes.filter((n) => level.get(n.id) === "shown").map(atFilter),
     ghosts: hood.nodes.filter((n) => level.get(n.id) === "ghost"),
     edges: edgesShown,
     faintEdges: faint,
@@ -761,20 +873,15 @@ export function applyThreshold(
     relatedShown,
     relatedTotal: hood.related.length,
     byType,
+    bubbleCount,
     closestHidden: below.length ? { id: below[0].id, relevance: below[0].relevance } : null,
   };
 }
 
-// Count of items per relevance bucket (bucket 0 = [0, 1/n), last bucket includes 1), focus excluded.
+// Related diseases per relevance bucket (bucket 0 = [0, 1/n), the last includes 1): what moving
+// the bar would bring in or take out.
 export function relevanceHistogram(hood: Neighborhood, buckets = 20): number[] {
   const counts = new Array<number>(buckets).fill(0);
-  const put = (r: number) => {
-    counts[Math.min(buckets - 1, Math.max(0, Math.floor(r * buckets)))] += 1;
-  };
-  for (const n of hood.nodes) {
-    if (n.role === "focus") continue;
-    if (n.memberRelevance) n.memberRelevance.forEach(put);
-    else put(n.relevance);
-  }
+  for (const r of hood.related) counts[Math.min(buckets - 1, Math.max(0, Math.floor(r.relevance * buckets)))] += 1;
   return counts;
 }

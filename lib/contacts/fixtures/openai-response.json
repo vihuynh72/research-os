@@ -1,0 +1,83 @@
+{
+  "id": "resp_fixture",
+  "object": "response",
+  "status": "completed",
+  "model": "gpt-5.4-mini",
+  "output": [
+    {
+      "id": "rs_1",
+      "type": "reasoning",
+      "summary": []
+    },
+    {
+      "id": "ws_1",
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "search",
+        "query": "Miguel Sena-Esteves UMass Chan Medical School",
+        "sources": [
+          {
+            "type": "url",
+            "url": "https://www.umassmed.edu/sena-esteves-lab/?utm_source=openai"
+          },
+          {
+            "type": "url",
+            "url": "https://www.linkedin.com/in/devin-dersh"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ws_2",
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "open_page",
+        "url": "https://profiles.umassmed.edu/display/flotte"
+      }
+    },
+    {
+      "id": "ws_3",
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "search",
+        "query": "Terence Flotte lab",
+        "sources": [
+          {
+            "type": "api",
+            "name": "oai-weather"
+          }
+        ]
+      }
+    },
+    {
+      "id": "msg_1",
+      "type": "message",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "{\"contacts\":[{\"candidate_id\":\"c1\",\"name\":\"Miguel Sena-Esteves\",\"role\":\"Professor of Neurology\",\"institution\":\"UMass Chan Medical School\",\"why\":\"Senior author of a 2022 paper on gene therapy for Tay-Sachs disease.\",\"profile_url\":\"https://www.umassmed.edu/sena-esteves-lab/?utm_source=openai\",\"lab_url\":null,\"email\":\"miguel.esteves@umassmed.edu\",\"email_source_url\":\"https://pubmed.ncbi.nlm.nih.gov/35145305/\",\"confidence\":\"high\",\"note\":null},{\"candidate_id\":\"c2\",\"name\":\"Terence R. Flotte\",\"role\":\"Dean of the School of Medicine\",\"institution\":\"UMass Chan Medical School\",\"why\":\"First author of the 2021 trial of gene therapy for Tay-Sachs disease.\",\"profile_url\":\"https://profiles.umassmed.edu/display/flotte\",\"lab_url\":\"https://flotte-lab.example.edu/\",\"email\":\"tflotte@umassmed.edu\",\"email_source_url\":\"https://profiles.umassmed.edu/display/flotte\",\"confidence\":\"high\",\"note\":\"Write to t.flotte@example.com for a faster reply.\"},{\"candidate_id\":\"c3\",\"name\":\"Devin Dersh\",\"role\":\"Senior research investigator\",\"institution\":\"\",\"why\":\"Led an NIH grant on Tay-Sachs disease in 2013.\",\"profile_url\":\"https://www.linkedin.com/in/devin-dersh\",\"lab_url\":null,\"email\":null,\"email_source_url\":null,\"confidence\":\"medium\",\"note\":null},{\"candidate_id\":\"c2\",\"name\":\"Terence Flotte\",\"role\":\"\",\"institution\":\"\",\"why\":\"Listed twice.\",\"profile_url\":null,\"lab_url\":null,\"email\":null,\"email_source_url\":null,\"confidence\":\"low\",\"note\":null}],\"summary\":\"Start with Dr. Miguel Sena-Esteves, who led the 2022 Tay-Sachs gene therapy study.\"}",
+          "annotations": [
+            {
+              "type": "url_citation",
+              "start_index": 0,
+              "end_index": 0,
+              "url": "https://flotte-lab.example.edu/?utm_source=openai",
+              "title": "Flotte lab"
+            }
+          ],
+          "logprobs": []
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 4200,
+    "output_tokens": 900,
+    "total_tokens": 5100
+  }
+}

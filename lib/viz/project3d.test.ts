@@ -430,3 +430,17 @@ test("separate works in 3D and keeps points inside the bounds", () => {
   const closest = Math.min(...out.flatMap((p, i) => out.slice(i + 1).map((q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]))));
   assert.ok(closest >= 0.1 * 0.9, `closest pair ${closest}`);
 });
+
+test("placeLabels drops an optional label rather than cover a label or name the wrong dot", () => {
+  // Twelve labels on one spot: the required first stays, the optional rest give way.
+  const crowd = Array.from({ length: 12 }, (_, i): LabelRequest => ({ ...label(250, 250), optional: i > 0 }));
+  const placed = placeLabels(crowd, 500, 500);
+  assert.equal(placed.length, 12, "one answer per request");
+  assert.equal(placed[0].dropped, false);
+  const drawn = placed.filter((p) => !p.dropped);
+  for (let i = 0; i < drawn.length; i++) for (let j = i + 1; j < drawn.length; j++) assert.equal(overlapArea(drawn[i], drawn[j]), 0);
+  assert.ok(drawn.length < 12);
+  // Text already on the canvas (a sector name) is kept clear too.
+  const [beside] = placeLabels([{ ...label(250, 250), optional: true }], 500, 500, 4, [{ x: 200, y: 256, w: 100, h: 30 }]);
+  assert.ok(beside.dropped || beside.side !== "below");
+});

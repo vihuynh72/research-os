@@ -4,6 +4,7 @@
 // meaningless on another.
 import fs from "node:fs";
 import path from "node:path";
+import type { SearchAliases } from "../graph/index.ts";
 import type { AtlasGraph } from "../graph/types.ts";
 import { ENGINE_VERSION, type RelevanceDoc } from "../grading/types.ts";
 
@@ -19,6 +20,9 @@ export interface AtlasData {
   relevance: RelevanceDoc;
   sample: boolean;
   notes: DataNote[]; // stale grades, a graph waiting to be graded
+  // Other names for search (search-aliases.json, scripts/build-search-aliases.ts); null without the
+  // file, and search then works on the labels alone.
+  aliases: SearchAliases | null;
 }
 
 export type AtlasDataResult = { ok: true; data: AtlasData } | { ok: false; dir: string; missing: string[]; error?: string };
@@ -27,6 +31,8 @@ const PAIRS = [
   { graph: "graph.json", relevance: "relevance.json", sample: false },
   { graph: "graph.sample.json", relevance: "relevance.sample.json", sample: true },
 ] as const;
+
+const ALIAS_FILE = "search-aliases.json";
 
 export function dataDir(): string {
   return process.env.ATLAS_DATA_DIR ?? path.join(process.cwd(), "public");
@@ -53,6 +59,26 @@ function isGraph(value: unknown): value is AtlasGraph {
 function isRelevance(value: unknown): value is RelevanceDoc {
   const v = value as RelevanceDoc;
   return !!v && typeof v === "object" && !!v.meta && !!v.diseases && typeof v.diseases === "object" && Array.isArray(v.pairs);
+}
+
+// The optional alias file: lists of names by node id. A missing or damaged file never stops the
+// app; only well-formed entries are kept.
+function loadAliases(dir: string): SearchAliases | null {
+  const file = path.join(/*turbopackIgnore: true*/ dir, ALIAS_FILE);
+  if (!fs.existsSync(/*turbopackIgnore: true*/ file)) return null;
+  let doc: unknown;
+  try {
+    doc = readJson(file);
+  } catch {
+    return null;
+  }
+  const lists = (doc as { aliases?: unknown } | null)?.aliases;
+  if (!lists || typeof lists !== "object" || Array.isArray(lists)) return null;
+  const aliases: Record<string, string[]> = {};
+  for (const [id, names] of Object.entries(lists)) {
+    if (Array.isArray(names)) aliases[id] = names.filter((name): name is string => typeof name === "string");
+  }
+  return aliases;
 }
 
 // The data folder is chosen at run time (ATLAS_DATA_DIR), so these paths are marked for the bundler
@@ -97,5 +123,5 @@ export function loadAtlasData(): AtlasDataResult {
       detail: `The grades come from engine ${relevance.meta.engine_version}; this app expects ${ENGINE_VERSION}. Run npm run grade again.`,
     });
   }
-  return { ok: true, data: { graph, relevance, sample: pair.sample, notes } };
+  return { ok: true, data: { graph, relevance, sample: pair.sample, notes, aliases: loadAliases(dir) } };
 }

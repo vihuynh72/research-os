@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "total": 1,
+    "offset": 0,
+    "limit": 10
+  },
+  "results": [
+    {
+      "appl_id": 8593531,
+      "project_title": "Endoplasmic reticulum quality control of mutant HexA enzyme in Tay-Sachs disease",
+      "fiscal_year": 2013,
+      "project_start_date": "2013-09-01T00:00:00",
+      "project_end_date": "2014-11-30T00:00:00",
+      "principal_investigators": [
+        {
+          "profile_id": 11085238,
+          "first_name": "Devin",
+          "middle_name": "",
+          "last_name": "Dersh",
+          "is_contact_pi": true,
+          "full_name": "Devin  Dersh",
+          "title": "SENIOR RESEARCH INVESTIGATOR"
+        }
+      ],
+      "contact_pi_name": "DERSH, DEVIN ",
+      "organization": {
+        "org_name": "UNIVERSITY OF PENNSYLVANIA",
+        "org_city": "PHILADELPHIA",
+        "org_state": "PA",
+        "org_country": "UNITED STATES"
+      },
+      "project_detail_url": "https://reporter.nih.gov/project-details/8593531",
+      "core_project_num": "F31NS084666",
+      "is_active": false
+    }
+  ]
+}

@@ -5,23 +5,20 @@ import type {
   Dimension,
   DimensionResult,
   DimensionStatus,
-  Flag,
   PairGrade,
   RelevanceCluster,
   RelevanceDoc,
-  SharedItem,
   Tier,
 } from "../../lib/grading/types.ts";
 import { TIER_ORDER, pairKey } from "../../lib/grading/types.ts";
 import { UMBRELLA_MIN, UMBRELLA_SHARE } from "../../lib/grading/config.ts";
-import { classifyVariant, type VariantEffect } from "../../lib/grading/variants.ts";
-import { buildGraphIndex, type GraphIndex } from "../../lib/graph/index.ts";
+import { buildGraphIndex, type GraphIndex, type SearchAliases } from "../../lib/graph/index.ts";
 import type { HoodEdge, HoodNode, Neighborhood } from "../../lib/graph/neighborhood.ts";
 import { relationLabel } from "../../lib/graph/vocab.ts";
 import { compactSynonym, displayName } from "./names.ts";
+import { plainClusterName, shortClusterName } from "./explain.ts";
 
 export type Mode = "parent" | "researcher";
-export type View = "2d" | "3d";
 export type Kind = EdgeKind | "mixed";
 
 export const TIER_WORD: Record<Tier, string> = {
@@ -49,40 +46,14 @@ export const STATUS_WORD: Record<DimensionStatus, string> = {
   unknown: "Not enough data",
 };
 
-export const KIND_WORD: Record<Kind, string> = {
-  observed: "observed",
-  inferred: "inferred",
-  contradicted: "disputed",
-  mixed: "observed and inferred",
-};
-
-// Coded flags in words a parent can act on. Keep them short and free of jargon.
-export const FLAG_TEXT: Record<Flag, string> = {
-  generic_symptoms_only: "The shared symptoms are common ones.",
-  few_annotations: "One of the two diseases has few symptoms on record.",
-  uncalibrated: "Symptom overlap is not yet compared with all other diseases.",
-  same_gene_allelic: "They share a gene. Different changes in one gene can still act differently.",
-  variant_type_conflict: "In one disease the gene changes mostly switch the gene off; in the other they mostly do not.",
-  variant_effect_unknown: "Too few gene changes are on record to compare their type.",
-  derived_from_variant_notation: "The type of gene change is read from the variant names, not from a curated source.",
-  via_mechanism: "Some groups or resources are linked through the shared mechanism, not to the disease itself.",
-  keyword_match_only: "Some links come only from a keyword search.",
-  name_match_only: "Some links come only from a directory name match.",
-  inferred_only: "No curated source states this link directly; it is inferred.",
-  contradicted_evidence: "A source disputes part of this link.",
-  umbrella_resource: "A shared group or resource covers most diseases here, so it says little about these two.",
-  inactive_or_withdrawn: "A shared study was withdrawn, stopped early or has an unknown status.",
-  no_data: "One or both diseases have nothing on record for some kinds of evidence.",
-  needs_expert_review: "The AI review asks a specialist to check this link.",
-  family_level_only: "They share only the process that defines the whole disease family, which does not tell them apart.",
-  sources_disagree: "Published sources give different values here, for example the age symptoms start. A clinician should confirm.",
-};
-
+// A Reactome item is a pathway (a chain of steps inside cells), never a "mechanism": two genes in
+// one pathway take part in the same process, which is not the same as two diseases sharing a
+// mechanism.
 export const TYPE_WORD: Record<NodeType, string> = {
   Disease: "Disease",
   Gene: "Gene",
-  Variant: "Variant",
-  Mechanism: "Mechanism",
+  Variant: "Gene change",
+  Mechanism: "Pathway",
   Phenotype: "Symptom",
   PatientOrg: "Patient group",
   Paper: "Paper",
@@ -92,26 +63,27 @@ export const TYPE_WORD: Record<NodeType, string> = {
   Asset: "Registry or asset",
 };
 
-const TRIAL_STATUS: Record<string, string> = {
-  RECRUITING: "Recruiting",
-  NOT_YET_RECRUITING: "Not yet recruiting",
-  ENROLLING_BY_INVITATION: "Enrolling by invitation",
-  ACTIVE_NOT_RECRUITING: "Active, not recruiting",
-  COMPLETED: "Completed",
-  SUSPENDED: "Suspended",
-  TERMINATED: "Stopped early",
-  WITHDRAWN: "Withdrawn",
-  UNKNOWN: "Status unknown",
+// The panel's name for each line of evidence the grades compare.
+export const DIMENSION_WORD: Record<Dimension, string> = {
+  gene: "Same gene",
+  variant: "Type of gene change",
+  mechanism: "Shared pathway",
+  phenotype: "Symptoms",
+  disease: "Onset and inheritance",
+  patient_org: "Patient groups",
+  paper: "Papers",
+  grant: "Research grants",
+  trial: "Clinical studies",
+  investigator: "Researchers",
+  asset: "Registries",
 };
 
-export function trialStatus(node: GraphNode): string | null {
-  const raw = node.attributes?.overall_status;
-  if (typeof raw !== "string" || !raw) return null;
-  return TRIAL_STATUS[raw] ?? raw.charAt(0) + raw.slice(1).toLowerCase().replace(/_/g, " ");
-}
-
-export function isRecruiting(node: GraphNode): boolean {
-  return node.attributes?.overall_status === "RECRUITING";
+// The grading engine's sentences (a pair's reasons, a line's summary) call a Reactome item a
+// "mechanism". They are shown through this, which says "pathway" and keeps case and plural.
+export function engineText(text: string): string {
+  return text.replace(/\b(mechanism|Mechanism|MECHANISM)(s|S)?\b/g, (_, word: string, plural = "") =>
+    (word === "MECHANISM" ? "PATHWAY" : word[0] === "M" ? "Pathway" : "pathway") + plural,
+  );
 }
 
 export function clusterColor(slot: number | null | undefined): string {
@@ -122,11 +94,12 @@ export function formatScore(x: number): string {
   return x.toFixed(2);
 }
 
-// 0.9963 -> "99.6%": one decimal near the top of the scale, where the difference matters, rounded
-// down there so nothing short of a perfect match reads as 100%.
+// 0.449 -> "44%": always rounded down, so a percent never crosses the tier cutoff its word is
+// on ("Exploratory · 45%" beside the 45% moderate line). One decimal near the top of the scale,
+// so nothing short of a perfect match reads as 100%.
 export function formatPercent(p: number): string {
   const pct = p * 100;
-  return `${pct >= 99 && pct < 100 ? (Math.floor(pct * 10) / 10).toFixed(1) : Math.round(pct)}%`;
+  return `${pct >= 99 && pct < 100 ? (Math.floor(pct * 10) / 10).toFixed(1) : Math.floor(pct + 1e-6)}%`;
 }
 
 export function kindOf(edges: GraphEdge[]): Kind {
@@ -150,11 +123,11 @@ export interface AtlasModel {
   diseaseCount: number;
 }
 
-export function buildModel(graph: AtlasGraph, relevance: RelevanceDoc): AtlasModel {
+export function buildModel(graph: AtlasGraph, relevance: RelevanceDoc, aliases?: SearchAliases | null): AtlasModel {
   return {
     graph,
     relevance,
-    index: buildGraphIndex(graph),
+    index: buildGraphIndex(graph, { aliases }),
     edgeById: new Map(graph.edges.map((e) => [e.id, e])),
     pairs: new Map(relevance.pairs.map((p) => [pairKey(p.a, p.b), p])),
     clusters: new Map(relevance.clusters.map((c) => [c.id, c])),
@@ -179,12 +152,34 @@ export function diseaseColor(model: AtlasModel, diseaseId: string): string {
   return clusterColor(clusterOf(model, diseaseId)?.color_slot);
 }
 
-// Suggested first searches for the start screen, all taken from the data: a disease that shows
-// what the atlas is for (it shares biology through a pathway with diseases caused by other genes,
-// and has clinical look-alikes too), a gene that is not just the disease's own name (its own gene,
-// else the gene of its closest relative), and its most specific symptom. Nothing here is ever
-// focused until the person picks it.
+// The start screen's examples: plain names a parent would search, each leading somewhere. Tay-Sachs
+// disease, the gene GBA1 and the symptom "Visual impairment", in that order.
+const PREFERRED_EXAMPLES: readonly { id: string; type: NodeType }[] = [
+  { id: "MONDO:0010100", type: "Disease" },
+  { id: "HGNC:4177", type: "Gene" },
+  { id: "HP:0000505", type: "Phenotype" },
+];
+
+// Suggested first searches for the start screen: the preferred examples, each replaced by the
+// automatic pick of its kind when this data does not have it (or it reaches no disease). Nothing
+// here is ever focused until the person picks it.
 export function exampleNodes(model: AtlasModel): GraphNode[] {
+  const picked = PREFERRED_EXAMPLES.map(({ id, type }) => {
+    const node = model.index.byId.get(id);
+    return node?.type === type && model.index.diseasesFor(id).length > 0 ? node : undefined;
+  });
+  const auto = picked.every(Boolean) ? [] : automaticExamples(model);
+  return PREFERRED_EXAMPLES.flatMap(({ type }, i) => {
+    const node = picked[i] ?? auto.find((n) => n.type === type);
+    return node ? [node] : [];
+  });
+}
+
+// The automatic pick, all taken from the data: a disease that shows what RareVerse is for (it
+// shares biology through a pathway with diseases caused by other genes, and has clinical
+// look-alikes too), a gene that is not just the disease's own name (its own gene, else the gene of
+// its closest relative), and its most specific symptom.
+function automaticExamples(model: AtlasModel): GraphNode[] {
   const { index, relevance } = model;
   const demo = demoDisease(model);
   if (!demo) return [];
@@ -234,18 +229,12 @@ function mostCentralNode(model: AtlasModel, nodes: GraphNode[]): GraphNode | und
   return id ? model.index.byId.get(id) : undefined;
 }
 
-// A display name for any node in `max` characters: a compact synonym ("CLN3") when there is one,
-// otherwise the label, cut in the middle so the end that tells similar names apart stays
-// ("oculocutaneous… type 1A"). See names.ts.
-export function nodeName(node: Pick<GraphNode, "label" | "synonyms" | "type">, max = 40): string {
-  return displayName(node, max);
-}
-
 export const OTHER_CLUSTER = "other";
 
 export interface ClusterRow {
   id: string; // a cluster id, or OTHER_CLUSTER for clusters past the eighth color and unclustered diseases
-  label: string;
+  label: string; // in plain words: "Linked to the gene COL2A1", "Shares the melanin biosynthesis pathway"
+  short: string; // for map labels and chips: "COL2A1", "Melanin biosynthesis"
   size: number;
   color: string;
   lead: string | null; // the most central member, focused when the row is picked
@@ -262,14 +251,25 @@ function mostCentral(model: AtlasModel, ids: string[]): string | null {
   );
 }
 
-// Colored clusters in color-slot order (largest first), then one gray "Other / unclustered" row.
+// A cluster's name in plain words. The grade file names a cluster "Same gene: COL2A1" or after a
+// Reactome pathway; a parent reads "Linked to the gene COL2A1" or "Shares the … pathway".
+export function clusterName(cluster: Pick<RelevanceCluster, "label"> | null | undefined): string {
+  return plainClusterName(cluster?.label);
+}
+
+export function clusterShortName(cluster: Pick<RelevanceCluster, "label"> | null | undefined): string {
+  return shortClusterName(cluster?.label);
+}
+
+// Colored clusters in color-slot order (largest first), then one gray "Not in a group yet" row.
 export function clusterRows(model: AtlasModel): ClusterRow[] {
   const colored = model.relevance.clusters
     .filter((c) => c.color_slot !== null)
     .sort((a, b) => (a.color_slot ?? 0) - (b.color_slot ?? 0));
   const rows: ClusterRow[] = colored.map((c) => ({
     id: c.id,
-    label: c.label,
+    label: clusterName(c),
+    short: clusterShortName(c),
     size: c.size,
     color: clusterColor(c.color_slot),
     lead: mostCentral(model, c.members),
@@ -284,7 +284,8 @@ export function clusterRows(model: AtlasModel): ClusterRow[] {
   if (other.length) {
     rows.push({
       id: OTHER_CLUSTER,
-      label: "Other / unclustered",
+      label: "Not in a group yet",
+      short: "Not in a group",
       size: other.length,
       color: clusterColor(null),
       lead: mostCentral(model, other),
@@ -474,133 +475,12 @@ export function diseaseProfile(model: AtlasModel, diseaseId: string): DiseasePro
   };
 }
 
-// What the engine had to compare for one disease, per dimension, for the "no connection" state.
-export function coverageOf(profile: DiseaseProfile): Record<Dimension, number> {
-  return {
-    gene: profile.genes.length,
-    variant: profile.variants.length,
-    mechanism: profile.mechanisms.length,
-    phenotype: profile.symptoms.length,
-    disease: profile.context.length,
-    patient_org: profile.orgs.length,
-    paper: profile.papers.length,
-    trial: profile.trials.length,
-    grant: profile.grants.length,
-    investigator: profile.investigators.length,
-    asset: profile.assets.length,
-  };
-}
-
-// ---------- the evidence path between two diseases ----------
-
-export interface PathConnector {
-  edges: GraphEdge[];
-  kind: Kind;
-}
-
-export interface PathStep {
-  node: GraphNode;
-  connector?: PathConnector; // how this step is reached from the previous one
-}
-
-// Shortest walk from one node to another using only the given edges (the edges the engine
-// cites for a shared item), so every step on screen is an edge with a source.
-function walk(model: AtlasModel, from: string, to: string, edgeIds: string[]): GraphEdge[] | null {
-  const edges = edgeIds.flatMap((id) => {
-    const e = model.edgeById.get(id);
-    return e ? [e] : [];
-  });
-  const prev = new Map<string, { node: string; edge: GraphEdge } | null>([[from, null]]);
-  const queue = [from];
-  while (queue.length) {
-    const at = queue.shift()!;
-    if (at === to) break;
-    for (const e of edges) {
-      const next = e.subject === at ? e.object : e.object === at ? e.subject : null;
-      if (next && !prev.has(next)) {
-        prev.set(next, { node: at, edge: e });
-        queue.push(next);
-      }
-    }
-  }
-  if (!prev.has(to)) return null;
-  const out: GraphEdge[] = [];
-  for (let at = to; prev.get(at); at = prev.get(at)!.node) out.unshift(prev.get(at)!.edge);
-  return out;
-}
-
-export interface EvidencePath {
-  steps: PathStep[];
-  sharedTie: SharedItem | null; // the gene, mechanism or symptom in the middle
-  sharedGroup: SharedItem | null; // the patient group or registry at the end
-  groupIsUmbrella: boolean; // the only shared group covers most diseases here
-}
-
-export function evidencePath(model: AtlasModel, pair: PairGrade, focusId: string, otherId: string): EvidencePath | null {
-  const focus = nodeOf(model, focusId);
-  const other = nodeOf(model, otherId);
-  if (!focus || !other) return null;
-  const d = pair.dimensions;
-  const sharedTie = d.gene?.shared[0] ?? d.mechanism?.shared[0] ?? d.phenotype?.shared[0] ?? null;
-  const umbrella = new Set([...umbrellaIds(model, d.patient_org), ...umbrellaIds(model, d.asset)]);
-  const groups = [...(d.patient_org?.shared ?? []), ...(d.asset?.shared ?? [])];
-  const sharedGroup = groups.find((g) => !umbrella.has(g.id)) ?? groups[0] ?? null;
-  const groupIsUmbrella = !!sharedGroup && umbrella.has(sharedGroup.id);
-
-  const steps: PathStep[] = [{ node: focus }];
-  const connect = (fromId: string, item: SharedItem, toNode: GraphNode) => {
-    const edges = walk(model, fromId, toNode.id, item.edges);
-    if (!edges?.length) return false;
-    steps.push({ node: toNode, connector: { edges, kind: kindOf(edges) } });
-    return true;
-  };
-
-  // No single shared item that walks from one disease to the other: show the two ends only.
-  const tieNode = sharedTie ? nodeOf(model, sharedTie.id) : undefined;
-  if (!sharedTie || !tieNode || !connect(focusId, sharedTie, tieNode) || !connect(tieNode.id, sharedTie, other)) {
-    return { steps: [{ node: focus }, { node: other }], sharedTie: null, sharedGroup, groupIsUmbrella };
-  }
-  const groupNode = sharedGroup ? nodeOf(model, sharedGroup.id) : undefined;
-  if (sharedGroup && groupNode) connect(otherId, sharedGroup, groupNode);
-  return { steps, sharedTie, sharedGroup, groupIsUmbrella };
-}
-
-// The graph edges behind a dimension's shared items, each once, in the dimension's item order
-// (strongest item first) so the first sources listed back the strongest claims.
-export function sharedEdges(model: AtlasModel, dim: DimensionResult): GraphEdge[] {
-  const seen = new Set<string>();
-  const out: GraphEdge[] = [];
-  for (const item of dim.shared) {
-    for (const id of item.edges) {
-      const edge = model.edgeById.get(id);
-      if (!edge || seen.has(id)) continue;
-      seen.add(id);
-      out.push(edge);
-    }
-  }
-  return out;
-}
-
-export interface VariantRow {
-  node: GraphNode;
-  name: string; // the change without its transcript prefix: "c.70_73del (p.Arg24fs)"
-  effect: VariantEffect;
-}
-
-// The variants the variant-type line was computed from (the disease's own and its genes'),
-// classified with the engine's own reader, so the panel can show how "2 of 3" was counted.
-export function variantRows(model: AtlasModel, diseaseId: string): VariantRow[] {
-  return diseaseProfile(model, diseaseId).variants.map(({ node }) => ({
-    node,
-    name: node.label.replace(/^[^\s:()]+\([^)]*\):/, ""),
-    effect: classifyVariant(node.label),
-  }));
-}
-
 // Names for evidence sentences: in full, except that a gene and its disease often share a name
 // ("CLN3"), so the sentence says which is which: "CLN3 gene causes CLN3 disease".
 export function evidenceName(node: GraphNode): string {
   if (node.type === "Gene") return `${node.label} gene`;
+  // A title is quoted whole, without its own closing period, so the sentence reads on.
+  if (node.type === "Paper" || node.type === "Grant") return `“${node.label.replace(/\.$/, "")}”`;
   if (node.type === "Disease") {
     const short = compactSynonym(node);
     return short && short !== node.label ? `${short} disease` : node.label;
