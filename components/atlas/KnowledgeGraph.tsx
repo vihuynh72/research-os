@@ -6,16 +6,20 @@
 // with the relevance bar) and direction is the kind of thing (diseases at the top, research upper
 // right, groups and registries lower right, symptoms at the bottom, genes and mechanisms on the left).
 // Line width, glow and opacity follow relevance; dashed lines are inferred; items just under the
-// filter stay as faint ghosts so the user can see there is more.
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+// filter stay as faint ghosts so the user can see there is more. Labels never print over each
+// other: a name that fits nowhere is left to hover and selection.
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AtlasGraph, NodeType } from "@/lib/graph/types";
 import type { RelevanceDoc } from "@/lib/grading/types";
 import { applyThreshold, buildNeighborhood, type HoodEdge, type HoodNode } from "@/lib/graph/neighborhood";
 import { SECTORS, radialLayout, ringRadius, type RadialNode } from "@/lib/viz/radialLayout";
+import { separate } from "@/lib/viz/project3d";
 import { ICON_PATH } from "@/lib/viz/icons";
-import { shortLabel } from "@/lib/graph/labels";
 import { TYPE_NAME } from "@/lib/graph/vocab";
 import { KIND_OF, KIND_STYLE } from "./kinds";
+import { formatPercent, isTier, tierWord } from "./format";
+import { compactSynonym, displayName, distinctNames, fitName, wrapName } from "./names";
+import { crowdedDiseases, mapNodeRadius } from "./mapSizes";
 
 export interface KnowledgeGraphProps {
   graph: AtlasGraph;
@@ -23,13 +27,13 @@ export interface KnowledgeGraphProps {
   focusId: string | null;
   selectedId: string | null; // a node id or a map edge id
   threshold: number; // 0..1
+  thresholds: { strong: number; moderate: number; exploratory: number }; // the tier rings
   hiddenTypes: ReadonlySet<NodeType>;
   expanded: ReadonlySet<string>;
   mode: "parent" | "researcher";
   onFocus(id: string): void;
   onSelect(id: string | null): void;
   onToggleBubble(id: string): void;
-  onThreshold(value: number): void;
   reserveTop?: number; // share of the height kept clear above the constellation before a search
   className?: string;
 }
@@ -37,31 +41,44 @@ export interface KnowledgeGraphProps {
 const W = 1200;
 const H = 840;
 const CONSTELLATION_PAD = 70;
+const CONSTELLATION_GAP = 34; // closest two constellation dots may sit: their hover targets never overlap
 // Text keeps a readable size on screen however small the map is drawn: a 12-unit label renders at
 // about LABEL_PX pixels, never smaller than designed and never more than MAX_TEXT_SCALE times it.
 const LABEL_PX = 10.5;
 const MAX_TEXT_SCALE = 2.4;
+// A name up to this many characters fits on one line of the map; longer ones wrap over two lines,
+// or, where two lines do not fit, shorten in the middle and keep their distinguishing end.
+const ONE_LINE = 26;
+const TWO_LINES = 26;
+// A label may cover this share of its own area with dots (it is drawn above them, with a halo),
+// but never any of another label.
+const DOT_OVERLAP = 0.08;
 
 type Pt = [number, number];
 type Box = [number, number, number, number]; // left, top, right, bottom
-type Anchor = { x: number; y: number; anchor: "start" | "middle" | "end" };
+type Anchor = { x: number; y: number; anchor: "start" | "middle" | "end" }; // first baseline, from the node
+interface LabelSpec {
+  lines: string[];
+  tier: string; // the related disease's grade line, or ""
+  size: number;
+  weight: number;
+}
+interface PlacedLabel {
+  spec: LabelSpec;
+  at: Anchor;
+}
 
 const overlaps = (a: Box, b: Box) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
 const overlapArea = (a: Box, b: Box) => Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+const area = (b: Box) => (b[2] - b[0]) * (b[3] - b[1]);
 
 interface Hover {
   kind: "node" | "edge";
   id: string;
   left: number; // px inside the container
-  top: number;
-}
-
-function nodeRadius(n: HoodNode, centrality: number): number {
-  if (n.role === "focus") return 30;
-  if (n.type === "Disease") return 17 + 7 * centrality;
-  if (n.role === "bubble") return 15;
-  if (n.role === "symptom") return 11;
-  return 13;
+  top: number; // px inside the container: the target's top edge
+  bottom: number; // and its bottom edge
+  below: boolean; // open below the target (it sits in the lower half of the map), room permitting
 }
 
 function clusterColor(relevance: RelevanceDoc | null, cluster: string | null | undefined): string {
@@ -74,13 +91,7 @@ function typeName(n: HoodNode): string {
   return TYPE_NAME[n.type].one;
 }
 
-function pct(x: number): string {
-  return `${Math.round(x * 100)}%`;
-}
-
-function truncate(label: string, max = 26): string {
-  return label.length <= max ? label : `${label.slice(0, max - 1).trimEnd()}…`;
-}
+const pct = formatPercent;
 
 // Disease-to-disease lines carry the story, so they get the weight and the glow; evidence lines stay
 // thinner and neutral. Weak lines fade but never below 22% opacity.
@@ -116,6 +127,15 @@ function convexHull(points: Pt[]): Pt[] {
   return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
+// Distance from p to the segment a-b, and how far along it (0..1) the closest point lies.
+function toSegment(p: Pt, a: Pt, b: Pt): { d: number; t: number } {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2));
+  return { d: Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy)), t };
+}
+
 function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -129,7 +149,7 @@ function useReducedMotion(): boolean {
 }
 
 export default function KnowledgeGraph(props: KnowledgeGraphProps) {
-  const { graph, relevance, focusId, selectedId, threshold, hiddenTypes, expanded, mode } = props;
+  const { graph, relevance, focusId, selectedId, threshold, thresholds, hiddenTypes, expanded, mode } = props;
   const uid = useId().replace(/:/g, "");
   const reduced = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -140,12 +160,16 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
 
   // How large the map is drawn, so labels can keep a readable size on screen (ts = text scale).
   const [drawn, setDrawn] = useState(0.7);
+  const [boxWidth, setBoxWidth] = useState(600);
+  const [boxHeight, setBoxHeight] = useState(420);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const measure = () => {
       const { width, height } = el.getBoundingClientRect();
       if (width > 0 && height > 0) setDrawn(Math.min(width / W, height / H));
+      if (width > 0) setBoxWidth(width);
+      if (height > 0) setBoxHeight(height);
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -154,10 +178,34 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
   }, []);
   const ts = Math.round(Math.min(MAX_TEXT_SCALE, Math.max(1, LABEL_PX / (12 * drawn))) * 20) / 20;
 
+  // Label widths: estimated on the server and in the first render (so hydration matches), then
+  // measured with the page's own font, so labels are placed by their real size.
+  const [measureText, setMeasureText] = useState<((text: string, size: number, weight: number) => number) | null>(null);
+  useEffect(() => {
+    const context = document.createElement("canvas").getContext("2d");
+    const el = containerRef.current;
+    if (!context || !el) return;
+    const family = getComputedStyle(el).fontFamily;
+    const cache = new Map<string, number>();
+    setMeasureText(() => (text: string, size: number, weight: number) => {
+      const key = `${weight}|${text}`;
+      let unit = cache.get(key);
+      if (unit === undefined) {
+        context.font = `${weight} 100px ${family}`;
+        unit = context.measureText(text).width / 100;
+        cache.set(key, unit);
+      }
+      return unit * size;
+    });
+  }, []);
+  const textWidth = (text: string, size: number, weight: number) => (measureText ? measureText(text, size, weight) : text.length * size * (weight >= 560 ? 0.6 : 0.56));
+
   const byId = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
   const edgeById = useMemo(() => new Map(graph.edges.map((e) => [e.id, e])), [graph]);
   const centralityOf = (id: string) => relevance?.diseases[id]?.centrality ?? 0;
   const focusNode = focusId ? byId.get(focusId) : undefined;
+  // One short name per disease of the atlas, never two alike ("oculocutaneous… type 1A").
+  const diseaseNames = useMemo(() => distinctNames(graph.nodes.filter((n) => n.type === "Disease"), ONE_LINE), [graph]);
 
   // Constellation: every disease at its 2D projection of the 3D similarity layout. Before a search it
   // sits below the reserved top band, leaving room for the search card.
@@ -166,18 +214,31 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
     const out = new Map<string, Pt>();
     const diseases = graph.nodes.filter((n) => n.type === "Disease");
     const top = H * reserveTop + CONSTELLATION_PAD;
-    diseases.forEach((n, i) => {
+    const raw = diseases.map((n, i): Pt => {
       const c = relevance?.diseases[n.id]?.coords3d;
       const x = c ? c[0] : Math.cos((i / Math.max(diseases.length, 1)) * 2 * Math.PI) * 0.8;
       const y = c ? c[1] : Math.sin((i / Math.max(diseases.length, 1)) * 2 * Math.PI) * 0.8;
-      out.set(n.id, [W / 2 + x * (W / 2 - CONSTELLATION_PAD), top + ((y + 1) / 2) * (H - CONSTELLATION_PAD - top)]);
+      return [W / 2 + x * (W / 2 - CONSTELLATION_PAD), top + ((y + 1) / 2) * (H - CONSTELLATION_PAD - top)];
     });
+    // Diseases that share no biology all sit at the middle of the similarity layout: spread them
+    // so every dot can be seen and pointed at, each staying near its place. A small atlas writes
+    // names under its dots, so its dots keep a name's width apart.
+    const gap = diseases.length <= 30 ? Math.max(CONSTELLATION_GAP, 46 * ts) : CONSTELLATION_GAP;
+    const spread = separate(raw, gap, { min: [CONSTELLATION_PAD, top], max: [W - CONSTELLATION_PAD, H - CONSTELLATION_PAD] });
+    diseases.forEach((n, i) => out.set(n.id, [Math.round(spread[i][0] * 100) / 100, Math.round(spread[i][1] * 100) / 100]));
     return out;
-  }, [graph, relevance, reserveTop]);
+  }, [graph, relevance, reserveTop, ts]);
 
   // The neighborhood and its layout. Layout uses every node at every relevance, so moving the bar
   // only shows and hides; nothing jumps.
   const hood = useMemo(() => (focusId ? buildNeighborhood(graph, relevance, focusId, { expanded }) : null), [graph, relevance, focusId, expanded]);
+  const crowded = crowdedDiseases(hood);
+  // Short names for everything else on the map, never two alike ("Developmental… Ductal Cells").
+  const nodeNames = useMemo(
+    () => distinctNames((hood?.nodes ?? []).filter((n) => n.type !== "Disease").map((n) => ({ id: n.id, label: n.role === "bubble" ? n.label.replace(/^\d+ /, "") : n.label })), ONE_LINE),
+    [hood],
+  );
+  const radiusOf = (n: HoodNode) => mapNodeRadius(n, centralityOf(n.id), crowded);
   const layout = useMemo(() => {
     if (!hood) return null;
     const nodes: RadialNode[] = hood.nodes.map((n) => ({
@@ -187,7 +248,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
       role: n.role,
       relevance: n.relevance,
       ownerRank: n.ownerRank,
-      radius: nodeRadius(n, relevance?.diseases[n.id]?.centrality ?? 0) + 2,
+      radius: mapNodeRadius(n, relevance?.diseases[n.id]?.centrality ?? 0, crowdedDiseases(hood)) + 2,
       cluster: n.cluster ?? null,
     }));
     return radialLayout(nodes, hood.focus, W, H);
@@ -248,16 +309,37 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
     return () => svg.removeEventListener("wheel", onWheel);
   }, [focusId]);
 
-  const showHover = (kind: Hover["kind"], id: string, target: Element) => {
-    const box = containerRef.current?.getBoundingClientRect();
-    const r = target.getBoundingClientRect();
-    if (!box) return;
-    setHover({ kind, id, left: r.left + r.width / 2 - box.left, top: r.top - box.top });
-  };
-
   const hoodNodes = hood?.nodes ?? [];
   const nodeById = new Map(hoodNodes.map((n) => [n.id, n]));
   const center: Pt = geometry ? [geometry.cx, geometry.cy] : [W / 2, H / 2];
+
+  // Where a point of the map is on screen, inside the container: for tooltips.
+  const toScreen = (p: Pt): Pt | null => {
+    const svg = svgRef.current;
+    const box = containerRef.current?.getBoundingClientRect();
+    if (!svg || !box) return null;
+    const rect = svg.getBoundingClientRect();
+    const scale = Math.min(rect.width / W, rect.height / H);
+    const ox = rect.left - box.left + (rect.width - W * scale) / 2;
+    const oy = rect.top - box.top + (rect.height - H * scale) / 2;
+    return [ox + (p[0] * view.k + view.x) * scale, oy + (p[1] * view.k + view.y) * scale];
+  };
+  const showNodeHover = (id: string, target: Element) => {
+    const box = containerRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const r = target.getBoundingClientRect();
+    const p = positions.get(id);
+    // Nodes below the center open their tooltip below, away from their own line and its pill.
+    const below = !!focusId && !!p && p[1] > center[1] + 4;
+    setHover({ kind: "node", id, left: r.left + r.width / 2 - box.left, top: r.top - box.top, bottom: r.bottom - box.top, below });
+  };
+  const showEdgeHover = (id: string, clientX: number, clientY: number) => {
+    const box = containerRef.current?.getBoundingClientRect();
+    const c = toScreen(center);
+    if (!box || !c) return;
+    const y = clientY - box.top;
+    setHover({ kind: "edge", id, left: clientX - box.left, top: y - 14, bottom: y + 14, below: y > c[1] });
+  };
 
   const placeOf = (n: HoodNode): Pt => {
     const target = positions.get(n.id) ?? center;
@@ -279,62 +361,81 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
     return ids;
   }, [activeNode, filtered]);
 
-  // Labels: diseases and the searched node always, others only where they fit. Each label takes the
-  // first place that collides with nothing (outward from the center, then beside, above or below its
-  // dot); a label that must show and fits nowhere takes the place where it covers the least.
-  const labels = useMemo(() => {
-    const anchors = new Map<string, Anchor>();
-    const boxes: Box[] = [];
-    if (!filtered || !geometry) return { anchors, boxes, obstacles: [] as [string, Box][] };
-    // The direction names at the rim and the filter's own label are placed first: node labels go
-    // around them.
-    for (const s of SECTORS) {
-      const { x, y, anchor, lines, size } = sectorLabel(s, geometry);
-      const w = Math.max(...lines.map((l) => l.length)) * size * 0.68;
-      const left = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
-      boxes.push([left, y - size, left + w, y + 3 + (lines.length - 1) * size * 1.2]);
-    }
-    {
-      const r = ringRadius(geometry, threshold);
-      const x = geometry.cx + Math.cos((18 * Math.PI) / 180) * r + 6;
-      const y = geometry.cy + Math.sin((18 * Math.PI) / 180) * r + 4;
-      boxes.push([x, y - 11.5 * ts, x + `${pct(threshold)} filter`.length * 11.5 * 0.56 * ts, y + 3 * ts]);
-    }
-    const order: HoodNode["role"][] = ["focus", "anchor", "related", "attribute", "group", "research", "bubble", "symptom"];
-    const nodes = [...filtered.nodes].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role) || b.relevance - a.relevance);
-    const obstacles = filtered.nodes.flatMap((n): [string, Box][] => {
-      const p = positions.get(n.id);
-      if (!p) return [];
-      const r = nodeRadius(n, relevance?.diseases[n.id]?.centrality ?? 0);
-      return [[n.id, [p[0] - r, p[1] - r, p[0] + r, p[1] + r]]];
-    });
-    for (const n of nodes) {
-      const p = positions.get(n.id);
-      if (!p) continue;
-      const always = n.role === "focus" || n.type === "Disease";
-      let chosen: Anchor | null = null;
-      let fallback: Anchor | null = null;
-      let least = Infinity;
-      for (const a of labelAnchors(n, p)) {
-        const box = labelBox(n, p, a);
-        const cost =
-          boxes.reduce((sum, b) => sum + overlapArea(box, b), 0) + obstacles.reduce((sum, [id, b]) => sum + (id === n.id ? 0 : overlapArea(box, b)), 0);
-        if (cost === 0) {
-          chosen = a;
-          break;
-        }
-        if (cost < least) {
-          least = cost;
-          fallback = a;
-        }
-      }
-      if (!chosen && always) chosen = fallback;
-      if (!chosen) continue;
-      anchors.set(n.id, chosen);
-      boxes.push(labelBox(n, p, chosen));
-    }
-    return { anchors, boxes, obstacles };
-  }, [filtered, positions, geometry, byId, relevance, ts, threshold]);
+  // ---------- names on the map ----------
+
+  // The full name: a disease's compact synonym or label; a folded group's label without its count
+  // (the count is in the bubble).
+  function fullName(n: HoodNode): string {
+    if (n.role === "bubble") return n.label.replace(/^\d+ /, "");
+    const node = byId.get(n.id);
+    return (node && compactSynonym(node)) ?? n.label;
+  }
+
+  // The grade line under a related disease's name: its tier and relevance.
+  function tierText(n: HoodNode): string {
+    if (n.type !== "Disease" || n.role === "focus" || n.role === "anchor") return "";
+    const word = n.tier && n.tier !== "none" ? `${tierWord(n.tier).toLowerCase()} · ` : "";
+    return `${word}${pct(n.relevance)}`;
+  }
+
+  // The ways a node's name can be written. Compact: one line (the whole name, or a short form that
+  // keeps what tells it apart), with the grade line under a related disease, then without it.
+  // Full: wrapped whole over two lines. Every label first gets a compact form, then grows into a
+  // full one where there is room.
+  function labelForms(n: HoodNode): { compact: LabelSpec[]; full: LabelSpec[] } {
+    const isDisease = n.type === "Disease";
+    const size = n.role === "focus" ? 15 : isDisease ? 13 : 12;
+    const weight = n.role === "focus" ? 650 : isDisease ? 560 : 450;
+    const name = fullName(n);
+    if (n.role === "focus") return { compact: [{ lines: wrapName(name, 28, 3), tier: "", size, weight }], full: [] };
+    const tier = tierText(n);
+    const short = name.length <= ONE_LINE ? name : isDisease ? (diseaseNames.get(n.id) ?? fitName(name, ONE_LINE)) : (nodeNames.get(n.id) ?? fitName(name, ONE_LINE));
+    const spec = (lines: string[], withTier: string): LabelSpec => ({ lines, tier: withTier, size, weight });
+    const compact = tier ? [spec([short], tier), spec([short], "")] : [spec([short], "")];
+    if (name.length <= ONE_LINE) return { compact, full: [] };
+    const two = wrapName(name, TWO_LINES, 2);
+    return { compact, full: tier ? [spec(two, tier), spec(two, "")] : [spec(two, "")] };
+  }
+  const labelSpecs = (n: HoodNode): LabelSpec[] => {
+    const { compact, full } = labelForms(n);
+    return [...full, ...compact];
+  };
+
+  const lineHeight = (spec: LabelSpec) => spec.size * 1.2 * ts;
+  const tierHeight = 15 * ts;
+  // The text's extent around its first baseline, as the browser measures it (font ascent and
+  // descent), so two labels that do not touch here do not touch on screen.
+  const below = (spec: LabelSpec) => (spec.lines.length - 1) * lineHeight(spec) + (spec.tier ? tierHeight : 0) + 0.26 * (spec.tier ? 11.5 : spec.size) * ts;
+  const ascent = (spec: LabelSpec) => spec.size * 0.96 * ts;
+
+  // Where a label can go, best first: below the searched node; otherwise outward from the center,
+  // then to the right, left, above or below its dot.
+  function labelAnchors(n: HoodNode, p: Pt, spec: LabelSpec): Anchor[] {
+    const r = radiusOf(n);
+    if (n.role === "focus") return [{ x: 0, y: r + 6 + ascent(spec), anchor: "middle" }];
+    const off = r + 6;
+    const middle = -(ascent(spec) + below(spec)) / 2 + ascent(spec); // a baseline that centers the block on the dot
+    const under: Anchor = { x: 0, y: off + ascent(spec), anchor: "middle" };
+    const over: Anchor = { x: 0, y: -off - below(spec), anchor: "middle" };
+    const right: Anchor = { x: off, y: middle, anchor: "start" };
+    const left: Anchor = { x: -off, y: middle, anchor: "end" };
+    const dx = p[0] - center[0];
+    const dy = p[1] - center[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const radial: Anchor = Math.abs(ux) < 0.35 ? (uy > 0 ? under : over) : { x: ux * off, y: uy * off + middle, anchor: ux > 0 ? "start" : "end" };
+    return [radial, ...[right, left, over, under].filter((a) => a !== radial)];
+  }
+
+  function labelBox(p: Pt, spec: LabelSpec, a: Anchor): Box {
+    const w = Math.max(...spec.lines.map((l) => textWidth(l, spec.size, spec.weight)), spec.tier ? textWidth(spec.tier, 11.5, 450) : 0) * ts;
+    const x = p[0] + a.x;
+    const y = p[1] + a.y;
+    const left = a.anchor === "start" ? x : a.anchor === "end" ? x - w : x - w / 2;
+    // A little air around the text, so two labels never touch.
+    return [left - 3 * ts, y - ascent(spec) - 1.5 * ts, left + w + 3 * ts, y + below(spec) + 1.5 * ts];
+  }
 
   // A direction's name at the rim of the map. Two-word names ("Genes and mechanisms") break after
   // "and" so they stay inside the map when it is drawn small.
@@ -349,48 +450,109 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
     return { x: g.cx + Math.cos(a) * (g.outer + 34), y: g.cy + Math.sin(a) * (g.outer + 34) + 4 - lift, anchor, lines, size };
   }
 
-  function labelText(n: HoodNode): string {
-    if (n.type === "Disease") return shortLabel({ label: n.label, synonyms: byId.get(n.id)?.synonyms });
-    // A bubble shows its count inside, so its label drops the number.
-    return truncate(n.role === "bubble" ? n.label.replace(/^\d+ /, "") : n.label);
-  }
+  const filterLabelAt = (g: NonNullable<typeof geometry>): Pt => {
+    const r = ringRadius(g, threshold);
+    return [g.cx + Math.cos((18 * Math.PI) / 180) * r + 6, g.cy + Math.sin((18 * Math.PI) / 180) * r + 4];
+  };
 
-  // The second line under a related disease's name: its tier and relevance.
-  function tierText(n: HoodNode): string {
-    if (n.type !== "Disease" || n.role === "focus") return "";
-    return `${n.tier && n.tier !== "none" ? `${n.tier} · ` : ""}${pct(n.relevance)}`;
-  }
+  // Labels: the searched node always; diseases, then everything else, where they fit. Each takes
+  // the first of its forms and places that covers no other label and stays inside the map; a label
+  // that fits nowhere is left to hover and selection.
+  const labels = useMemo(() => {
+    const placed = new Map<string, PlacedLabel>();
+    const boxes: Box[] = [];
+    const obstacles: [string, Box][] = [];
+    if (!filtered || !geometry) return { placed, boxes, obstacles };
+    // The direction names at the rim and the filter's own label are placed first.
+    for (const s of SECTORS) {
+      const { x, y, anchor, lines, size } = sectorLabel(s, geometry);
+      const w = Math.max(...lines.map((l) => l.length)) * size * 0.68;
+      const left = anchor === "start" ? x : anchor === "end" ? x - w : x - w / 2;
+      boxes.push([left, y - size, left + w, y + 3 + (lines.length - 1) * size * 1.2]);
+    }
+    {
+      const [x, y] = filterLabelAt(geometry);
+      boxes.push([x, y - 11.5 * ts, x + `${pct(threshold)} filter`.length * 11.5 * 0.56 * ts, y + 3 * ts]);
+    }
+    for (const n of filtered.nodes) {
+      const p = positions.get(n.id);
+      if (!p) continue;
+      const r = radiusOf(n);
+      obstacles.push([n.id, [p[0] - r, p[1] - r, p[0] + r, p[1] + r]]);
+    }
+    const order: HoodNode["role"][] = ["focus", "anchor", "related", "attribute", "group", "bubble", "research", "symptom"];
+    const nodes = [...filtered.nodes].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role) || b.relevance - a.relevance);
+    const inside = (b: Box) => b[0] >= 4 && b[1] >= 4 && b[2] <= W - 4 && b[3] <= H - 4;
+    const ownBox = new Map<string, Box>();
+    // The first form and place that covers no other label, few dots, and stays inside the map.
+    const firstFit = (n: HoodNode, p: Pt, specs: LabelSpec[], skip?: string): PlacedLabel | null => {
+      for (const spec of specs) {
+        for (const at of labelAnchors(n, p, spec)) {
+          const box = labelBox(p, spec, at);
+          if (!inside(box)) continue;
+          if ([...ownBox].some(([id, b]) => id !== skip && overlaps(box, b)) || boxes.some((b) => overlaps(box, b))) continue;
+          const onDots = obstacles.reduce((sum, [id, b]) => sum + (id === n.id ? 0 : overlapArea(box, b)), 0);
+          if (onDots <= DOT_OVERLAP * area(box)) return { spec, at };
+        }
+      }
+      return null;
+    };
+    // Pass 1: every label in its compact form, so as many things as possible are named.
+    for (const n of nodes) {
+      const p = positions.get(n.id);
+      if (!p) continue;
+      const { compact } = labelForms(n);
+      let chosen = firstFit(n, p, compact);
+      // The searched node is always named, in its least crowded place.
+      if (!chosen && n.role === "focus") {
+        let least = Infinity;
+        for (const spec of compact) {
+          for (const at of labelAnchors(n, p, spec)) {
+            const box = labelBox(p, spec, at);
+            const cost = [...ownBox.values(), ...boxes].reduce((sum, b) => sum + overlapArea(box, b), 0) + (inside(box) ? 0 : area(box));
+            if (cost < least) {
+              least = cost;
+              chosen = { spec, at };
+            }
+          }
+        }
+      }
+      if (!chosen) continue;
+      placed.set(n.id, chosen);
+      ownBox.set(n.id, labelBox(p, chosen.spec, chosen.at));
+    }
+    // Pass 2: where there is room, a shortened name grows back to its whole name over two lines.
+    for (const n of nodes) {
+      const p = positions.get(n.id);
+      if (!p || !placed.has(n.id)) continue;
+      const { full } = labelForms(n);
+      if (!full.length) continue;
+      const current = placed.get(n.id)!;
+      const grown = firstFit(n, p, full.filter((spec) => !!spec.tier === !!current.spec.tier), n.id);
+      if (!grown) continue;
+      placed.set(n.id, grown);
+      ownBox.set(n.id, labelBox(p, grown.spec, grown.at));
+    }
+    // Pass 3: a label that grew may have moved away from a place another one wanted.
+    for (const n of nodes) {
+      const p = positions.get(n.id);
+      if (!p || placed.has(n.id)) continue;
+      const chosen = firstFit(n, p, labelForms(n).compact);
+      if (!chosen) continue;
+      placed.set(n.id, chosen);
+      ownBox.set(n.id, labelBox(p, chosen.spec, chosen.at));
+    }
+    boxes.push(...ownBox.values());
+    return { placed, boxes, obstacles };
+  }, [filtered, positions, geometry, byId, relevance, ts, threshold, diseaseNames, nodeNames, crowded, measureText]);
 
-  // Where a node's label can go, best first: below the searched node; otherwise outward from the
-  // center, then to the right, left, above or below its dot.
-  function labelAnchors(n: HoodNode, p: Pt): Anchor[] {
-    const r = nodeRadius(n, relevance?.diseases[n.id]?.centrality ?? 0);
-    if (n.role === "focus") return [{ x: 0, y: r + 18 * ts, anchor: "middle" }];
-    const two = !!tierText(n);
-    const off = r + 6;
-    const below: Anchor = { x: 0, y: off + 10 * ts, anchor: "middle" };
-    const above: Anchor = { x: 0, y: -off - (two ? 19 : 4) * ts, anchor: "middle" };
-    const right: Anchor = { x: off, y: 4 * ts, anchor: "start" };
-    const left: Anchor = { x: -off, y: 4 * ts, anchor: "end" };
-    const dx = p[0] - center[0];
-    const dy = p[1] - center[1];
-    const len = Math.hypot(dx, dy) || 1;
-    const ux = dx / len;
-    const uy = dy / len;
-    const radial: Anchor = Math.abs(ux) < 0.35 ? (uy > 0 ? below : above) : { x: ux * off, y: uy * off + 4 * ts, anchor: ux > 0 ? "start" : "end" };
-    return [radial, ...[right, left, above, below].filter((a) => a !== radial)];
-  }
-
-  function labelBox(n: HoodNode, p: Pt, a: Anchor): Box {
-    const isDisease = n.type === "Disease";
-    const size = n.role === "focus" ? 15 : isDisease ? 13 : 12;
-    const w = Math.max(labelText(n).length * size * 0.56, tierText(n).length * 11.5 * 0.54) * ts;
-    const x = p[0] + a.x;
-    const y = p[1] + a.y;
-    const left = a.anchor === "start" ? x : a.anchor === "end" ? x - w : x - w / 2;
-    const h = (tierText(n) ? 30 : 16) * ts;
-    return [left, y - 12 * ts, left + w, y - 12 * ts + h];
-  }
+  // A label shown because its node is pointed at or selected, where no place was free.
+  const looseLabel = (n: HoodNode): PlacedLabel | null => {
+    const p = positions.get(n.id);
+    if (!p) return null;
+    const spec = labelSpecs(n)[0];
+    return { spec, at: labelAnchors(n, p, spec)[0] };
+  };
 
   const delayOf = (n: HoodNode, i: number) => (reduced ? 0 : Math.min(n.hop, 4) * 110 + Math.min(i, 40) * 8);
   const transition = (delay: number) =>
@@ -415,7 +577,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
     return [...groups]
       .filter(([, pts]) => pts.length > 1)
       .map(([id, pts]) => {
-        const label = truncate(relevance?.clusters.find((c) => c.id === id)?.label ?? id, 40);
+        const label = fitName(relevance?.clusters.find((c) => c.id === id)?.label ?? id, 40);
         const top = Math.min(...pts.map((p) => p[1]));
         const bottom = Math.max(...pts.map((p) => p[1]));
         const mid = (Math.min(...pts.map((p) => p[0])) + Math.max(...pts.map((p) => p[0]))) / 2;
@@ -423,7 +585,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
         let labelY: number | null = null;
         for (const y of [top - pad - 8, bottom + pad + 14 * ts]) {
           const box: Box = [mid - w / 2, y - 11 * ts, mid + w / 2, y + 3 * ts];
-          if (!taken.some((b) => overlaps(box, b))) {
+          if (box[1] > 4 && box[3] < H - 4 && !taken.some((b) => overlaps(box, b))) {
             labelY = y;
             taken.push(box);
             break;
@@ -435,26 +597,60 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
 
   const hoverNode = hover?.kind === "node" ? nodeById.get(hover.id) : undefined;
   const hoverEdge = hover?.kind === "edge" ? [...(filtered?.edges ?? []), ...(filtered?.faintEdges ?? [])].find((e) => e.id === hover.id) : undefined;
-  const noneAtThreshold = !!(filtered && hood && hood.related.length > 0 && filtered.relatedShown === 0 && filtered.closestHidden);
-  const noRelated = !!(hood && focusId && hood.focusType === "Disease" && hood.related.length === 0);
 
-  const curve = (a: Pt, b: Pt, role: HoodEdge["role"]) => {
-    // Lines from the center are straight; others bow outward so they skirt the middle of the map.
+  // Shown nodes a line from the center could run through.
+  const blockers = useMemo(
+    () => (filtered?.nodes ?? []).flatMap((n) => (n.role === "focus" || !positions.get(n.id) ? [] : [{ id: n.id, p: positions.get(n.id)!, r: radiusOf(n) }])),
+    [filtered, positions, crowded],
+  );
+
+  // A line's path, the point its strength pill prefers, and any point along it (for a pill that
+  // has to move to stay clear of labels and dots).
+  const curve = (e: HoodEdge, a: Pt, b: Pt): { d: string; mid: Pt; at(t: number): Pt } => {
     const atCenter = (p: Pt) => Math.hypot(p[0] - center[0], p[1] - center[1]) < 2;
+    const quad = (from: Pt, c: Pt, to: Pt) => (u: number): Pt => [
+      (1 - u) * (1 - u) * from[0] + 2 * (1 - u) * u * c[0] + u * u * to[0],
+      (1 - u) * (1 - u) * from[1] + 2 * (1 - u) * u * c[1] + u * u * to[1],
+    ];
     const mid: Pt = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-    if (atCenter(a) || atCenter(b)) return { d: `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`, mid };
-    const bow = role === "bridge" ? 0.42 : 0.24;
+    if (atCenter(a) || atCenter(b)) {
+      // Lines from the center are straight, unless one would run through another node: then it
+      // bows around it, and its strength pill sits past that node.
+      const [from, to] = atCenter(a) ? [a, b] : [b, a];
+      const block = blockers
+        .filter((x) => x.id !== e.a && x.id !== e.b)
+        .map((x) => ({ ...x, ...toSegment(x.p, from, to) }))
+        .filter((x) => x.d < x.r + 5 && x.t > 0.05 && x.t < 0.95)
+        .sort((x, y) => x.t - y.t)[0];
+      if (!block) {
+        const line = (u: number): Pt => [from[0] + (to[0] - from[0]) * u, from[1] + (to[1] - from[1]) * u];
+        return { d: `M${a[0]} ${a[1]} L${b[0]} ${b[1]}`, mid, at: line };
+      }
+      const dx = to[0] - from[0];
+      const dy = to[1] - from[1];
+      const len = Math.hypot(dx, dy) || 1;
+      // Bow to the side away from the blocking node.
+      const side = (block.p[0] - from[0]) * -dy + (block.p[1] - from[1]) * dx > 0 ? -1 : 1;
+      const bow = (block.r + 18) * 2;
+      const c: Pt = [mid[0] + (-dy / len) * bow * side, mid[1] + (dx / len) * bow * side];
+      const t = Math.min(0.85, Math.max(0.6, block.t + (block.r + 24) / len));
+      const q = quad(from, c, to);
+      return { d: `M${from[0]} ${from[1]} Q${c[0]} ${c[1]} ${to[0]} ${to[1]}`, mid: q(t), at: q };
+    }
+    const bow = e.role === "bridge" ? 0.42 : 0.24;
     const c: Pt = [mid[0] + (mid[0] - center[0]) * bow, mid[1] + (mid[1] - center[1]) * bow];
-    const m: Pt = [0.25 * a[0] + 0.5 * c[0] + 0.25 * b[0], 0.25 * a[1] + 0.5 * c[1] + 0.25 * b[1]];
-    return { d: `M${a[0]} ${a[1]} Q${c[0]} ${c[1]} ${b[0]} ${b[1]}`, mid: m };
+    const q = quad(a, c, b);
+    return { d: `M${a[0]} ${a[1]} Q${c[0]} ${c[1]} ${b[0]} ${b[1]}`, mid: q(0.5), at: q };
   };
 
   const edgesToDraw = settled && filtered ? [...filtered.faintEdges.map((e) => ({ e, faint: true })), ...filtered.edges.map((e) => ({ e, faint: false }))] : [];
+  const pillText = (e: HoodEdge) => pct(e.role === "bridge" ? e.relevance : e.strength);
+  const pillWidth = (e: HoodEdge) => pillText(e).length * 6.6 + 12;
 
   // Strength pills on the lines of the hovered or selected node, and on a hovered or selected line,
-  // the pointed-at line first and then the strongest; a pill that would cover another is left out
-  // (hovering its line still shows it).
-  const pills = new Set<string>();
+  // the pointed-at line first and then the strongest. A pill never covers a dot, a label or another
+  // pill; one that would is left out (hovering its line still shows it).
+  const pills = new Map<string, Pt>();
   {
     const isActive = (e: HoodEdge) => !!touching && touching.has(e.a) && touching.has(e.b) && (e.a === activeNode || e.b === activeNode);
     const pointed = (e: HoodEdge) => e.id === hover?.id || e.id === selectedId;
@@ -465,14 +661,34 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
       const a = positions.get(e.a);
       const b = positions.get(e.b);
       if (!a || !b) continue;
-      const { mid } = curve(a, b, e.role);
-      const box: Box = [mid[0] - 17 * ts, mid[1] - 10 * ts, mid[0] + 17 * ts, mid[1] + 8 * ts];
-      // Never under a dot (dots are drawn on top) or over another pill.
-      if (placed.some((p) => overlaps(box, p)) || labels.obstacles.some(([, o]) => overlaps(box, o))) continue;
-      placed.push(box);
-      pills.add(e.id);
+      const path = curve(e, a, b);
+      const half = (pillWidth(e) / 2) * ts;
+      const boxAt = (p: Pt): Box => [p[0] - half, p[1] - 10 * ts, p[0] + half, p[1] + 8 * ts];
+      const blocked = (box: Box) =>
+        placed.some((p) => overlaps(box, p)) || labels.obstacles.some(([, o]) => overlaps(box, o)) || labels.boxes.some((l) => overlaps(box, l));
+      // The middle of the line first, then points along it, until one is clear.
+      const spot = [path.mid, ...[0.4, 0.6, 0.3, 0.7, 0.22, 0.78].map((t) => path.at(t))].find((p) => !blocked(boxAt(p)));
+      if (!spot) continue;
+      placed.push(boxAt(spot));
+      pills.set(e.id, spot);
     }
   }
+
+  const nameOf = (id: string) => {
+    const n = nodeById.get(id);
+    if (!n) return id;
+    if (n.role === "bubble") return n.label;
+    return displayName({ label: n.label, synonyms: byId.get(id)?.synonyms }, 34);
+  };
+  // What a hovered line says: the relation in words, between the two things it joins.
+  const edgeTitle = (e: HoodEdge) => {
+    if (e.role === "similarity") return `${nameOf(e.a)} and ${nameOf(e.b)} share biology`;
+    if (e.role === "bridge") return `${nameOf(e.a)} and ${nameOf(e.b)}: ${e.label}`;
+    if (e.role === "bubble") return `${nameOf(e.a)} → ${nameOf(e.b)}`;
+    return `${nameOf(e.a)} ${e.label || "is linked to"} ${nameOf(e.b)}`;
+  };
+
+  const ringValues = [thresholds.strong, thresholds.moderate, thresholds.exploratory].filter((t) => t > 0 && t < 1);
 
   return (
     <div ref={containerRef} className={`relative h-full w-full select-none overflow-hidden ${props.className ?? ""}`}>
@@ -530,14 +746,15 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
           </g>
         )}
 
-        {/* Constellation dots: every disease not drawn on the map. */}
-        <g aria-hidden={focusId ? true : undefined}>
+        {/* Constellation dots: every disease. Once something is centered they fade away: their
+            places mean nothing on the radial map. */}
+        <g aria-hidden={focusId ? true : undefined} style={{ pointerEvents: focusId ? "none" : undefined }}>
           {[...constellation].map(([id, [x, y]], i) => {
             if (focusId && nodeById.has(id) && (level.has(id) || nodeById.get(id)?.role === "focus")) return null;
             const node = byId.get(id)!;
             const r = 3 + 3 * centralityOf(id);
             return (
-              <g key={id} transform={`translate(${x} ${y})`}>
+              <g key={id} transform={`translate(${x} ${y})`} style={{ opacity: focusId && settled ? 0 : 1, transition: reduced ? undefined : "opacity 600ms ease" }}>
                 <circle
                   r={focusId ? r : r + 3}
                   fill={focusId ? "var(--node-gray)" : clusterColor(relevance, relevance?.diseases[id]?.cluster)}
@@ -547,7 +764,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                 {/* Small atlases get names on the dots; big ones rely on hover. */}
                 {!focusId && constellation.size <= 30 && (
                   <text y={r + 8 + 12 * ts} textAnchor="middle" fontSize={12 * ts} fill="var(--ink-2)" className="atlas-label">
-                    {shortLabel(node)}
+                    {diseaseNames.get(id) ?? node.label}
                   </text>
                 )}
                 {!focusId && (
@@ -560,7 +777,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                     className="cursor-pointer outline-none"
                     onClick={() => props.onFocus(id)}
                     onKeyDown={(event) => event.key === "Enter" && props.onFocus(id)}
-                    onPointerEnter={(event) => showHover("node", id, event.currentTarget)}
+                    onPointerEnter={(event) => showNodeHover(id, event.currentTarget)}
                     onPointerLeave={() => setHover(null)}
                   />
                 )}
@@ -570,7 +787,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
         </g>
 
         <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
-          {/* The compass: relevance rings and kind-of-thing sectors. */}
+          {/* The compass: relevance rings at the grade cutoffs and kind-of-thing sectors. */}
           {geometry && settled && (
             <g aria-hidden className="atlas-fade-in">
               {SECTORS.map((s) => {
@@ -587,10 +804,8 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                   />
                 );
               })}
-              {[0.75, 0.45, 0.2].map((t) => (
-                <g key={t}>
-                  <circle cx={geometry.cx} cy={geometry.cy} r={ringRadius(geometry, t)} fill="none" stroke="var(--line)" strokeWidth={1} />
-                </g>
+              {ringValues.map((t) => (
+                <circle key={t} cx={geometry.cx} cy={geometry.cy} r={ringRadius(geometry, t)} fill="none" stroke="var(--line)" strokeWidth={1} />
               ))}
               {SECTORS.map((s) => {
                 const label = sectorLabel(s, geometry);
@@ -625,14 +840,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                 strokeWidth={1.4}
                 style={{ transition: reduced ? undefined : "r 250ms ease" }}
               />
-              <text
-                x={geometry.cx + Math.cos((18 * Math.PI) / 180) * ringRadius(geometry, threshold) + 6}
-                y={geometry.cy + Math.sin((18 * Math.PI) / 180) * ringRadius(geometry, threshold) + 4}
-                fontSize={11.5 * ts}
-                fontWeight={600}
-                fill="var(--accent-ink)"
-                className="atlas-label"
-              >
+              <text x={filterLabelAt(geometry)[0]} y={filterLabelAt(geometry)[1]} fontSize={11.5 * ts} fontWeight={600} fill="var(--accent-ink)" className="atlas-label">
                 {pct(threshold)} filter
               </text>
             </g>
@@ -663,53 +871,59 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
             const isSelected = selectedId === e.id;
             const active = touching ? touching.has(e.a) && touching.has(e.b) && (e.a === activeNode || e.b === activeNode) : false;
             const dim = touching && !active;
-            const { d, mid } = curve(a, b, e.role);
-            const showStrength = pills.has(e.id);
+            const { d, mid } = curve(e, a, b);
+            const pill = pills.get(e.id);
             const showBridgeLabel = e.role === "bridge" && (isSelected || hover?.id === e.id);
             const nodeA = nodeById.get(e.a);
             const nodeB = nodeById.get(e.b);
             const delay = reduced ? 0 : Math.max(nodeA?.hop ?? 0, nodeB?.hop ?? 0) * 110 + 420;
+            const width = pillWidth(e);
+            // The opacity sits on an outer group: the fade-in animation ends at opacity 1 and, with
+            // fill-mode both, would override an opacity set on its own element.
             return (
-              <g key={e.id} className="atlas-fade-in" style={{ animationDelay: `${delay}ms`, opacity: faint ? 0.3 : dim ? 0.22 : 1 }}>
-                {s.glow > 0 && !faint && (
-                  <path d={d} fill="none" stroke="var(--accent)" strokeWidth={s.width + s.glow * 1.6} opacity={0.42} filter={`url(#glow-${uid})`} />
-                )}
-                <path
-                  d={d}
-                  fill="none"
-                  stroke={isSelected || active ? (e.role === "similarity" ? "var(--accent)" : "var(--ink-2)") : s.color}
-                  strokeWidth={isSelected ? s.width + 1.5 : s.width}
-                  strokeDasharray={s.dash}
-                  strokeLinecap="round"
-                  opacity={isSelected ? 1 : s.opacity}
-                />
-                {showStrength && (
-                  <g transform={`translate(${mid[0]} ${mid[1]}) scale(${ts})`} aria-hidden>
-                    <rect x={-17} y={-10} width={34} height={18} rx={9} fill="var(--surface)" stroke="var(--line)" />
-                    <text y={3.5} textAnchor="middle" fontSize={10.5} fontWeight={600} fill="var(--ink)">
-                      {pct(e.role === "bridge" ? e.relevance : e.strength)}
+              <g key={e.id} style={{ opacity: faint ? 0.3 : dim ? 0.22 : 1 }}>
+                <g className="atlas-fade-in" style={{ animationDelay: `${delay}ms` }}>
+                  {s.glow > 0 && !faint && (
+                    <path d={d} fill="none" stroke="var(--accent)" strokeWidth={s.width + s.glow * 1.6} opacity={0.42} filter={`url(#glow-${uid})`} />
+                  )}
+                  <path
+                    d={d}
+                    fill="none"
+                    stroke={isSelected || active ? (e.role === "similarity" ? "var(--accent)" : "var(--ink-2)") : s.color}
+                    strokeWidth={isSelected ? s.width + 1.5 : s.width}
+                    strokeDasharray={s.dash}
+                    strokeLinecap="round"
+                    opacity={isSelected ? 1 : s.opacity}
+                  />
+                  {pill && (
+                    <g transform={`translate(${pill[0]} ${pill[1]}) scale(${ts})`} aria-hidden>
+                      <rect x={-width / 2} y={-10} width={width} height={18} rx={9} fill="var(--surface)" stroke="var(--line)" />
+                      <text y={3.5} textAnchor="middle" fontSize={10.5} fontWeight={600} fill="var(--ink)">
+                        {pillText(e)}
+                      </text>
+                    </g>
+                  )}
+                  {showBridgeLabel && (
+                    <text x={mid[0]} y={mid[1] - 14 * ts} textAnchor="middle" fontSize={11.5 * ts} fill="var(--ink)" className="atlas-label">
+                      {fitName(e.label, 40)}
                     </text>
-                  </g>
-                )}
-                {showBridgeLabel && (
-                  <text x={mid[0]} y={mid[1] - 14 * ts} textAnchor="middle" fontSize={11.5 * ts} fill="var(--ink)" className="atlas-label">
-                    {truncate(e.label, 40)}
-                  </text>
-                )}
-                <path
-                  d={d}
-                  data-edge
-                  fill="none"
-                  stroke="transparent"
-                  strokeWidth={14}
-                  className="cursor-pointer"
-                  onPointerEnter={(event) => showHover("edge", e.id, event.currentTarget)}
-                  onPointerLeave={() => setHover(null)}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    props.onSelect(e.id);
-                  }}
-                />
+                  )}
+                  <path
+                    d={d}
+                    data-edge
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={14}
+                    className="cursor-pointer"
+                    onPointerEnter={(event) => showEdgeHover(e.id, event.clientX, event.clientY)}
+                    onPointerMove={(event) => showEdgeHover(e.id, event.clientX, event.clientY)}
+                    onPointerLeave={() => setHover(null)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      props.onSelect(e.id);
+                    }}
+                  />
+                </g>
               </g>
             );
           })}
@@ -721,16 +935,14 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
             const isFocus = n.role === "focus";
             const isVisible = isFocus || (settled && lv === "shown");
             const isGhost = !isFocus && settled && lv === "ghost";
-            const r = nodeRadius(n, centralityOf(n.id));
+            const r = radiusOf(n);
             const isSelected = selectedId === n.id;
             const type = n.type === "Bubble" ? n.bubbleType! : n.type;
             const kind = KIND_STYLE[KIND_OF[type]];
             const isDisease = n.type === "Disease";
             const fill = isDisease ? clusterColor(relevance, n.cluster) : kind.fill;
             const opacity = isFocus ? 1 : isGhost ? 0.28 : !isVisible ? 0 : touching && !touching.has(n.id) ? 0.3 : 0.6 + 0.4 * n.relevance;
-            const showLabel = isVisible && (labels.anchors.has(n.id) || hover?.id === n.id || isSelected);
             const relevanceText = isFocus ? "what you searched" : `${pct(n.relevance)} relevant`;
-            const la = labels.anchors.get(n.id) ?? labelAnchors(n, positions.get(n.id) ?? [x, y])[0];
             const interactive = isVisible || isGhost;
             return (
               <g
@@ -743,9 +955,9 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                 aria-pressed={isSelected}
                 className="atlas-node cursor-pointer outline-none"
                 style={{ transform: `translate(${x}px, ${y}px)`, transition: transition(delayOf(n, i)), opacity, pointerEvents: interactive ? undefined : "none" }}
-                onPointerEnter={(event) => showHover("node", n.id, event.currentTarget)}
+                onPointerEnter={(event) => showNodeHover(n.id, event.currentTarget)}
                 onPointerLeave={() => setHover(null)}
-                onFocus={(event) => showHover("node", n.id, event.currentTarget)}
+                onFocus={(event) => showNodeHover(n.id, event.currentTarget)}
                 onBlur={() => setHover(null)}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -784,27 +996,40 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                     {isFocus && !reduced && <circle r={r + 10} fill="none" stroke={kind.ink} strokeOpacity={0.5} strokeWidth={2} className="atlas-pulse" />}
                   </>
                 )}
-                {showLabel && (
-                  <text
-                    x={la.x}
-                    y={la.y}
-                    textAnchor={la.anchor}
-                    fontSize={(isFocus ? 15 : isDisease ? 13 : 12) * ts}
-                    fontWeight={isFocus ? 650 : isDisease ? 560 : 450}
-                    fill="var(--ink)"
-                    className="atlas-label"
-                  >
-                    {labelText(n)}
-                    {tierText(n) && (
-                      <tspan x={la.x} dy={15 * ts} fontSize={11.5 * ts} fontWeight={450} fill="var(--ink-2)">
-                        {tierText(n)}
-                      </tspan>
-                    )}
-                  </text>
-                )}
               </g>
             );
           })}
+
+          {/* Names, above every dot and line, so nothing covers them. */}
+          <g aria-hidden className="pointer-events-none">
+            {hoodNodes.map((n, i) => {
+              const isFocus = n.role === "focus";
+              const isVisible = isFocus || (settled && level.get(n.id) === "shown");
+              if (!isVisible) return null;
+              const pointedAt = hover?.id === n.id || selectedId === n.id;
+              const label = labels.placed.get(n.id) ?? (pointedAt ? looseLabel(n) : null);
+              if (!label) return null;
+              const [x, y] = placeOf(n);
+              const { spec, at } = label;
+              const dimmed = touching && !touching.has(n.id);
+              return (
+                <g key={n.id} style={{ transform: `translate(${x}px, ${y}px)`, transition: transition(delayOf(n, i)), opacity: dimmed ? 0.35 : 1 }}>
+                  <text x={at.x} y={at.y} textAnchor={at.anchor} fontSize={spec.size * ts} fontWeight={spec.weight} fill="var(--ink)" className="atlas-label">
+                    {spec.lines.map((line, k) => (
+                      <tspan key={k} x={at.x} dy={k === 0 ? 0 : lineHeight(spec)}>
+                        {line}
+                      </tspan>
+                    ))}
+                    {spec.tier && (
+                      <tspan x={at.x} dy={tierHeight} fontSize={11.5 * ts} fontWeight={450} fill="var(--ink-2)">
+                        {spec.tier}
+                      </tspan>
+                    )}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
         </g>
       </svg>
 
@@ -818,34 +1043,8 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
         </button>
       )}
 
-      {noneAtThreshold && filtered?.closestHidden && (
-        <div className="absolute inset-x-0 bottom-4 mx-auto w-fit max-w-[90%] rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] shadow-sm">
-          <span>
-            No related disease at {pct(threshold)} or above. The closest is{" "}
-            <strong>{shortLabel(byId.get(filtered.closestHidden.id) ?? { label: filtered.closestHidden.id })}</strong> at {pct(filtered.closestHidden.relevance)}.
-          </span>{" "}
-          <button
-            type="button"
-            className="ml-2 rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-medium text-white"
-            onClick={() => props.onThreshold(Math.floor(filtered.closestHidden!.relevance * 100) / 100)}
-          >
-            Lower to {Math.floor(filtered.closestHidden.relevance * 100)}%
-          </button>
-        </div>
-      )}
-      {noRelated && focusNode && (
-        <div className="absolute inset-x-0 bottom-4 mx-auto w-fit max-w-[90%] rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] shadow-sm">
-          No supported connection to another disease in this atlas yet. We searched genes, mechanisms, symptoms, groups and research linked to{" "}
-          {shortLabel(focusNode)}.
-        </div>
-      )}
-
       {hover && (hoverNode || hoverEdge || (!focusId && byId.get(hover.id))) && (
-        <div
-          role="tooltip"
-          className="pointer-events-none absolute z-10 w-max max-w-[300px] -translate-x-1/2 -translate-y-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-xs leading-snug text-[var(--ink)] shadow-md"
-          style={{ left: hover.left, top: hover.top - 8 }}
-        >
+        <Tooltip hover={hover} width={boxWidth} height={boxHeight}>
           {hoverNode ? (
             <>
               <div className="font-semibold">{hoverNode.label}</div>
@@ -853,6 +1052,7 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
                 {typeName(hoverNode)}
                 {hoverNode.role !== "focus" && ` · ${pct(hoverNode.relevance)} relevant`}
                 {hoverNode.kind && hoverNode.role !== "focus" && ` · ${hoverNode.kind}`}
+                {hoverNode.tier && hoverNode.role === "related" && !isTier(hoverNode.tier) && ` · ${tierWord(hoverNode.tier).toLowerCase()}`}
                 {level.get(hoverNode.id) === "ghost" && " · under your filter"}
               </div>
               <div className="mt-1">{hoverNode.why}</div>
@@ -862,10 +1062,16 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
             </>
           ) : hoverEdge ? (
             <>
-              <div className="font-semibold">{hoverEdge.label || "linked"}</div>
+              <div className="font-semibold">{edgeTitle(hoverEdge)}</div>
               <div className="text-[var(--ink-2)]">
-                Strength {pct(hoverEdge.strength)} · {pct(hoverEdge.relevance)} relevant to {focusNode ? shortLabel(focusNode) : "your search"} ·{" "}
-                {hoverEdge.kind === "observed" ? "stated by a source" : hoverEdge.kind === "mixed" ? "partly inferred" : "inferred"}
+                Strength {pct(hoverEdge.strength)} · {pct(hoverEdge.relevance)} relevant to {focusNode ? displayName(focusNode, 34) : "your search"} ·{" "}
+                {hoverEdge.kind === "observed"
+                  ? hoverEdge.role === "similarity"
+                    ? "main evidence stated by a source"
+                    : "stated by a source"
+                  : hoverEdge.kind === "mixed"
+                    ? "partly inferred"
+                    : "inferred"}
               </div>
               <div className="mt-1">
                 Source:{" "}
@@ -876,8 +1082,28 @@ export default function KnowledgeGraph(props: KnowledgeGraphProps) {
           ) : (
             <div className="font-semibold">{byId.get(hover.id)?.label}</div>
           )}
-        </div>
+        </Tooltip>
       )}
+    </div>
+  );
+}
+
+// A tooltip that opens away from the center of the map (so it never hides the line it describes)
+// and stays inside the map: it flips when there is no room on that side.
+const TOOLTIP_ROOM = 150; // px a tooltip may need
+function Tooltip({ hover, width, height, children }: { hover: Hover; width: number; height: number; children: ReactNode }) {
+  const half = Math.min(150, (width - 16) / 2);
+  const left = Math.min(Math.max(hover.left, 8 + half), width - 8 - half);
+  const roomBelow = height - hover.bottom - 8;
+  const roomAbove = hover.top - 8;
+  const below = hover.below ? roomBelow >= TOOLTIP_ROOM || roomBelow > roomAbove : roomAbove < TOOLTIP_ROOM && roomBelow > roomAbove;
+  return (
+    <div
+      role="tooltip"
+      className={`pointer-events-none absolute z-10 w-max -translate-x-1/2 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-xs leading-snug text-[var(--ink)] shadow-md ${below ? "" : "-translate-y-full"}`}
+      style={{ left, top: below ? hover.bottom + 8 : hover.top - 8, maxWidth: half * 2 }}
+    >
+      {children}
     </div>
   );
 }

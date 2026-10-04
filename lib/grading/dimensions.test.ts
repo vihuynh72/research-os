@@ -6,6 +6,7 @@ import {
   atlasSpecificity,
   buildContext,
   candidatePairs,
+  collaborationWeight,
   isUmbrella,
   lofKind,
   mechanismPhrase,
@@ -15,8 +16,10 @@ import {
   quantileValue,
   scoreDimensions,
   scoreFloor,
+  sharedMechanismClause,
   symptomScale,
   symptomScore,
+  umbrellaCutoff,
 } from "./dimensions.ts";
 import { biologyScore, clinicalScore } from "./synthesize.ts";
 import { COLLABORATION_DIMENSIONS, pairKey, type HpoReference, type HpoTerm } from "./types.ts";
@@ -219,14 +222,34 @@ test("gene: shared gene is a match and flags allelic; a disputed gene never scor
 });
 
 test("variant: loss-of-function share from notation, with the conflict flag", () => {
-  const same = pair(1, 2).variant;
-  assert.equal(same.status, "match");
-  assert.equal(same.score, 1);
-  assert.equal(same.support, "inferred");
-  assert.equal(same.shared.length, 2); // allelic diseases share the gene's variants
-  assert.deepEqual(same.flags, ["derived_from_variant_notation", "inferred_only"]);
+  // DIS1 and DIS2 share GENEA, and their only variants are GENEA's: one list seen from two sides,
+  // set aside instead of compared with itself.
+  const allelic = pair(1, 2).variant;
+  assert.equal(allelic.status, "unknown");
+  assert.equal(allelic.score, 0);
+  assert.deepEqual(allelic.coverage, { a: 2, b: 2 });
+  assert.deepEqual(allelic.shared, []);
+  assert.deepEqual(allelic.flags, ["variant_effect_unknown"]);
+  assert.equal(allelic.details?.gene_level_variants, 2);
+  assert.equal(
+    allelic.summary,
+    "The variants on record are listed for the shared gene GENEA, not for either disease, so variant type cannot tell the two apart.",
+  );
 
-  const conflict = pair(1, 3).variant;
+  // GENEA has two diseases here, so its variants cannot stand for DIS1 against DIS3 either.
+  const geneLevel = pair(1, 3).variant;
+  assert.equal(geneLevel.status, "unknown");
+  assert.equal(geneLevel.score, 0);
+  assert.deepEqual(geneLevel.flags, ["variant_effect_unknown", "derived_from_variant_notation"]);
+  assert.equal(geneLevel.details?.gene_level_variants, 2);
+  assert.equal(
+    geneLevel.summary,
+    "Variant type cannot be compared: the variants on record for DIS1 are listed for its gene GENEA, which has 2 diseases here, not for the disease itself.",
+  );
+
+  // With GENEA's link to DIS2 removed, each gene has one disease and its variants stand for it.
+  const single = buildContext({ ...graph, edges: graph.edges.filter((e) => e.id !== "e-HGNC_1-MONDO_0000002") }, reference);
+  const conflict = scoreDimensions(single, D(1), D(3)).variant;
   assert.equal(conflict.score, 0);
   assert.equal(conflict.status, "none");
   assert.deepEqual(conflict.flags, ["variant_type_conflict", "derived_from_variant_notation"]);
@@ -234,11 +257,59 @@ test("variant: loss-of-function share from notation, with the conflict flag", ()
   assert.equal(conflict.details?.lof_fraction_b, 0);
   assert.equal(conflict.details?.kind_a, "mostly_lof");
   assert.equal(conflict.details?.kind_b, "mostly_not_lof");
-  assert.equal(conflict.summary, "DIS1 mostly loss-of-function (2 of 2 loss-of-function), DIS3 mostly missense or in-frame (0 of 2).");
+  assert.equal(conflict.details?.gene_level_variants, undefined);
+  assert.equal(conflict.summary, "Test records: GENEA mostly loss-of-function (2 of 2 loss-of-function), GENEB mostly missense or in-frame (0 of 2).");
 
   const none = pair(5, 6).variant;
   assert.equal(none.status, "unknown");
   assert.deepEqual(none.flags, ["variant_effect_unknown", "no_data"]);
+});
+
+test("variant: the variants of a gene with several diseases stand for none of them", () => {
+  // GENE1 causes A and B, GENE2 causes C and D, each with two loss-of-function variants, and both
+  // genes are in one small pathway; E and F (GENE3) are in another. A and C share the pathway. Their
+  // genes' records agree, but comparing them would compare the genes, not A and C.
+  const lof = (id: string, gene: string, k: number) => ({ ...node(id, "Variant", `NM_7.1(${gene}):c.${k}del (p.Leu${k}fs)`), source: "ClinVar" });
+  const g: AtlasGraph = {
+    meta: graph.meta,
+    nodes: [
+      ...["A", "B", "C", "D", "E", "F"].map((x) => node(`MONDO:${x}`, "Disease", x)),
+      ...[1, 2, 3].map((k) => node(`HGNC:${k}`, "Gene", `GENE${k}`)),
+      lof("CLINVAR:a", "GENE1", 10),
+      lof("CLINVAR:b", "GENE1", 20),
+      lof("CLINVAR:c", "GENE2", 30),
+      lof("CLINVAR:d", "GENE2", 40),
+      node("PW:1", "Mechanism", "Small pathway", { gene_count: 5 }),
+      node("PW:2", "Mechanism", "Other pathway", { gene_count: 5 }),
+    ],
+    edges: [
+      edge("HGNC:1", "MONDO:A"),
+      edge("HGNC:1", "MONDO:B"),
+      edge("HGNC:2", "MONDO:C"),
+      edge("HGNC:2", "MONDO:D"),
+      edge("HGNC:3", "MONDO:E"),
+      edge("HGNC:3", "MONDO:F"),
+      ...["a", "b"].map((v) => edge(`CLINVAR:${v}`, "HGNC:1")),
+      ...["c", "d"].map((v) => edge(`CLINVAR:${v}`, "HGNC:2")),
+      edge("HGNC:1", "PW:1"),
+      edge("HGNC:2", "PW:1"),
+      edge("HGNC:3", "PW:2"),
+    ],
+  };
+  const c = buildContext(g, null);
+  const ac = scoreDimensions(c, "MONDO:A", "MONDO:C");
+  assert.equal(ac.variant.status, "unknown");
+  assert.deepEqual(ac.variant.flags, ["variant_effect_unknown"]);
+  assert.equal(ac.variant.details?.gene_level_variants, 4);
+  assert.equal(
+    ac.variant.summary,
+    "Variant type cannot be compared: the variants on record are listed for GENE1 (2 diseases here) and GENE2 (2 diseases here), not for either disease itself.",
+  );
+  // The pathway alone carries the pair: 0.8 x its weight, nothing from the variants.
+  assert.equal(ac.mechanism.status, "partial");
+  assert.deepEqual(ac.mechanism.details, { most_specific: "PW:1", n: 4, N: 6, atlas: 6, via_genes: true });
+  assert.equal(ac.mechanism.summary, "Their genes share one mechanism, small pathway (4 of 6 diseases here).");
+  assert.equal(biologyScore(ac), Number((0.8 * ac.mechanism.score).toFixed(4)));
 });
 
 test("variant kinds: two of three loss-of-function variants count as mostly loss-of-function", () => {
@@ -255,9 +326,11 @@ test("mechanism weights: specificity within the atlas, floored, times pathway si
   assert.ok(Math.abs(atlasSpecificity(3, 5) - (1 - Math.log(3) / Math.log(5)) / (1 - Math.log(2) / Math.log(5))) < 1e-12);
   assert.equal(atlasSpecificity(1, 5), 1); // reached by one disease: never shared, but not penalized
   assert.equal(atlasSpecificity(2, 2), 1); // too few diseases to judge specificity
-  // In the fixture both mechanisms reach two of six diseases; REACT:2 also spans 2000 genes.
+  // Three of the fixture's six diseases have a mechanism on record (DIS1, DIS2, and DIS3 through
+  // GENEB); N counts only those. Each mechanism reaches two of them; REACT:2 also spans 2000 genes.
   const big = 1 - Math.log(2000) / Math.log(20000);
-  assert.deepEqual(mechanismWeight(ctx, "REACT:1"), { weight: 1, floored: false, n: 2, N: 6 });
+  assert.equal(ctx.mechanismDiseases, 3);
+  assert.deepEqual(mechanismWeight(ctx, "REACT:1"), { weight: 1, floored: false, n: 2, N: 3 });
   assert.ok(Math.abs(mechanismWeight(ctx, "REACT:2").weight - big) < 1e-12);
 });
 
@@ -266,8 +339,9 @@ test("mechanism: the most specific shared mechanism sets the score, reached thro
   const partial = pair(1, 2).mechanism;
   assert.equal(partial.status, "partial");
   assert.equal(partial.score, Number(big.toFixed(4)));
-  assert.deepEqual(partial.details, { most_specific: "REACT:2", n: 2, N: 6 });
-  assert.equal(partial.summary, "Both involve big pathway (2 of 6 diseases here).");
+  // Reached directly by both, not through their shared gene, so it counts on its own.
+  assert.deepEqual(partial.details, { most_specific: "REACT:2", n: 2, N: 3, atlas: 6 });
+  assert.equal(partial.summary, "Both involve big pathway (2 of the 3 diseases with a mechanism on record).");
 
   const viaGene = pair(1, 3).mechanism;
   assert.equal(viaGene.status, "match");
@@ -320,7 +394,11 @@ test("mechanism: a family-wide process alone does not tell diseases apart", () =
     ["PW:MID", Number(mid.toFixed(4))],
     ["PW:FAM", MECHANISM_FLOOR],
   ]);
-  assert.equal(ab.summary, "Both are missing a soluble lysosomal enzyme (2 of 4 diseases here). Also shared: Membrane protein missing and Lipofuscin storage.");
+  // A label about the gene product reads as the diseases' own, and the others are named beside it.
+  assert.equal(
+    ab.summary,
+    "Both are missing a soluble lysosomal enzyme (2 of 4 diseases here), the most specific of 3 shared mechanisms. Also shared: Membrane protein missing and Lipofuscin storage.",
+  );
 
   const ac = score("A", "C");
   assert.equal(ac.score, Number(mid.toFixed(4)));
@@ -331,7 +409,7 @@ test("mechanism: a family-wide process alone does not tell diseases apart", () =
   assert.equal(cd.score, MECHANISM_FLOOR);
   assert.equal(cd.status, "partial");
   assert.deepEqual(cd.flags, ["family_level_only"]);
-  assert.deepEqual(cd.details, { most_specific: "PW:FAM", n: 4, N: 4 });
+  assert.deepEqual(cd.details, { most_specific: "PW:FAM", n: 4, N: 4, atlas: 4 });
   assert.equal(cd.summary, "They share only the family-wide process Lipofuscin storage (all 4 diseases here), which does not tell them apart.");
 
   // Support follows the mechanism that carries the score, not the family-wide one beside it.
@@ -341,6 +419,152 @@ test("mechanism: a family-wide process alone does not tell diseases apart", () =
   assert.ok(result.flags.includes("inferred_only"));
 });
 
+test("mechanism specificity counts only the diseases with a mechanism on record", () => {
+  // The family graph inside a larger atlas whose other six diseases have genes but no mechanism on
+  // record: the family-wide process must stay at the floor, as in the family on its own.
+  const base = familyGraph();
+  const extra = ["E", "F", "G", "H", "I", "J"];
+  const g: AtlasGraph = {
+    meta: base.meta,
+    nodes: [...base.nodes, ...extra.flatMap((x) => [node(`MONDO:${x}`, "Disease", x), node(`HGNC:${x}`, "Gene", `GENE${x}`)])],
+    edges: [...base.edges, ...extra.map((x) => edge(`HGNC:${x}`, `MONDO:${x}`))],
+  };
+  const c = buildContext(g, null);
+  assert.equal(c.diseases.length, 10);
+  assert.equal(c.mechanismDiseases, 4);
+  assert.deepEqual(mechanismWeight(c, "PW:FAM"), { weight: MECHANISM_FLOOR, floored: true, n: 4, N: 4 });
+  // Counted over all ten diseases instead, it would weigh (1 - ln 4 / ln 10) / (1 - ln 2 / ln 10)
+  // = 0.57 and pass for a specific mechanism.
+  assert.ok(atlasSpecificity(4, 10) > 0.5);
+
+  const cd = scoreDimensions(c, "MONDO:C", "MONDO:D").mechanism;
+  assert.equal(cd.score, MECHANISM_FLOOR);
+  assert.deepEqual(cd.flags, ["family_level_only"]);
+  assert.deepEqual(cd.details, { most_specific: "PW:FAM", n: 4, N: 4, atlas: 10 });
+  assert.equal(
+    cd.summary,
+    "They share only the family-wide process Lipofuscin storage (all 4 diseases with a mechanism on record), which does not tell them apart.",
+  );
+  assert.equal(
+    scoreDimensions(c, "MONDO:A", "MONDO:B").mechanism.summary,
+    "Both are missing a soluble lysosomal enzyme (2 of the 4 diseases with a mechanism on record), the most specific of 3 shared mechanisms. Also shared: Membrane protein missing and Lipofuscin storage.",
+  );
+});
+
+// Diseases of one gene. X and Y share GENEG, whose three variants and mechanism come with the gene;
+// each also has two loss-of-function variants of its own. V and W share GENEK; W has one variant of
+// its own. U (GENEH) has a mechanism too, so three diseases have one on record.
+function oneGeneGraph(): AtlasGraph {
+  const variant = (id: string, gene: string, change: string) => ({ ...node(id, "Variant", `NM_9.1(${gene}):${change}`), source: "ClinVar" });
+  const lof = (id: string, gene: string, k: number) => variant(id, gene, `c.${k}del (p.Leu${k}fs)`);
+  return {
+    meta: graph.meta,
+    nodes: [
+      ...["U", "V", "W", "X", "Y"].map((x) => node(`MONDO:${x}`, "Disease", x)),
+      ...["G", "H", "K"].map((x) => node(`HGNC:${x}`, "Gene", `GENE${x}`)),
+      lof("CLINVAR:g1", "GENEG", 10),
+      lof("CLINVAR:g2", "GENEG", 20),
+      variant("CLINVAR:g3", "GENEG", "c.30A>G (p.Lys10Arg)"),
+      ...[1, 2, 3].map((k) => lof(`CLINVAR:k${k}`, "GENEK", 10 * k)),
+      ...[1, 2].map((k) => lof(`CLINVAR:x${k}`, "GENEG", 40 + k)),
+      ...[1, 2].map((k) => lof(`CLINVAR:y${k}`, "GENEG", 50 + k)),
+      ...[1, 2].map((k) => lof(`CLINVAR:v${k}`, "GENEK", 60 + k)),
+      lof("CLINVAR:w1", "GENEK", 70),
+      node("PW:G", "Mechanism", "Soluble lysosomal enzyme missing"),
+      node("PW:H", "Mechanism", "Membrane protein missing"),
+    ],
+    edges: [
+      edge("HGNC:G", "MONDO:X"),
+      edge("HGNC:G", "MONDO:Y"),
+      edge("HGNC:K", "MONDO:V"),
+      edge("HGNC:K", "MONDO:W"),
+      edge("HGNC:H", "MONDO:U"),
+      ...["g1", "g2", "g3"].map((v) => edge(`CLINVAR:${v}`, "HGNC:G")),
+      ...["k1", "k2", "k3"].map((v) => edge(`CLINVAR:${v}`, "HGNC:K")),
+      ...["x1", "x2"].map((v) => edge(`CLINVAR:${v}`, "MONDO:X")),
+      ...["y1", "y2"].map((v) => edge(`CLINVAR:${v}`, "MONDO:Y")),
+      ...["v1", "v2"].map((v) => edge(`CLINVAR:${v}`, "MONDO:V")),
+      edge("CLINVAR:w1", "MONDO:W"),
+      edge("HGNC:G", "PW:G"),
+      edge("HGNC:H", "PW:H"),
+    ],
+  };
+}
+
+test("same gene: the gene's own variants and mechanism are the gene's fact, not more evidence", () => {
+  const c = buildContext(oneGeneGraph(), null);
+  const xy = scoreDimensions(c, "MONDO:X", "MONDO:Y");
+  assert.equal(xy.gene.status, "match");
+  // Each disease's own variants are compared; the gene's three are set aside.
+  assert.equal(xy.variant.status, "match");
+  assert.equal(xy.variant.score, 1);
+  assert.deepEqual(xy.variant.coverage, { a: 5, b: 5 });
+  assert.deepEqual(xy.variant.shared, []);
+  assert.equal(xy.variant.details?.gene_level_variants, 3);
+  assert.equal(xy.variant.details?.lof_a, 2);
+  assert.equal(xy.variant.summary, "Both mostly loss-of-function (ClinVar records: X 2 of 2 loss-of-function, Y 2 of 2).");
+  // The mechanism is shared only because the gene is: listed, but no line of its own. It cannot say
+  // whether the two diseases disrupt it the same way, so it is unknown and scores 0.
+  assert.equal(xy.mechanism.status, "unknown");
+  assert.equal(xy.mechanism.score, 0);
+  assert.equal(xy.mechanism.support, null);
+  assert.deepEqual(xy.mechanism.shared.map((s) => [s.id, s.weight]), [["PW:G", 1]]);
+  assert.deepEqual(xy.mechanism.details, { most_specific: "PW:G", n: 2, N: 3, atlas: 5, through_shared_gene: true });
+  assert.equal(
+    xy.mechanism.summary,
+    "The mechanism they share, Soluble lysosomal enzyme missing (2 of the 3 diseases with a mechanism on record), comes with their shared gene GENEG, so it says nothing the gene does not; whether both diseases disrupt it the same way is unknown.",
+  );
+  // Gene and own variants: two lines. The mechanism adds nothing on top of the gene.
+  assert.equal(biologyScore(xy), Number((1 - 0.3 * 0.75).toFixed(4)));
+
+  const vw = scoreDimensions(c, "MONDO:V", "MONDO:W");
+  assert.equal(vw.variant.status, "unknown");
+  assert.deepEqual(vw.variant.flags, ["variant_effect_unknown", "derived_from_variant_notation"]);
+  assert.equal(vw.variant.details?.gene_level_variants, 3);
+  assert.equal(vw.variant.summary, "Apart from the variants of the shared gene GENEK, too few with a readable type to compare (V: 2, W: 1; 2 needed each).");
+  assert.equal(biologyScore(vw), 0.7);
+});
+
+test("variant: the same kind of lesion on both sides matches even when three variants a side differ by one", () => {
+  // Two genes read from three variants each: P 2 of 3 loss-of-function, T 3 of 3. M is mixed (1 of 3).
+  const variant = (id: string, change: string) => ({ ...node(id, "Variant", `NM_8.1(GENE):${change}`), source: "ClinVar" });
+  const g: AtlasGraph = {
+    meta: graph.meta,
+    nodes: [
+      ...["M", "P", "T"].flatMap((x) => [node(`MONDO:${x}`, "Disease", x), node(`HGNC:${x}`, "Gene", `GENE${x}`)]),
+      variant("CLINVAR:p1", "c.1A>T (p.Met1Leu)"),
+      variant("CLINVAR:p2", "c.138C>A (p.Cys46Ter)"),
+      variant("CLINVAR:p3", "c.224C>A (p.Thr75Asn)"),
+      variant("CLINVAR:t1", "c.141_144del (p.Leu49fs)"),
+      variant("CLINVAR:t2", "c.1053dup (p.Leu352fs)"),
+      variant("CLINVAR:t3", "c.2T>C (p.Met1Thr)"),
+      variant("CLINVAR:m1", "c.40del (p.Leu14fs)"),
+      variant("CLINVAR:m2", "c.50A>G (p.Lys17Arg)"),
+      variant("CLINVAR:m3", "c.60G>A (p.Gly20Ser)"),
+    ],
+    edges: [
+      ...["M", "P", "T"].map((x) => edge(`HGNC:${x}`, `MONDO:${x}`)),
+      ...["p1", "p2", "p3"].map((v) => edge(`CLINVAR:${v}`, "HGNC:P")),
+      ...["t1", "t2", "t3"].map((v) => edge(`CLINVAR:${v}`, "HGNC:T")),
+      ...["m1", "m2", "m3"].map((v) => edge(`CLINVAR:${v}`, "HGNC:M")),
+    ],
+  };
+  const c = buildContext(g, null);
+  const pt = scoreDimensions(c, "MONDO:P", "MONDO:T").variant;
+  assert.equal(pt.score, 0.6667);
+  assert.equal(pt.status, "match");
+  assert.deepEqual([pt.details?.kind_a, pt.details?.kind_b], ["mostly_lof", "mostly_lof"]);
+  // Each gene has one disease here, so its records stand for the disease; the words say whose they are.
+  assert.equal(pt.summary, "Both mostly loss-of-function (ClinVar records: GENEP 2 of 3 loss-of-function, GENET 3 of 3).");
+  // The same share gap, but one side mixed: only partly in agreement.
+  const mp = scoreDimensions(c, "MONDO:M", "MONDO:P").variant;
+  assert.equal(mp.score, 0.6667);
+  assert.equal(mp.status, "partial");
+  const mt = scoreDimensions(c, "MONDO:M", "MONDO:T").variant;
+  assert.equal(mt.status, "none");
+  assert.ok(!mt.flags.includes("variant_type_conflict")); // mixed is not the opposite kind
+});
+
 test("mechanism phrases read the label only", () => {
   assert.equal(mechanismPhrase("Soluble lysosomal enzyme missing"), "both are missing a soluble lysosomal enzyme");
   assert.equal(mechanismPhrase("Membrane protein missing"), "both are missing a membrane protein");
@@ -348,6 +572,32 @@ test("mechanism phrases read the label only", () => {
   assert.equal(mechanismPhrase("Lysosomal membrane protein"), "both involve a lysosomal membrane protein");
   assert.equal(mechanismPhrase("Transport across the lysosomal membrane"), "both involve transport across the lysosomal membrane");
   assert.equal(mechanismPhrase("TGF-beta signaling"), "both involve TGF-beta signaling");
+  // Reactome names: sentence case reads as running text, title case is kept as written.
+  assert.equal(mechanismPhrase("Melanin biosynthesis"), "both involve melanin biosynthesis");
+  assert.equal(
+    mechanismPhrase("Regulation of MITF-M-dependent genes involved in pigmentation"),
+    "both involve regulation of MITF-M-dependent genes involved in pigmentation",
+  );
+  assert.equal(
+    mechanismPhrase("Developmental Lineage of Pancreatic Ductal Cells"),
+    "both involve Developmental Lineage of Pancreatic Ductal Cells",
+  );
+  assert.equal(mechanismPhrase("Pre-NOTCH Processing in the Endoplasmic Reticulum"), "both involve Pre-NOTCH Processing in the Endoplasmic Reticulum");
+});
+
+test("shared mechanism clause: a pathway their genes are in is named as such, a gene-product label as their own", () => {
+  const reach = "2 of the 81 diseases with a mechanism on record";
+  assert.equal(sharedMechanismClause("Galactose catabolism", 1, true, reach), `their genes share one mechanism, galactose catabolism (${reach})`);
+  assert.equal(
+    sharedMechanismClause("Hyaluronan degradation", 5, true, reach),
+    `their genes share 5 mechanisms, of which the most specific here is hyaluronan degradation (${reach})`,
+  );
+  // Process names ending in a product noun stay process names.
+  assert.equal(sharedMechanismClause("Signaling by Insulin receptor", 1, true, ""), "their genes share one mechanism, Signaling by Insulin receptor");
+  assert.equal(sharedMechanismClause("Membrane protein missing", 1, true, ""), "both are missing a membrane protein");
+  assert.equal(sharedMechanismClause("Lysosomal membrane protein", 2, true, reach), `both involve a lysosomal membrane protein (${reach}), the most specific of 2 shared mechanisms`);
+  // Linked to the diseases themselves: their own mechanism.
+  assert.equal(sharedMechanismClause("Big pathway", 1, false, reach), `both involve big pathway (${reach})`);
 });
 
 test("symptom scale: floor at the 99th percentile of random pairs, top at the same-disease median", () => {
@@ -467,13 +717,19 @@ test("onset: neighbouring steps, finer terms count as their step, disagreeing so
 test("collaboration: via a mechanism or gene, umbrella items, inactive studies, disputes", () => {
   const d12 = pair(1, 2);
   assert.equal(d12.patient_org.status, "match");
-  assert.deepEqual(d12.patient_org.shared.map((s) => [s.id, s.via ?? null]), [
-    ["atlas:org-2", null],
-    ["atlas:org-1", "REACT:2"],
+  // The group linked to two diseases weighs 1 and comes first; the one listed for every disease with
+  // a group on record (5 of 5) weighs 0 and is an umbrella (5 > max(4, 0.6)).
+  assert.deepEqual(d12.patient_org.shared.map((s) => [s.id, s.via ?? null, s.weight]), [
+    ["atlas:org-1", "REACT:2", 1],
+    ["atlas:org-2", null, 0],
   ]);
-  assert.equal(d12.patient_org.score, 0.75);
+  assert.equal(d12.patient_org.score, 0.5); // 1 - (1 - 0.5 x 1)(1 - 0.5 x 0)
   assert.deepEqual(d12.patient_org.flags, ["via_mechanism", "umbrella_resource"]);
   assert.equal(d12.patient_org.details?.umbrella_items, "atlas:org-2");
+  assert.equal(
+    d12.patient_org.summary,
+    "2 shared patient groups, e.g. Pathway families. Linked through Big pathway. 1 of them is listed for more than 4 of the 6 diseases here.",
+  );
   assert.deepEqual(d12.asset.shared.map((s) => [s.id, s.via]), [["atlas:asset-1", "HGNC:1"]]);
   assert.ok(d12.asset.flags.includes("via_mechanism"));
   assert.deepEqual(d12.trial.flags, ["inferred_only", "inactive_or_withdrawn"]);
@@ -490,6 +746,51 @@ test("collaboration: via a mechanism or gene, umbrella items, inactive studies, 
   assert.equal(d56.paper.details?.contradicted_edges, "e-PMID_2-MONDO_0000006");
   assert.equal(d56.trial.status, "unknown");
   assert.deepEqual(d56.trial.flags, ["no_data"]);
+});
+
+test("umbrella resources and item weights: broad listings say little and never bridge", () => {
+  // More than max(UMBRELLA_MIN, UMBRELLA_SHARE x N) diseases: 4 in a small atlas, a tenth of a large one.
+  assert.equal(umbrellaCutoff(6), 4);
+  assert.equal(umbrellaCutoff(93), 9.3);
+  // 30 diseases; 20 of them have a patient group on record. A group for 4 diseases is specific, one
+  // for 5 is listed beyond the cutoff (max(4, 3) = 4), and one for all 20 weighs nothing.
+  const n = 30;
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  for (let d = 1; d <= n; d++) nodes.push(node(D(d), "Disease"));
+  const groups: [string, number[]][] = [
+    ["atlas:org-a", [1, 2, 3, 4]],
+    ["atlas:org-b", [5, 6, 7, 8, 9]],
+    ["atlas:org-c", Array.from({ length: 20 }, (_, i) => i + 1)],
+  ];
+  for (const [id, members] of groups) {
+    nodes.push(node(id, "PatientOrg"));
+    for (const d of members) edges.push(edge(id, D(d), "inferred"));
+  }
+  const c = buildContext({ meta: graph.meta, nodes, edges }, null);
+  assert.equal(c.collaborationDiseases.patient_org, 20);
+  assert.equal(isUmbrella(c, "patient_org", "atlas:org-a"), false);
+  assert.equal(isUmbrella(c, "patient_org", "atlas:org-b"), true);
+  assert.equal(isUmbrella(c, "patient_org", "atlas:org-c"), true);
+  const lnN = Math.log(20);
+  assert.ok(Math.abs(collaborationWeight(c, "patient_org", "atlas:org-a") - (1 - Math.log(4) / lnN) / (1 - Math.log(2) / lnN)) < 1e-12);
+  assert.equal(collaborationWeight(c, "patient_org", "atlas:org-c"), 0);
+  // D1-D2 share a specific group and the everyone group: the pair is a match, flagged for the umbrella.
+  const d12 = scoreDimensions(c, D(1), D(2)).patient_org;
+  assert.equal(d12.status, "match");
+  assert.deepEqual(d12.shared.map((s) => s.id), ["atlas:org-a", "atlas:org-c"]);
+  assert.equal(d12.score, Number((0.5 * collaborationWeight(c, "patient_org", "atlas:org-a")).toFixed(4)));
+  // D5-D6 share only listings beyond the cutoff: a partial overlap, and no bridge between them.
+  const d56 = scoreDimensions(c, D(5), D(6)).patient_org;
+  assert.equal(d56.status, "partial");
+  assert.ok(d56.flags.includes("umbrella_resource"));
+  assert.equal(d56.summary, "2 shared patient groups, e.g. atlas:org-b. Each is listed for more than 4 of the 30 diseases here, so they say little about this pair.");
+  assert.ok(!candidatePairs(c).some(([a, b]) => a === D(5) && b === D(6)));
+  // Only the specific group makes pairs worth grading.
+  assert.deepEqual(
+    candidatePairs(c).map(([a, b]) => `${a} ${b}`),
+    [[1, 2], [1, 3], [1, 4], [2, 3], [2, 4], [3, 4]].map(([a, b]) => `${D(a)} ${D(b)}`),
+  );
 });
 
 test("relation names never matter: the same graph with renamed edges grades the same", () => {

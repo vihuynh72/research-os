@@ -1,34 +1,51 @@
 "use client";
 
 // One search for everything: a WAI-ARIA combobox over diseases, genes, symptoms, groups and
-// research. Picking a result puts it in the center of the map.
+// research, with icon chips to narrow it to one kind ("only symptoms"). Picking a result puts it
+// in the center of the map.
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { SearchHit } from "@/lib/graph/index";
+import type { NodeType } from "@/lib/graph/types";
 import { countLabel } from "@/lib/graph/vocab";
 import { ICON_PATH } from "@/lib/viz/icons";
 import { TYPE_WORD } from "./format";
+import { KIND_STYLE } from "./kinds";
+import { SEARCH_SCOPES, type ScopeId, type SearchScope } from "./searchScopes";
 
 // Longest first: the box shows the longest hint that fits, so a phone never shows a hint cut
 // off mid-word. The examples come from the data, so the hint never names something the atlas
 // does not have. The server renders the first one.
-function placeholdersFor(examples: string[]): string[] {
+function placeholdersFor(scope: SearchScope, examples: string[]): string[] {
   return [
-    examples.length >= 2 ? `Search a disease, gene or symptom, e.g. "${examples[0]}" or "${examples[1]}"` : "",
-    examples.length >= 1 ? `Search a disease, gene or symptom, e.g. "${examples[0]}"` : "",
-    "Search a disease, gene or symptom",
-    "Search the atlas",
+    examples.length >= 2 ? `${scope.hint}, e.g. "${examples[0]}" or "${examples[1]}"` : "",
+    examples.length >= 1 ? `${scope.hint}, e.g. "${examples[0]}"` : "",
+    scope.hint,
+    scope.id === "all" ? "Search the atlas" : `Search ${scope.label.toLowerCase()}`,
   ].filter(Boolean);
 }
 
 interface Props {
-  search(query: string): SearchHit[];
+  // types narrows the search; a caller that ignores it still works, the box filters what comes back.
+  search(query: string, types?: readonly NodeType[]): SearchHit[];
+  suggest?(types: readonly NodeType[]): SearchHit[]; // what to list for a chosen kind before typing
   onPick(hit: SearchHit): void;
-  examples?: string[]; // names to suggest in the placeholder, e.g. ["CLN3", "MFSD8"]
+  examples?: string[]; // names to suggest in the "All" placeholder, from the data
+  examplesByScope?: Partial<Record<ScopeId, string[]>>;
+  scopes?: readonly SearchScope[] | false; // false hides the chips
   autoFocus?: boolean; // on devices with a mouse or trackpad only, so phones do not pop the keyboard
   className?: string;
 }
 
-export default function SearchBox({ search, onPick, examples = [], autoFocus = false, className = "" }: Props) {
+export default function SearchBox({
+  search,
+  suggest,
+  onPick,
+  examples = [],
+  examplesByScope = {},
+  scopes = SEARCH_SCOPES,
+  autoFocus = false,
+  className = "",
+}: Props) {
   const id = useId();
   const inputId = `${id}-input`;
   const listId = `${id}-list`;
@@ -37,8 +54,13 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [announcement, setAnnouncement] = useState("");
-  const exampleKey = examples.join("\n");
-  const placeholders = useMemo(() => placeholdersFor(exampleKey ? exampleKey.split("\n") : []), [exampleKey]);
+  const [scopeId, setScopeId] = useState<ScopeId>("all");
+  const scopeList = scopes === false ? [] : scopes;
+  const scope = scopeList.find((s) => s.id === scopeId) ?? SEARCH_SCOPES[0];
+  const scopeExamples = scope.id === "all" ? examples : (examplesByScope[scope.id] ?? []);
+  // A string key, so a new examples array with the same names does not refit the placeholder.
+  const exampleKey = scopeExamples.join("\n");
+  const placeholders = useMemo(() => placeholdersFor(scope, exampleKey ? exampleKey.split("\n") : []), [scope, exampleKey]);
   const [placeholder, setPlaceholder] = useState(placeholders[0]);
 
   useLayoutEffect(() => {
@@ -62,7 +84,16 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
   }, [autoFocus]);
 
   const trimmed = query.trim();
-  const hits = useMemo(() => (trimmed ? search(trimmed) : []), [trimmed, search]);
+  const types = scope.types;
+  const hits = useMemo(() => {
+    if (trimmed) {
+      const found = search(trimmed, types.length ? types : undefined);
+      return types.length ? found.filter((hit) => types.includes(hit.node.type)) : found;
+    }
+    // A chosen kind with nothing typed yet lists what ties the atlas together.
+    return types.length && suggest ? suggest(types) : [];
+  }, [trimmed, search, suggest, types]);
+  const browsing = !trimmed && hits.length > 0;
   const expanded = open && hits.length > 0;
 
   // Announce the result count once typing pauses, not on every keystroke.
@@ -80,6 +111,13 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
     setOpen(false);
     setActive(-1);
     inputRef.current?.blur();
+  };
+
+  const choose = (next: ScopeId) => {
+    setScopeId(next);
+    setActive(-1);
+    setOpen(true);
+    inputRef.current?.focus({ preventScroll: true });
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -101,7 +139,7 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
         }
         break;
       case "Escape":
-        if (open && trimmed) {
+        if (open && (trimmed || browsing)) {
           event.preventDefault();
           setOpen(false);
           setActive(-1);
@@ -113,6 +151,16 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
     }
   };
 
+  // Arrow keys move between chips, as in any radio group.
+  const onChipKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+    if (!step) return;
+    event.preventDefault();
+    const next = scopeList[(index + step + scopeList.length) % scopeList.length];
+    setScopeId(next.id);
+    (event.currentTarget.parentElement?.children[(index + step + scopeList.length) % scopeList.length] as HTMLElement | undefined)?.focus();
+  };
+
   return (
     <div className={`relative ${className}`}>
       <label htmlFor={inputId} className="visually-hidden">
@@ -121,7 +169,7 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
       <svg
         aria-hidden="true"
         viewBox="0 0 24 24"
-        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-2"
+        className="pointer-events-none absolute top-5 left-3 size-4 -translate-y-1/2 text-ink-2"
         fill="none"
         stroke="currentColor"
         strokeWidth="2"
@@ -139,6 +187,7 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
         aria-expanded={expanded}
         aria-controls={listId}
         aria-activedescendant={expanded && active >= 0 ? `${id}-opt-${active}` : undefined}
+        aria-describedby={scopeList.length ? `${id}-scope` : undefined}
         autoComplete="off"
         autoCorrect="off"
         spellCheck={false}
@@ -155,13 +204,55 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
         onKeyDown={onKeyDown}
         className="h-10 w-full rounded-full border border-line bg-surface-2 pr-4 pl-9 text-[0.9375rem] text-ellipsis text-ink placeholder:text-ink-2 focus:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
       />
+
+      {scopeList.length > 0 && (
+        <div
+          id={`${id}-scope`}
+          role="radiogroup"
+          aria-label="Search in"
+          className="mt-2 flex flex-wrap gap-1.5"
+        >
+          {scopeList.map((s, i) => {
+            const on = s.id === scope.id;
+            const style = s.kind ? KIND_STYLE[s.kind] : null;
+            const fill = s.kind === "disease" ? "var(--series-1)" : (style?.fill ?? "var(--accent)");
+            const ink = s.kind === "disease" || !style ? "#fff" : style.ink;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                tabIndex={on ? 0 : -1}
+                title={s.hint}
+                onPointerDown={(event) => event.preventDefault()}
+                onClick={() => choose(s.id)}
+                onKeyDown={(event) => onChipKey(event, i)}
+                className={`flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors ${on ? "border-transparent font-medium" : "border-line bg-surface text-ink-2 hover:border-ink-3 hover:text-ink"}`}
+                style={on ? { background: fill, color: ink } : undefined}
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={s.icon} />
+                </svg>
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <ul
         id={listId}
         role="listbox"
-        aria-label="Suggestions"
+        aria-label={browsing ? `${scope.label} in this atlas` : "Suggestions"}
         hidden={!expanded}
         className="absolute inset-x-0 top-full z-30 mt-2 max-h-[min(24rem,60dvh)] overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-[0_12px_32px_rgb(0_0_0/0.16)]"
       >
+        {browsing && (
+          <li role="presentation" className="px-2.5 pt-1.5 pb-1 text-[11px] uppercase tracking-wide text-ink-2">
+            {scope.label} linked to the most diseases
+          </li>
+        )}
         {hits.map((hit, i) => {
           const isDisease = hit.node.type === "Disease";
           const synonym = hit.matched !== hit.node.label ? hit.matched : null;
@@ -202,7 +293,18 @@ export default function SearchBox({ search, onPick, examples = [], autoFocus = f
       </ul>
       {open && trimmed && !hits.length && (
         <div className="absolute inset-x-0 top-full z-30 mt-2 rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-ink-2 shadow-[0_12px_32px_rgb(0_0_0/0.16)]">
-          Nothing in this atlas matches “{trimmed}”. Try a disease name, a gene{examples[1] ? ` such as ${examples[1]}` : ""}, or a symptom.
+          {scope.id === "all" ? (
+            <>
+              Nothing in this atlas matches “{trimmed}”. Try a disease name, a gene{examples[1] ? ` such as ${examples[1]}` : ""}, or a symptom.
+            </>
+          ) : (
+            <>
+              No {scope.label.toLowerCase()} match “{trimmed}”.{" "}
+              <button type="button" className="text-accent-ink underline" onPointerDown={(event) => event.preventDefault()} onClick={() => choose("all")}>
+                Search everything
+              </button>
+            </>
+          )}
         </div>
       )}
       <div aria-live="polite" className="visually-hidden">

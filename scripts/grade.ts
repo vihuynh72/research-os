@@ -4,7 +4,7 @@
 //   npm run grade:check    recompute and compare with the files on disk; write nothing
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, dirname, relative, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
@@ -23,11 +23,11 @@ import {
 } from "../lib/grading/types.ts";
 
 const HELP = `Usage: node scripts/grade.ts [options]
-  --graph <file>      graph to grade (default public/graph.json if it exists, else public/graph.sample.json)
+  --graph <file>      graph to grade (default public/graph.json)
   --reference <file>  HPO reference, or "none" (default data/reference/hpo-reference.json if it exists)
   --judgments <file>  AI judgments, or "none" (default public/judgments.json if it exists)
-  --out <file>        relevance output (default public/relevance.json; public/relevance.sample.json for a sample graph)
-  --bundles <file>    evidence bundles (default data/grading/bundles.json; bundles.sample.json for a sample graph)
+  --out <file>        relevance output (default public/relevance.json)
+  --bundles <file>    evidence bundles (default data/grading/bundles.json)
   --check             recompute and compare with the files on disk; write nothing, exit 1 if anything differs`;
 
 const { values } = parseArgs({
@@ -70,13 +70,12 @@ function optionalInput(value: string | undefined, fallback: string): string | nu
   return existsSync(fallback) ? fallback : null;
 }
 
-const graphPath = values.graph ?? (existsSync("public/graph.json") ? "public/graph.json" : "public/graph.sample.json");
-if (!existsSync(graphPath)) fail(`Graph not found: ${graphPath}. Run npm run data:sample first.`);
-const sample = basename(graphPath).includes("sample");
+const graphPath = values.graph ?? "public/graph.json";
+if (!existsSync(graphPath)) fail(`Graph not found: ${graphPath}. Run npm run data:graph first.`);
 const referencePath = optionalInput(values.reference, "data/reference/hpo-reference.json");
 const judgmentsPath = optionalInput(values.judgments, "public/judgments.json");
-const outPath = values.out ?? (sample ? "public/relevance.sample.json" : "public/relevance.json");
-const bundlesPath = values.bundles ?? (sample ? "data/grading/bundles.sample.json" : "data/grading/bundles.json");
+const outPath = values.out ?? "public/relevance.json";
+const bundlesPath = values.bundles ?? "data/grading/bundles.json";
 
 const graph = readJson<AtlasGraph>(graphPath);
 const reference = referencePath ? readJson<HpoReference>(referencePath) : null;
@@ -164,6 +163,9 @@ function printReport(): void {
   for (const pair of shownPairs) {
     const mechanism = pair.dimensions.mechanism;
     const phenotype = pair.dimensions.phenotype;
+    // The mechanism that carries the score; a heavier one listed first may only come with a shared gene.
+    const scoring = mechanism.shared.find((item) => item.id === mechanism.details?.most_specific) ?? mechanism.shared[0];
+    const viaGene = mechanism.details?.through_shared_gene === true ? ", with the shared gene, not counted" : "";
     console.log(
       `  ${pairName(pair.a, pair.b).padEnd(26)} ${pair.tier.padEnd(11)} biology ${pair.biology.toFixed(4)}  ` +
         `clinical ${pair.clinical.toFixed(4)} (${CLINICAL_TIER_WORD[pair.clinical_tier].toLowerCase()})  ` +
@@ -172,7 +174,7 @@ function printReport(): void {
     console.log(
       `    lines: ${pair.lines_of_evidence.join(", ") || "-"}; gene ${pair.dimensions.gene.status}, ` +
         `variant ${pair.dimensions.variant.score.toFixed(4)} ${pair.dimensions.variant.status}, ` +
-        `mechanism ${mechanism.score.toFixed(4)} ${mechanism.status}${mechanism.shared[0] ? ` (${mechanism.shared[0].label})` : ""}; ` +
+        `mechanism ${mechanism.score.toFixed(4)} ${mechanism.status}${scoring ? ` (${scoring.label}${viaGene})` : ""}; ` +
         `symptoms ${phenotype.score.toFixed(4)} ${phenotype.status}${phenotype.raw === undefined ? "" : ` (SimGIC ${phenotype.raw.toFixed(4)}, p ${(phenotype.percentile ?? 0).toFixed(4)})`}, ` +
         `onset/inheritance ${pair.dimensions.disease.score.toFixed(4)} ${pair.dimensions.disease.status}`,
     );

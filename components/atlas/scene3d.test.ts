@@ -8,9 +8,10 @@ import { applyThreshold, buildNeighborhood } from "../../lib/graph/neighborhood.
 import { constellationScene, neighborhoodScene } from "./scene3d.ts";
 import type { AtlasModel } from "./format";
 
+// The atlas's own data (npm run data:graph && npm run grade).
 function fixture(): AtlasModel {
-  const graph: AtlasGraph = JSON.parse(readFileSync(new URL("../../public/graph.sample.json", import.meta.url), "utf8"));
-  const relevance: RelevanceDoc = JSON.parse(readFileSync(new URL("../../public/relevance.sample.json", import.meta.url), "utf8"));
+  const graph: AtlasGraph = JSON.parse(readFileSync(new URL("../../public/graph.json", import.meta.url), "utf8"));
+  const relevance: RelevanceDoc = JSON.parse(readFileSync(new URL("../../public/relevance.json", import.meta.url), "utf8"));
   return {
     graph,
     relevance,

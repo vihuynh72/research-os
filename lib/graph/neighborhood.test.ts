@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import type { AtlasGraph, GraphEdge, GraphNode, NodeType } from "./types.ts";
 import type { Dimension, DimensionResult, PairGrade, RelevanceDoc, SharedItem } from "../grading/types.ts";
 import { DIMENSIONS, DIMENSION_FAMILY } from "../grading/types.ts";
-import { applyThreshold, bubbleId, buildNeighborhood, relevanceHistogram } from "./neighborhood.ts";
+import { HOOD, MAP_CAP, SHARED_BUBBLE_OWNER, applyThreshold, bubbleId, buildNeighborhood, relevanceHistogram } from "./neighborhood.ts";
 
 const node = (id: string, type: NodeType, label = id, attributes?: Record<string, unknown>): GraphNode => ({
   id,
@@ -253,12 +253,21 @@ test("threshold: shown, faint ghosts just below, hidden further down", () => {
   assert.ok(direct.nodes.every((x) => x.relevance === 1), "100% keeps only direct facts");
 });
 
-test("hiding a type drops what only hangs off it", () => {
+test("hiding a type hides only that type: what hangs off it stays", () => {
   const hood = buildNeighborhood(graph, relevance, "D1");
   const res = applyThreshold(hood, 0, new Set<NodeType>(["Mechanism"]));
   const ids = new Set(res.nodes.map((x) => x.id));
-  assert.ok(!ids.has("M1") && !ids.has("O1") && !ids.has("A1"));
+  assert.ok(!ids.has("M1"));
+  assert.ok(ids.has("O1") && ids.has("A1"), "groups reached through the hidden mechanism are still counted and shown");
   assert.ok(ids.has("D2"), "related diseases stay through their similarity line");
+  assert.ok(res.edges.every((e) => ids.has(e.a) && ids.has(e.b)), "no line runs to a hidden node");
+
+  // "Only genes": every gene that passes the bar, the related disease's too.
+  const onlyGenes = applyThreshold(hood, 0.8, new Set<NodeType>(["Disease", "Variant", "Mechanism", "Phenotype", "PatientOrg", "Asset", "Trial", "Paper", "Grant", "Investigator"]));
+  assert.deepEqual(onlyGenes.byType.Gene, applyThreshold(hood, 0.8).byType.Gene);
+  assert.ok(onlyGenes.nodes.some((x) => x.id === "G2"), "D2's gene stays although D2 is hidden");
+  assert.equal(onlyGenes.relatedShown, 0);
+  assert.deepEqual(onlyGenes.closestHidden, { id: "D3", relevance: 0.3 }, "D2 is hidden by type, not under the bar, so it is never offered");
 });
 
 test("deterministic, and works without a grading layer", () => {
@@ -271,3 +280,67 @@ test("deterministic, and works without a grading layer", () => {
 function round(x: number): number {
   return Math.round(x * 10000) / 10000;
 }
+
+// A crowded neighborhood: one gene behind 15 diseases, each with its own symptoms and papers, and a
+// disease related to five others that each have their own papers.
+function crowdedGraph(): { graph: AtlasGraph; relevance: RelevanceDoc } {
+  let k = 0;
+  const e = (subject: string, type: string, object: string): GraphEdge => ({ id: `c${++k}`, type, subject, object, source: "test", url: "https://example.org", date: "2026-10-03", confidence: 1, kind: "observed" });
+  const nodes: GraphNode[] = [node("GX", "Gene", "GENEX"), node("MX", "Mechanism", "process x")];
+  const edges: GraphEdge[] = [];
+  for (let i = 0; i < 15; i++) {
+    nodes.push(node(`A${i}`, "Disease", `anchor ${i}`));
+    edges.push(e("GX", "causes", `A${i}`));
+    for (let j = 0; j < 4; j++) {
+      nodes.push(node(`HP:A${i}${j}`, "Phenotype", `sign ${i}.${j}`));
+      edges.push(e(`A${i}`, "has_phenotype", `HP:A${i}${j}`));
+    }
+  }
+  nodes.push(node("F", "Disease", "focus disease"));
+  for (let i = 0; i < 5; i++) {
+    nodes.push(node(`R${i}`, "Disease", `related ${i}`));
+    for (let j = 0; j < 3; j++) {
+      nodes.push(node(`P${i}${j}`, "Paper", `paper ${i}.${j}`));
+      edges.push(e(`P${i}${j}`, "about", `R${i}`));
+    }
+  }
+  const diseases: Record<string, unknown> = {};
+  for (const n of nodes.filter((x) => x.type === "Disease")) diseases[n.id] = entry(n.id, []);
+  for (let i = 0; i < 15; i++) (diseases[`A${i}`] as { centrality: number }).centrality = i / 15;
+  diseases.F = entry("F", Array.from({ length: 5 }, (_, i) => ({ id: `R${i}`, tier: "moderate" as const, relevance: 0.7 - i * 0.01 })));
+  const pairs = Array.from({ length: 5 }, (_, i) => pair("F", `R${i}`, 0.7 - i * 0.01, "moderate", {}));
+  const rel = { meta: {} as RelevanceDoc["meta"], clusters: [], diseases, pairs, bridges: [], node_info: {} } as unknown as RelevanceDoc;
+  return { graph: { meta: { schema_version: "0.1.0", generated_at: "2026-10-03T00:00:00Z" }, nodes, edges }, relevance: rel };
+}
+
+test("a gene behind many diseases maps the best connected and folds the rest into one bubble", () => {
+  const { graph: g, relevance: r } = crowdedGraph();
+  const hood = buildNeighborhood(g, r, "GX");
+  assert.equal(hood.anchors.length, 15, "every disease the gene is behind is still an anchor (the panel lists them all)");
+  const mapped = hood.nodes.filter((x) => x.role === "anchor");
+  assert.equal(mapped.length, HOOD.maxAnchors);
+  const bubble = hood.nodes.find((x) => x.id === bubbleId("GX", "Disease"))!;
+  assert.equal(bubble.label, "3 more diseases");
+  assert.deepEqual([...bubble.members!].sort(), ["A0", "A1", "A2"], "the least connected fold first");
+  assert.ok(hood.edges.some((x) => x.role === "bubble" && x.a === "GX" && x.b === bubble.id));
+  // Symptoms of all those diseases: at most MAP_CAP single nodes, the rest in numbered bubbles.
+  assert.ok(hood.nodes.filter((x) => x.type === "Phenotype").length <= MAP_CAP.Phenotype!);
+  const folded = hood.nodes.filter((x) => x.role === "bubble" && x.bubbleType === "Phenotype");
+  assert.equal(folded.length, 1, "past mergeAfter owners, one shared bubble instead of one per disease");
+  assert.equal(folded[0].id, bubbleId(SHARED_BUBBLE_OWNER, "Phenotype"));
+  const open = buildNeighborhood(g, r, "GX", { expanded: new Set([bubbleId("GX", "Disease")]) });
+  assert.equal(open.nodes.filter((x) => x.role === "anchor").length, 15, "opening the bubble maps every disease");
+});
+
+test("research of many related diseases shares one bubble; one related disease keeps its own", () => {
+  const { graph: g, relevance: r } = crowdedGraph();
+  const hood = buildNeighborhood(g, r, "F");
+  const papers = hood.nodes.filter((x) => x.role === "bubble" && x.bubbleType === "Paper");
+  assert.equal(papers.length, 1);
+  assert.equal(papers[0].id, bubbleId(SHARED_BUBBLE_OWNER, "Paper"));
+  assert.equal(papers[0].members!.length, 15);
+  assert.equal(papers[0].relevance, 0.7, "a shared bubble sits at its best member's relevance");
+  assert.equal(hood.edges.filter((x) => x.role === "bubble" && x.b === papers[0].id).length, 5, "a line from each disease it gathers papers from");
+  // The lead fixture's single related disease keeps its own per-owner bubble.
+  assert.ok(buildNeighborhood(graph, relevance, "D1").nodes.some((x) => x.id === bubbleId("D2", "Trial")));
+});

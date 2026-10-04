@@ -2,9 +2,18 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { mock, test } from "node:test";
 import type { AtlasGraph, EdgeKind, GraphEdge, GraphNode, NodeType } from "../graph/types.ts";
-import { CLINICAL_THRESHOLDS, MAX_NEIGHBORS } from "./config.ts";
+import { CAPS, CLINICAL_THRESHOLDS, MAX_NEIGHBORS, MIN_ANNOTATIONS } from "./config.ts";
+import { buildContext, isUmbrella, scoreDimensions, umbrellaCutoff } from "./dimensions.ts";
 import { buildBundles, bundleEdgeIds, canonicalJson, gradeGraph } from "./grade.ts";
-import { DIMENSIONS, TIER_ORDER, pairKey, type HpoReference, type Judgment, type JudgmentsDoc } from "./types.ts";
+import {
+  COLLABORATION_DIMENSIONS,
+  DIMENSIONS,
+  TIER_ORDER,
+  pairKey,
+  type HpoReference,
+  type Judgment,
+  type JudgmentsDoc,
+} from "./types.ts";
 
 function node(id: string, type: NodeType, label = id): GraphNode {
   return { id, type, label, source: "test", url: `https://example.org/${id}` };
@@ -38,7 +47,8 @@ function starGraph(n: number): AtlasGraph {
 
 // D1-D2: a specific mechanism through their genes (observed) and loss-of-function variants on both
 // sides, so strong. D1-D3: another specific mechanism, inferred, so one line: capped at moderate.
-// D1, D2 and D3 also share a broader mechanism. D4 shares nothing. A grant ties D2 and D3.
+// D1, D2 and D3 also share a mechanism every disease with a mechanism has, so it says nothing on its
+// own. D4 shares nothing. A grant ties D2 and D3, which share no other biology.
 function smallGraph(): AtlasGraph {
   const lof = (gene: string, k: number) => node(`CLINVAR:${gene}${k}`, "Variant", `NM_1(${gene}):c.${10 * k}del (p.Leu${k}fs)`);
   return {
@@ -126,31 +136,91 @@ test("the document: neighbors, look-alikes, output pairs, meta", () => {
     ],
   );
   const d12 = doc.pairs.find((p) => p.a === D(1) && p.b === D(2));
-  assert.equal(d12?.tier_reason, "Strong: both are missing a soluble lysosomal enzyme, and both carry mostly loss-of-function variants.");
+  assert.equal(
+    d12?.tier_reason,
+    "Strong: both are missing a soluble lysosomal enzyme (2 of the 3 diseases with a mechanism on record), the most specific of 2 shared mechanisms, and both carry mostly loss-of-function variants.",
+  );
   assert.equal(doc.pairs.find((p) => p.a === D(1) && p.b === D(3))?.tier_reason.startsWith("Capped at moderate: only one line"), true);
-  // Without a reference symptoms are raw overlap: D1 and D2 have the same single symptom.
+  // Without a reference symptoms are raw overlap: D1 and D2 have the same single symptom, a full
+  // overlap from one symptom on each side, so the tier is capped while the score stays.
   assert.deepEqual(doc.diseases[D(1)].clinical_neighbors.map((n) => [n.id, n.clinical]), [[D(2), 0.75]]);
-  assert.equal(d12?.clinical_tier, "very_similar");
+  assert.equal(d12?.clinical_tier, "somewhat");
+  assert.match(d12?.clinical_reason ?? "", /^Capped at looks somewhat similar: few symptoms are on record for disease 1 \(1\) and disease 2 \(1\), and they share only one identical symptom\./);
   assert.deepEqual(doc.diseases[D(4)].neighbors, []);
   assert.deepEqual(doc.diseases[D(4)].clinical_neighbors, []);
   assert.equal(doc.diseases[D(4)].cluster, null);
   assert.equal(doc.diseases[D(4)].centrality, 0);
+  // D2-D3 share only the grant and a mechanism all three diseases with one have: not on the map,
+  // so the pair is left out of `pairs` and the bridge alone carries the shared grant.
+  assert.deepEqual(doc.diseases[D(2)].neighbors.map((n) => n.id), [D(1)]);
   assert.deepEqual(
     doc.pairs.map((p) => [p.a, p.b]),
     [
       [D(1), D(2)],
       [D(1), D(3)],
-      [D(2), D(3)],
     ],
   );
-  assert.deepEqual(doc.bridges.map((b) => [b.a, b.b, b.reason]), [[D(2), D(3), "Same research grant"]]);
+  assert.deepEqual(doc.bridges.map((b) => [b.a, b.b, b.reason, b.edges]), [
+    [D(2), D(3), "Same research grant", ["e-reporter_R1-MONDO_0000002", "e-reporter_R1-MONDO_0000003"]],
+  ]);
   assert.match(doc.meta.notes[0], /^Graded 3 of 6 disease pairs/);
-  // Mechanisms get their weight in this atlas even without an HPO reference.
+  assert.ok(doc.meta.notes.includes("Pairs listed: every pair in a disease's biology neighbors or clinical look-alikes; 1 research bridge between diseases outside those lists is in bridges only."));
+  assert.ok(doc.meta.notes.some((note) => note.startsWith("Mechanism specificity within this atlas") && note.includes("(N = 3 of 4 here)")));
+  assert.ok(doc.meta.notes.some((note) => note.startsWith("Settings (lib/grading/config.ts")));
+  // Mechanisms get their weight in this atlas even without an HPO reference. PW:2 reaches all three
+  // diseases that have a mechanism on record (D4 has none), so it sits at the floor.
   assert.deepEqual(doc.node_info, {
     "PW:1": { specificity: 1, diseases: 2 },
-    "PW:2": { specificity: Number(((1 - Math.log(3) / Math.log(4)) / (1 - Math.log(2) / Math.log(4))).toFixed(4)), diseases: 3 },
+    "PW:2": { specificity: 0.15, diseases: 3 },
     "PW:3": { specificity: 1, diseases: 2 },
   });
+});
+
+// Two diseases of one gene whose three variants are recorded for the gene, and whose mechanism comes
+// with the gene: one fact, so never strong. With variants of their own that agree, a second line.
+function oneGeneGraph(ownVariants: boolean): AtlasGraph {
+  const lof = (id: string, k: number) => node(id, "Variant", `NM_1(GENEA):c.${10 * k}del (p.Leu${k}fs)`);
+  return {
+    meta: { schema_version: "0.1.0", generated_at: "2026-10-03T00:00:00Z" },
+    nodes: [
+      node(D(1), "Disease", "disease 1"),
+      node(D(2), "Disease", "disease 2"),
+      node("HGNC:1", "Gene", "GENEA"),
+      ...[1, 2, 3].map((k) => lof(`CLINVAR:${k}`, k)),
+      ...(ownVariants ? [4, 5, 6, 7].map((k) => lof(`CLINVAR:${k}`, k)) : []),
+      node("PW:1", "Mechanism", "Soluble lysosomal enzyme missing"),
+    ],
+    edges: [
+      edge("HGNC:1", D(1)),
+      edge("HGNC:1", D(2)),
+      ...[1, 2, 3].map((k) => edge(`CLINVAR:${k}`, "HGNC:1")),
+      ...(ownVariants ? [edge("CLINVAR:4", D(1)), edge("CLINVAR:5", D(1)), edge("CLINVAR:6", D(2)), edge("CLINVAR:7", D(2))] : []),
+      edge("HGNC:1", "PW:1"),
+    ],
+  };
+}
+
+test("two diseases on one gene with three variants are not strong: the gene is one line, not three", () => {
+  const pair = gradeGraph(oneGeneGraph(false), null).pairs[0];
+  assert.equal(pair.dimensions.gene.status, "match");
+  assert.equal(pair.dimensions.variant.status, "unknown");
+  assert.ok(pair.dimensions.variant.flags.includes("variant_effect_unknown"));
+  assert.equal(pair.dimensions.mechanism.details?.through_shared_gene, true);
+  assert.equal(pair.dimensions.mechanism.status, "unknown");
+  assert.equal(pair.biology, 0.7);
+  assert.equal(pair.tier, "moderate");
+  assert.deepEqual(pair.lines_of_evidence, ["gene"]);
+  assert.equal(
+    pair.tier_reason,
+    "Moderate: both are caused by the same gene (GENEA); the variants on record belong to the gene, not to either disease, so whether both break it the same way is unknown.",
+  );
+
+  const own = gradeGraph(oneGeneGraph(true), null).pairs[0];
+  assert.equal(own.dimensions.variant.status, "match");
+  assert.equal(own.dimensions.variant.details?.gene_level_variants, 3);
+  assert.equal(own.tier_reason, "Strong: both are caused by the same gene (GENEA), and both carry mostly loss-of-function variants.");
+  assert.equal(own.tier, "strong");
+  assert.deepEqual(own.lines_of_evidence, ["gene", "variant"]);
 });
 
 test("at most MAX_NEIGHBORS neighbors and look-alikes; the rest are counted in hidden", () => {
@@ -268,76 +338,111 @@ test("with a reference: node_info for symptoms and mechanisms, the symptom scale
   assert.equal(doc.meta.ic_source, "hpo-annotations");
 });
 
-// ---- end to end on the seed sample (written by scripts/seed-to-graph.ts) ------------------------
+// ---- end to end on the atlas (public/graph.json, written by scripts/seed-to-graph.ts) ----------
+// Rules, not counts: the committed outputs are checked byte for byte by npm run grade:check.
 
-const SAMPLE = "public/graph.sample.json";
+const ATLAS = "public/graph.json";
 const REFERENCE = "data/reference/hpo-reference.json";
 
-test("end to end on public/graph.sample.json", { skip: !existsSync(SAMPLE) && "public/graph.sample.json not built yet" }, () => {
-  const graph = JSON.parse(readFileSync(SAMPLE, "utf8")) as AtlasGraph;
+test("end to end on public/graph.json", { skip: !existsSync(ATLAS) && "public/graph.json not built yet: npm run data:graph" }, () => {
+  const graph = JSON.parse(readFileSync(ATLAS, "utf8")) as AtlasGraph;
   const reference = existsSync(REFERENCE) ? (JSON.parse(readFileSync(REFERENCE, "utf8")) as HpoReference) : null;
   const doc = gradeGraph(graph, reference);
   assert.equal(JSON.stringify(gradeGraph(graph, reference)), JSON.stringify(doc));
 
-  const byLabel = new Map(graph.nodes.filter((n) => n.type === "Disease").map((n) => [n.synonyms?.[0] ?? n.label, n.id]));
-  const cln = (name: string) => byLabel.get(name) ?? assert.fail(`missing ${name}`);
-  const [cln1, cln2, cln3, cln6, cln7] = ["CLN1", "CLN2", "CLN3", "CLN6", "CLN7"].map(cln);
-  assert.equal(Object.keys(doc.diseases).length, 5);
-  const pairOf = (a: string, b: string) => doc.pairs.find((p) => pairKey(p.a, p.b) === pairKey(a, b)) ?? assert.fail(`no pair ${a} ${b}`);
-
-  // Five neuronal ceroid lipofuscinoses: different genes; every pair shares the family-wide
-  // process, which alone says nothing about which subtype is closer.
-  assert.equal(doc.pairs.length, 10);
-  for (const pair of doc.pairs) {
-    assert.equal(pair.dimensions.gene.status, "none");
-    assert.notEqual(pair.dimensions.mechanism.status, "unknown");
-    assert.ok(pair.dimensions.mechanism.shared.some((item) => item.id === "PW:NCL-LYSOSOME"));
-    // Patient groups and the registry hang off the family-wide mechanism: umbrella resources.
-    assert.ok(pair.dimensions.patient_org.flags.includes("umbrella_resource"));
-    assert.ok(pair.dimensions.asset.flags.includes("umbrella_resource"));
-    assert.equal(pair.relevance, pair.biology);
-  }
-  // Soluble enzymes (CLN1, CLN2) and membrane proteins (CLN3, CLN6, CLN7) form the two clusters.
-  assert.deepEqual(
-    doc.clusters.map((c) => [c.label, c.members, c.color_slot]),
-    [
-      ["Membrane protein missing", [cln3, cln6, cln7].sort(), 1],
-      ["Soluble lysosomal enzyme missing", [cln1, cln2].sort(), 2],
-    ],
-  );
-  assert.equal(pairOf(cln3, cln7).tier, "strong");
-  assert.equal(pairOf(cln1, cln2).dimensions.mechanism.details?.most_specific, "PW:NCL-SOLUBLE-ENZYME");
-  for (const [a, b] of [[cln1, cln3], [cln1, cln6], [cln1, cln7], [cln2, cln3], [cln2, cln6], [cln2, cln7]]) {
-    assert.ok(pairOf(a, b).dimensions.mechanism.flags.includes("family_level_only"), `${a} ${b}`);
+  const diseases = graph.nodes.filter((n) => n.type === "Disease").map((n) => n.id);
+  assert.deepEqual(Object.keys(doc.diseases).sort(), [...diseases].sort());
+  for (const id of diseases) {
+    const entry = doc.diseases[id];
+    assert.ok(entry.neighbors.length <= MAX_NEIGHBORS && entry.clinical_neighbors.length <= MAX_NEIGHBORS);
+    assert.ok(entry.neighbors.every((n) => n.tier !== "none"));
   }
 
-  // One NIH grant (U54HD122210, PI Erika Augustine) covers CLN2, CLN3 and CLN6: across clusters
-  // for CLN2, inside the membrane cluster for CLN3-CLN6.
-  const funded = [cln2, cln3, cln6];
-  const expected = funded.flatMap((a, i) => funded.slice(i + 1).map((b) => pairKey(a, b))).sort();
-  assert.deepEqual(doc.bridges.map((b) => pairKey(b.a, b.b)).sort(), expected);
+  // One shared gene is one line of evidence. Variants hang off the gene and so do its pathways, so
+  // two diseases of one gene see one variant list and one set of mechanisms: neither may count again.
+  const allelic = doc.pairs.filter((p) => p.dimensions.gene.status === "match");
+  assert.ok(allelic.length > 0, "the atlas has diseases of one gene");
+  for (const p of allelic) {
+    const name = `${p.a} ${p.b}`;
+    assert.deepEqual(p.lines_of_evidence, ["gene"], name);
+    assert.equal(p.dimensions.variant.status, "unknown", name);
+    assert.ok(p.dimensions.variant.flags.includes("variant_effect_unknown"), name);
+    if (p.dimensions.mechanism.shared.length) {
+      assert.equal(p.dimensions.mechanism.details?.through_shared_gene, true, name);
+      assert.equal(p.dimensions.mechanism.status, "unknown", name);
+    }
+    assert.equal(p.biology, CAPS.gene, name);
+    assert.equal(p.tier, "moderate", name);
+    assert.match(p.tier_reason, /; the variants on record belong to the gene, not to either disease, so whether both break it the same way is unknown\.$/, name);
+  }
+
+  // Variants stand for a disease only when no other disease here has its gene: a pair with such a
+  // gene on either side never compares variant types, and a variant line that disagrees never counts.
+  const graphGenes = new Map<string, string[]>();
+  for (const e of graph.edges) {
+    if (diseases.includes(e.object) && graph.nodes.find((n) => n.id === e.subject)?.type === "Gene") {
+      graphGenes.set(e.object, [...(graphGenes.get(e.object) ?? []), e.subject]);
+    }
+  }
+  const diseasesOfGene = new Map<string, number>();
+  for (const genes of graphGenes.values()) for (const g of genes) diseasesOfGene.set(g, (diseasesOfGene.get(g) ?? 0) + 1);
+  const shared = (id: string) => (graphGenes.get(id) ?? []).some((g) => (diseasesOfGene.get(g) ?? 0) > 1);
+  for (const p of doc.pairs) {
+    if (shared(p.a) || shared(p.b)) assert.equal(p.dimensions.variant.status, "unknown", `${p.a} ${p.b}`);
+    if (p.tier_reason.includes("variant types") || p.tier_reason.includes("carry mostly")) {
+      assert.ok(["match", "partial"].includes(p.dimensions.variant.status), `${p.a} ${p.b}`);
+    }
+  }
+
+  // Look-alikes run by clinical tier, and a thin record that shares at most one symptom is never
+  // more than "somewhat similar".
+  const pairOf = new Map(doc.pairs.map((p) => [pairKey(p.a, p.b), p]));
+  const order = { very_similar: 3, similar: 2, somewhat: 1, different: 0 };
+  for (const id of diseases) {
+    const tiers = doc.diseases[id].clinical_neighbors.map((n) => order[pairOf.get(pairKey(id, n.id))?.clinical_tier ?? "different"]);
+    assert.deepEqual(tiers, [...tiers].sort((x, y) => y - x), id);
+  }
+  for (const p of doc.pairs) {
+    const d = p.dimensions.phenotype.details;
+    const thin = Math.min(Number(d?.terms_a ?? 0), Number(d?.terms_b ?? 0)) < MIN_ANNOTATIONS;
+    if (p.dimensions.phenotype.status !== "unknown" && thin && Number(d?.shared_exact ?? 0) <= 1) {
+      assert.ok(order[p.clinical_tier] <= order.somewhat, `${p.a} ${p.b} ${p.clinical_tier}`);
+    }
+  }
+
+  // Mechanisms are Reactome pathways linked from genes; specificity counts the diseases that have one.
+  const mechanisms = graph.nodes.filter((n) => n.type === "Mechanism");
+  assert.ok(mechanisms.length > 0, "no mechanism layer: run npm run data:reactome && npm run data:graph");
+  for (const m of mechanisms) {
+    assert.match(m.id, /^REACT:R-HSA-\d+$/);
+    assert.equal(typeof m.attributes?.gene_count, "number");
+    assert.ok(doc.node_info?.[m.id]?.diseases !== undefined, m.id);
+  }
+
+  // Umbrella resources (listed for more than max(UMBRELLA_MIN, UMBRELLA_SHARE x N) diseases) are
+  // flagged and never bridge; every bridge rests on items below the cutoff, and only on those.
+  const ctx = buildContext(graph, reference);
+  const cutoff = umbrellaCutoff(diseases.length);
   for (const bridge of doc.bridges) {
-    assert.equal(bridge.reason, "Same research grant and same researcher");
-    assert.equal(bridge.cross_cluster, bridge.a === cln2 || bridge.b === cln2);
+    const dims = scoreDimensions(ctx, bridge.a, bridge.b);
+    const specific = COLLABORATION_DIMENSIONS.filter((d) => dims[d].shared.some((item) => !isUmbrella(ctx, d, item.id)));
+    assert.ok(specific.length > 0, `${bridge.a} ${bridge.b}`);
+    assert.deepEqual([...bridge.dimensions].sort(), [...specific].sort(), `${bridge.a} ${bridge.b}`);
+    for (const id of bridge.edges) {
+      const edge = graph.edges.find((e) => e.id === id);
+      assert.ok(edge, id);
+      const item = [edge.subject, edge.object].find((end) => !diseases.includes(end)) ?? "";
+      assert.ok(COLLABORATION_DIMENSIONS.every((d) => !isUmbrella(ctx, d, item)), `${id} ties a bridge to an umbrella item`);
+    }
+  }
+  for (const p of doc.pairs) {
+    for (const d of COLLABORATION_DIMENSIONS) {
+      const umbrella = p.dimensions[d].shared.filter((item) => (ctx.linkedDiseases[d].get(item.id) ?? 0) > cutoff);
+      assert.equal(p.dimensions[d].flags.includes("umbrella_resource"), umbrella.length > 0, `${p.a} ${p.b} ${d}`);
+    }
   }
 
   const bundles = buildBundles(graph, reference, doc);
   const edgeIds = new Set(graph.edges.map((e) => e.id));
   for (const bundle of bundles) for (const id of Object.keys(bundle.edges)) assert.ok(edgeIds.has(id), id);
-
-  if (reference) {
-    for (const pair of doc.pairs) {
-      assert.notEqual(pair.dimensions.phenotype.status, "unknown");
-      assert.notEqual(pair.dimensions.disease.status, "unknown"); // curated onset and inheritance
-      assert.ok(pair.clinical > 0);
-    }
-    // The onsets of CLN2 and CLN7 are disputed between sources; every pair involving them says so.
-    for (const pair of doc.pairs) {
-      const disputed = [pair.a, pair.b].some((id) => id === cln2 || id === cln7);
-      assert.equal(pair.flags.includes("sources_disagree"), disputed, `${pair.a} ${pair.b}`);
-    }
-    assert.ok(doc.meta.symptom_scale && doc.meta.symptom_scale.same_disease_pairs > 0);
-    assert.equal(doc.node_info?.["PW:NCL-LYSOSOME"]?.diseases, 5);
-    assert.equal(doc.node_info?.["HP:0000007"]?.aspect, "I");
-  }
 });

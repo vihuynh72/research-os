@@ -38,7 +38,8 @@ export function nextSteps(
   const edgeById = new Map(graph.edges.map((e) => [e.id, e]));
   const focus = byId.get(focusId);
   if (!focus) return [];
-  const name = (id: string) => shortLabel(byId.get(id) ?? { label: id });
+  // Whole names (up to a long length): similar diseases ("... type 1A", "... type 1B") must not read the same.
+  const name = (id: string) => shortLabel(byId.get(id) ?? { label: id }, 64);
   const target = (node: GraphNode) => ({ id: node.id, label: node.label, url: node.url, source: node.source });
   const evidenceOf = (ids: string[]) => kindOf(ids.map((id) => edgeById.get(id)?.kind ?? "inferred"));
   const caveatOf = (ids: string[]) =>

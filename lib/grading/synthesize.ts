@@ -2,7 +2,7 @@
 // (the only number that moves a disease on the map) with its tier, clinical resemblance with its
 // own tier, and collaboration. Caps and AI judgments can only lower the biology tier, never raise it.
 import { CAPS, CLINICAL_THRESHOLDS, MIN_ANNOTATIONS, TIER_THRESHOLDS } from "./config.ts";
-import { joinList, mechanismPhrase, round, sentence, symptomAnchor, type LofKind } from "./dimensions.ts";
+import { joinList, reachText, round, sentence, sharedMechanismClause, symptomAnchor, type LofKind } from "./dimensions.ts";
 import {
   BIOLOGY_DIMENSIONS,
   CLINICAL_DIMENSIONS,
@@ -37,11 +37,18 @@ export function noisyOr(terms: { cap: number; score: number }[]): number {
 
 const agrees = (result: DimensionResult) => result.status === "match" || result.status === "partial";
 
-// Variant type only counts once the pair shares a gene or a mechanism, at least partly. Otherwise
-// every two diseases with mostly loss-of-function variants would look related.
+// Variant type only counts once the pair shares a gene or a mechanism, at least partly; otherwise
+// every two diseases with mostly loss-of-function variants would look related. It also counts only
+// when the variant types agree at least partly: variants that disagree are a reason to doubt a link
+// (a conflict caps the tier), never a reason to strengthen it. A mechanism the pair shares only
+// through a gene they share is the gene's own fact: it counts once, as the gene line, so one shared
+// gene never passes for two agreeing lines of evidence.
 export function countedBiology(dimensions: Dimensions): BiologyDimension[] {
   const primary = PRIMARY_BIOLOGY.some((d) => agrees(dimensions[d]));
-  return BIOLOGY_DIMENSIONS.filter((d) => primary || d !== "variant");
+  const throughGene = dimensions.mechanism.details?.through_shared_gene === true;
+  return BIOLOGY_DIMENSIONS.filter((d) =>
+    d === "variant" ? primary && agrees(dimensions.variant) : d === "mechanism" ? !throughGene : true,
+  );
 }
 
 // Onset and inheritance only count once the symptoms overlap beyond chance (a symptom score above
@@ -79,6 +86,26 @@ export function clinicalTierFor(clinical: number): ClinicalTier {
   if (clinical >= CLINICAL_THRESHOLDS.similar) return "similar";
   if (clinical >= CLINICAL_THRESHOLDS.somewhat) return "somewhat";
   return "different";
+}
+
+export const CLINICAL_ORDER: Record<ClinicalTier, number> = { very_similar: 3, similar: 2, somewhat: 1, different: 0 };
+
+// A resemblance read from a thin record is at most "Looks somewhat similar": a side has fewer than
+// MIN_ANNOTATIONS symptoms on record, and the two share at most one identical symptom, or no rare
+// one. Two records of one or two symptoms that share one can otherwise score as much overlap as one
+// disease described twice. Returns why the cap applies, or null. Like the biology caps it lowers the
+// tier only; the score stays what the symptoms give.
+export function thinClinicalEvidence(dimensions: Dimensions): string | null {
+  const phenotype = dimensions.phenotype;
+  if (phenotype.status === "unknown") return null;
+  const terms = Math.min(Number(phenotype.details?.terms_a ?? 0), Number(phenotype.details?.terms_b ?? 0));
+  if (terms >= MIN_ANNOTATIONS) return null;
+  const n = Number(phenotype.details?.shared_exact ?? 0);
+  if (n === 0) return "they share no identical symptom, only related ones";
+  if (n === 1) return "they share only one identical symptom";
+  // shared_rare is null without a reference: rarity unknown, so no cap on that ground.
+  if (phenotype.details?.shared_rare === 0) return `none of the ${n} symptoms they share is rare`;
+  return null;
 }
 
 const ONE_DOWN: Record<Tier, Tier> = { strong: "moderate", moderate: "exploratory", exploratory: "none", none: "none" };
@@ -165,7 +192,10 @@ export function synthesizePair(
   const applied = judgments
     .map((j) => ({ ...j, a, b }))
     .sort((x, y) => order(x) - order(y));
-  const clinicalTier = clinicalTierFor(clinical);
+  let clinicalTier = clinicalTierFor(clinical);
+  const thin = thinClinicalEvidence(dimensions);
+  const clinicalCap = thin !== null && CLINICAL_ORDER[clinicalTier] > CLINICAL_ORDER.somewhat ? thin : null;
+  if (clinicalCap) clinicalTier = "somewhat";
 
   return {
     a,
@@ -177,7 +207,7 @@ export function synthesizePair(
     tier: state.tier,
     tier_reason: tierReason(state, biology, biologyEvidence(dimensions, counted)),
     clinical_tier: clinicalTier,
-    clinical_reason: clinicalReason(clinicalTier, dimensions, names),
+    clinical_reason: clinicalReason(clinicalTier, dimensions, names, clinicalCap),
     support,
     lines_of_evidence: lines,
     dimensions,
@@ -200,17 +230,35 @@ function geneClause(result: DimensionResult): string | null {
 }
 
 function mechanismClause(result: DimensionResult): string | null {
-  const best = result.shared[0];
+  // The mechanism that carries the score, which is not the first listed when a heavier one only
+  // comes with a shared gene.
+  const best = result.shared.find((item) => item.id === result.details?.most_specific) ?? result.shared[0];
   if (!best || (result.status !== "match" && result.status !== "partial")) return null;
   const n = Number(result.details?.n);
   const N = Number(result.details?.N);
-  const counted = Number.isFinite(n) && Number.isFinite(N);
-  const reach = !counted ? "" : n === N ? ` (all ${N} diseases here)` : ` (${n} of ${N} diseases here)`;
+  const atlas = Number(result.details?.atlas ?? N);
+  const counted = Number.isFinite(n) && Number.isFinite(N) && Number.isFinite(atlas);
+  const reach = counted ? reachText(n, N, atlas) : "";
   if (result.flags.includes("family_level_only")) {
-    return `they share only ${counted && n !== N ? "a widely shared" : "the family-wide"} process ${best.label}${reach}`;
+    return `they share only ${counted && n !== N ? "a widely shared" : "the family-wide"} process ${best.label}${reach ? ` (${reach})` : ""}`;
   }
-  const phrase = mechanismPhrase(best.label);
-  return result.status === "match" ? phrase : `${phrase}${reach}`;
+  const count = Number(result.details?.independent_mechanisms ?? result.shared.length);
+  return sharedMechanismClause(best.label, count, result.details?.via_genes === true, reach);
+}
+
+// What a shared gene cannot say on its own: whether both diseases break it the same way. Said in the
+// reason whenever the gene line stands without a variant comparison, so "moderate" is not read as
+// "the same disease mechanism" (dominant versus recessive, gain versus loss of function).
+function allelicCaveat(dimensions: Dimensions): string | null {
+  const gene = dimensions.gene;
+  const variant = dimensions.variant;
+  if (gene.status !== "match" || variant.status !== "unknown") return null;
+  const it = gene.shared.length > 1 ? "them" : "it";
+  if (variant.flags.includes("no_data")) return `no variants are on record to tell whether both break ${it} the same way`;
+  if (Number(variant.details?.gene_level_variants ?? 0) > 0) {
+    return `the variants on record belong to the gene, not to either disease, so whether both break ${it} the same way is unknown`;
+  }
+  return `too few of their variants have a readable type to tell whether both break ${it} the same way`;
 }
 
 const LOF_CLAUSE: Partial<Record<LofKind, string>> = {
@@ -226,14 +274,16 @@ function variantClause(result: DimensionResult): string | null {
   return same ?? "their variants have a similar loss-of-function share";
 }
 
-// The biology lines in plain words, gene and mechanism first, then the variant modifier.
+// The biology lines in plain words, gene and mechanism first, then the variant modifier, then what
+// a shared gene alone cannot tell.
 export function biologyEvidence(dimensions: Dimensions, counted: BiologyDimension[]): string {
   const clauses = [
     counted.includes("gene") ? geneClause(dimensions.gene) : null,
     counted.includes("mechanism") ? mechanismClause(dimensions.mechanism) : null,
     counted.includes("variant") ? variantClause(dimensions.variant) : null,
   ].filter((clause): clause is string => clause !== null);
-  return joinClauses(clauses);
+  const caveat = counted.includes("gene") && clauses.length ? allelicCaveat(dimensions) : null;
+  return `${joinClauses(clauses)}${caveat ? `; ${caveat}` : ""}`;
 }
 
 const TIER_WORD: Record<Tier, string> = { strong: "Strong", moderate: "Moderate", exploratory: "Exploratory", none: "No link" };
@@ -279,7 +329,7 @@ function symptomClause(result: DimensionResult): string {
   return `${shared}, ${overlap}`;
 }
 
-// "CLN6 (8)", or "one of them" without names.
+// "Tietz syndrome (9)" when the names are known, else "one of them".
 function thinRecords(result: DimensionResult, names: PairNames | null): string {
   const sides = [
     { name: names?.a, n: Number(result.details?.terms_a ?? 0) },
@@ -290,16 +340,22 @@ function thinRecords(result: DimensionResult, names: PairNames | null): string {
 }
 
 // The clinical evidence in plain words: symptoms first, then onset and inheritance when they count.
-function clinicalReason(tier: ClinicalTier, dimensions: Dimensions, names: PairNames | null): string {
+// A capped tier says why first, as a capped biology tier does.
+function clinicalReason(tier: ClinicalTier, dimensions: Dimensions, names: PairNames | null, cap: string | null): string {
   const phenotype = dimensions.phenotype;
   const context = dimensions.disease;
-  const sentences = [`${CLINICAL_TIER_WORD[tier]}: ${symptomClause(phenotype)}.`];
-  if (phenotype.flags.includes("few_annotations") && phenotype.status !== "unknown") {
+  const sentences = cap
+    ? [
+        `Capped at ${CLINICAL_TIER_WORD[tier].toLowerCase()}: few symptoms are on record for ${thinRecords(phenotype, names)}, and ${cap}.`,
+        `${sentence(symptomClause(phenotype))}.`,
+      ]
+    : [`${CLINICAL_TIER_WORD[tier]}: ${symptomClause(phenotype)}.`];
+  if (!cap && phenotype.flags.includes("few_annotations") && phenotype.status !== "unknown") {
     sentences.push(`Few symptoms are on record for ${thinRecords(phenotype, names)}, so this comparison is uncertain.`);
   }
   if (context.status !== "unknown") {
     if (countedClinical(dimensions).includes("disease")) sentences.push(context.summary);
     else if (context.score > 0) sentences.push("Onset and inheritance only count once the symptoms overlap.");
   }
-  return sentences.join(" ");
+  return sentences.filter(Boolean).join(" ");
 }

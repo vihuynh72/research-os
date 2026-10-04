@@ -6,11 +6,11 @@
 import type { GraphNode, NodeType } from "@/lib/graph/types";
 import type { HoodNode, Neighborhood, ThresholdResult } from "@/lib/graph/neighborhood";
 import { sectorOf, type SectorId } from "@/lib/viz/radialLayout";
-import { shortLabel } from "@/lib/graph/labels";
 import { TYPE_NAME } from "@/lib/graph/vocab";
 import { KIND_WORD, TYPE_WORD, diseaseColor, formatPercent, nodeName, nodeOf, type AtlasModel, type ClusterRow, type Mode } from "./format";
 import { KIND_STYLE, type Kind } from "./kinds";
 import { KindSwatch } from "./ClusterPanel";
+import { compactSynonym } from "./names";
 import { Dot, TierBadge } from "./NeighborList";
 
 interface Props {
@@ -62,8 +62,8 @@ function AtlasList({ model, clusters, onFocus }: Props) {
               .map((node) => (
                 <li key={node.id}>
                   <button type="button" onClick={() => onFocus(node.id)} className="w-full rounded-lg px-2 py-1.5 text-left text-sm hover:bg-surface-2">
-                    <span className="font-medium">{shortLabel(node)}</span>
-                    {shortLabel(node) !== node.label && <span className="block truncate text-xs text-ink-2">{node.label}</span>}
+                    <span className="font-medium">{compactSynonym(node) ?? node.label}</span>
+                    {compactSynonym(node) && <span className="block text-xs text-ink-2 text-pretty">{node.label}</span>}
                   </button>
                 </li>
               ))}
@@ -125,7 +125,7 @@ function HoodList({ model, hood, filtered, threshold, selectedId, mode, onSelect
                             aria-current={n.id === selectedId ? "true" : undefined}
                             className="text-left text-sm font-medium hover:underline aria-[current=true]:text-accent-ink"
                           >
-                            {n.type === "Disease" ? shortLabel({ label: n.label, synonyms: model.index.byId.get(n.id)?.synonyms }) : n.label}
+                            {n.type === "Disease" ? (compactSynonym({ label: n.label, synonyms: model.index.byId.get(n.id)?.synonyms }) ?? n.label) : n.label}
                           </button>
                         )}
                         <span className="text-xs text-ink-2">{isBubble ? `${TYPE_NAME[type].many}, folded` : TYPE_WORD[type]}</span>

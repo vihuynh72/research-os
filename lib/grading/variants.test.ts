@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { classifyVariant, countEffects } from "./variants.ts";
 
-test("the 15 seed variant names classify as expected", () => {
+// ClinVar names of real variants (the 5 NCL genes of an earlier atlas), one of each notation kind.
+test("15 ClinVar variant names classify as expected", () => {
   const expected: [string, string][] = [
     ["NM_000310.4(PPT1):c.1A>T (p.Met1Leu)", "lof"], // start codon lost
     ["NM_000310.4(PPT1):c.138C>A (p.Cys46Ter)", "lof"], // nonsense
@@ -64,7 +65,7 @@ test("unreadable names are unknown, never guessed", () => {
   }
 });
 
-test("countEffects tallies the seed CLN3 variants", () => {
+test("countEffects tallies readable and unreadable names", () => {
   assert.deepEqual(
     countEffects([
       "NM_001042432.2(CLN3):c.70_73del (p.Arg24fs)",

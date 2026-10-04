@@ -105,6 +105,59 @@ export function orbitFrame(pivot: Vec3, points: readonly Vec3[], highlighted: re
   return { span, zoom: near > 0 ? clamp((fill * span) / near, 1, maxZoom) : 1 };
 }
 
+// Pushes apart points that sit closer than minDist, in any number of dimensions, each pair by half
+// the overlap per round, until none overlaps (or maxRounds). Diseases that share no biology all
+// land on the same spot of the similarity layout; this spreads them into a readable cloud while
+// every point stays near where the layout put it. Points on the very same spot part along a
+// direction fixed by their indices, and bounds (when given) are enforced every round, so the
+// result is deterministic and stays inside them.
+export function separate(
+  points: readonly (readonly number[])[],
+  minDist: number,
+  bounds?: { min: readonly number[]; max: readonly number[] },
+  maxRounds = 400,
+): number[][] {
+  const out = points.map((p) => [...p]);
+  const dims = out[0]?.length ?? 0;
+  const keepInside = (p: number[]) => {
+    if (!bounds) return;
+    for (let k = 0; k < dims; k++) p[k] = clamp(p[k], bounds.min[k], bounds.max[k]);
+  };
+  // A fixed sideways nudge per pair (a unit vector from the pair's indices), so a pile spreads in
+  // every dimension instead of along the line its points happen to share.
+  const nudge = (i: number, j: number): number[] => {
+    const t = 2 * Math.PI * ((i * 0.6180339887 + j * 0.7548776662) % 1);
+    const z = 2 * ((i * 0.569840291 + j * 0.3247179572) % 1) - 1;
+    const s = Math.sqrt(1 - z * z);
+    const v = dims >= 3 ? [s * Math.cos(t), s * Math.sin(t), z] : [Math.cos(t), Math.sin(t)];
+    return Array.from({ length: dims }, (_, k) => v[k] ?? 0);
+  };
+  out.forEach(keepInside);
+  for (let round = 0; round < maxRounds; round++) {
+    let worst = 0;
+    for (let i = 0; i < out.length; i++) {
+      for (let j = i + 1; j < out.length; j++) {
+        const d = out[j].map((v, k) => v - out[i][k]);
+        const len = Math.hypot(...d);
+        if (len >= minDist) continue;
+        const side = nudge(i, j);
+        const dir = d.map((v, k) => (len > 1e-9 ? v / len : 0) + 0.35 * side[k]);
+        const norm = Math.hypot(...dir) || 1;
+        const push = (minDist - len) / 2;
+        for (let k = 0; k < dims; k++) {
+          const u = (dir[k] / norm) * push;
+          out[i][k] -= u;
+          out[j][k] += u;
+        }
+        worst = Math.max(worst, minDist - len);
+      }
+    }
+    out.forEach(keepInside);
+    if (worst < minDist * 0.02) break;
+  }
+  return out;
+}
+
 // Paint order, farthest first, so nearer nodes cover farther ones. Equal depths keep their input
 // order, so overlapping nodes never trade places between frames. Depths must be finite.
 export function depthSort(depths: readonly number[]): number[] {

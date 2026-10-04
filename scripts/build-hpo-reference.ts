@@ -5,12 +5,12 @@
 // pairs ("closer than 99% of random disease pairs"), and the SimGIC of two records of the same
 // disease (OMIM versus Orphanet), the realistic ceiling for "looks the same".
 // The HPO release files are cached in data/raw/hpo/ (gitignored). The output keeps only the
-// terms our graphs and curated facts use plus their ancestors, so it stays small enough to commit.
+// terms our graphs use plus their ancestors (and the onset ladder), so it stays small enough to commit.
 //
 // Usage: node scripts/build-hpo-reference.ts [--refresh] [graph.json ...]
 //   --refresh    download the HPO files again even when cached copies exist
 //   graph.json   extra schema-format graphs whose Phenotype ids the reference must cover
-//                (public/graph.sample.json and public/graph.json are read when present)
+//                (data/seed/rare_graph.json is always read, public/graph.json when present)
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { shortLabel } from "../lib/graph/labels.ts";
@@ -22,9 +22,9 @@ import type { HpoAspect, HpoReference, HpoTerm } from "../lib/grading/types.ts";
 const ROOT = resolve(import.meta.dirname, "..");
 const RAW_DIR = join(ROOT, "data/raw/hpo");
 const OUT = join(ROOT, "data/reference/hpo-reference.json");
+// The team's graph in its own format, written by pipeline/build_graph.py.
 const SEED_GRAPH = join(ROOT, "data/seed/rare_graph.json");
-const CURATED_FACTS = join(ROOT, "data/curated/ncl_facts.json");
-const OPTIONAL_GRAPHS = [join(ROOT, "public/graph.sample.json"), join(ROOT, "public/graph.json")];
+const OPTIONAL_GRAPHS = [join(ROOT, "public/graph.json")];
 
 const ONTOLOGY_URL = "https://purl.obolibrary.org/obo/hp.json";
 const ANNOTATIONS_URL = "https://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa";
@@ -495,22 +495,14 @@ function buildTerms(ids: Iterable<string>, ontology: Ontology, h: Hierarchy, rar
   return terms;
 }
 
-// HPO ids the engine needs whatever the graphs contain: the onset and inheritance terms of the
-// curated facts (scripts/seed-to-graph.ts adds them to the sample graph) and every onset step.
-function requiredIds(): { ids: string[]; curated: number } {
-  const curated = new Set<string>();
-  if (existsSync(CURATED_FACTS)) {
-    const facts = readJson(CURATED_FACTS) as { diseases?: { onset?: { hpo?: string }; inheritance?: { hpo?: string } }[] };
-    for (const disease of facts.diseases ?? []) {
-      for (const id of [disease.onset?.hpo, disease.inheritance?.hpo]) if (id) curated.add(id);
-    }
-  }
-  return { ids: [...new Set([...curated, ...ONSET_LADDER])].sort(), curated: curated.size };
+// HPO ids the engine needs whatever the graphs contain: every step of the onset ladder.
+function requiredIds(): string[] {
+  return [...new Set(ONSET_LADDER)].sort();
 }
 
 interface SeedGraph {
-  nodes: { id: string; type: string; name?: string; synonyms?: string[] }[];
-  edges: { source: string; target: string; status?: string }[];
+  nodes: { id: string; type: string; name?: string | null; synonyms?: string[] }[];
+  edges: { source: string; target: string; relation?: string }[];
 }
 
 const normalized = (text: string) => text.trim().replace(/\s+/g, " ").toLowerCase();
@@ -528,7 +520,7 @@ function printSeedReport(seed: SeedGraph, ontology: Ontology, h: Hierarchy, rari
   console.log(`Commonest seed terms:`);
   for (const id of [...live].sort((x, y) => icOf(x) - icOf(y) || byId(x, y)).slice(0, 10)) console.log(row(id));
 
-  // The seed zips Monarch's phenotype id and label lists, which come in different orders.
+  // pipeline/build_graph.py zips Monarch's phenotype id and label lists, which come in different orders.
   const idByLabel = new Map<string, string>();
   for (const [id, label] of ontology.labels) {
     if (!ontology.obsolete.has(id) && !idByLabel.has(normalized(label))) idByLabel.set(normalized(label), id);
@@ -541,14 +533,13 @@ function printSeedReport(seed: SeedGraph, ontology: Ontology, h: Hierarchy, rari
     console.log(`  ${n.id}  seed "${n.name}"  HPO "${ontology.labels.get(n.id)}"${note}`);
   }
 
-  // For information: what the engine should report for the seed pairs.
+  // For information: the symptom comparison the engine will make, summarized over the seed's pairs.
   const diseases = seed.nodes.filter((n) => n.type === "disease").sort((x, y) => (x.id < y.id ? -1 : 1));
   const phenotypeIds = new Set(phenotypes.map((n) => n.id));
   const directP = new Map<string, string[]>();
   for (const disease of diseases) {
     const ids = new Set<string>();
     for (const edge of seed.edges) {
-      if (edge.status === "gap") continue;
       const other = edge.source === disease.id ? edge.target : edge.target === disease.id ? edge.source : null;
       const term = other && phenotypeIds.has(other) ? currentId(ontology, other) : null;
       if (term && h.aspectOf(term) === "P") ids.add(term);
@@ -558,28 +549,32 @@ function printSeedReport(seed: SeedGraph, ontology: Ontology, h: Hierarchy, rari
   const name = (n: SeedGraph["nodes"][number]) => shortLabel({ label: n.name ?? n.id, synonyms: n.synonyms });
   // The engine's own scale (lib/grading/dimensions.ts), so these numbers match npm run grade.
   const scale = symptomScale(meta);
-  console.log(
-    `\nSeed disease pairs (phenotypic-abnormality terms). Symptom scale: SimGIC ${fixed(scale.floor)} (99th percentile of random pairs) -> 0, ` +
-      `${fixed(scale.top)} (median of ${scale.sameDiseasePairs} same-disease pairs) -> 1; below the 95th percentile of random pairs -> 0.`,
-  );
-  console.log(`  pair        terms  exact  raw     percentile  score   status`);
-  for (let i = 0; i < diseases.length; i++) {
-    for (let j = i + 1; j < diseases.length; j++) {
-      const a = directP.get(diseases[i].id) ?? [];
-      const b = directP.get(diseases[j].id) ?? [];
-      const pair = `${name(diseases[i])}-${name(diseases[j])}`.padEnd(10);
-      const terms = `${a.length}/${b.length}`.padEnd(5);
-      if (!a.length || !b.length) {
-        console.log(`  ${pair}  ${terms}  -      -       -           -       unknown`);
-        continue;
-      }
+  const withSymptoms = diseases.filter((d) => directP.get(d.id)?.length);
+  const rows: { pair: string; terms: string; exact: number; raw: number; percentile: number; score: number }[] = [];
+  for (let i = 0; i < withSymptoms.length; i++) {
+    for (let j = i + 1; j < withSymptoms.length; j++) {
+      const a = directP.get(withSymptoms[i].id) ?? [];
+      const b = directP.get(withSymptoms[j].id) ?? [];
       const raw = round(simgic(closeTerms(a, h.ancestorsOf), closeTerms(b, h.ancestorsOf), icOf));
       const percentile = round(percentileOf(raw, meta.null.quantiles));
       const score = round(symptomScore(raw, percentile, scale));
-      const status = score >= PHENOTYPE_STATUS.match ? "match" : score >= PHENOTYPE_STATUS.partial ? "partial" : "none";
       const exact = a.filter((t) => b.includes(t)).length;
-      console.log(`  ${pair}  ${terms}  ${String(exact).padEnd(5)}  ${fixed(raw)}  ${fixed(percentile)}      ${fixed(score)}  ${status}`);
+      rows.push({ pair: `${name(withSymptoms[i])} - ${name(withSymptoms[j])}`, terms: `${a.length}/${b.length}`, exact, raw, percentile, score });
     }
+  }
+  const status = (score: number) => (score >= PHENOTYPE_STATUS.match ? "match" : score >= PHENOTYPE_STATUS.partial ? "partial" : "none");
+  console.log(
+    `\nSeed symptom comparison. Symptom scale: SimGIC ${fixed(scale.floor)} (99th percentile of random pairs) -> 0, ` +
+      `${fixed(scale.top)} (median of ${scale.sameDiseasePairs} same-disease pairs) -> 1; below the 95th percentile of random pairs -> 0.`,
+  );
+  console.log(
+    `  ${withSymptoms.length} of ${diseases.length} seed diseases have phenotypic-abnormality terms; of their ${rows.length} pairs, ` +
+      `${rows.filter((r) => r.score > 0).length} score above 0 and ${rows.filter((r) => status(r.score) === "match").length} are a match.`,
+  );
+  console.log(`  highest raw SimGIC:`);
+  console.log(`  terms   exact  raw     percentile  score   status   pair`);
+  for (const r of [...rows].sort((x, y) => y.raw - x.raw || (x.pair < y.pair ? -1 : 1)).slice(0, 10)) {
+    console.log(`  ${r.terms.padEnd(6)}  ${String(r.exact).padEnd(5)}  ${fixed(r.raw)}  ${fixed(r.percentile)}      ${fixed(r.score)}  ${status(r.score).padEnd(7)}  ${r.pair}`);
   }
 }
 
@@ -589,6 +584,10 @@ function parseArgs(args: string[]): { refresh: boolean; graphs: string[] } {
   const extra = args.filter((a) => !a.startsWith("-")).map((a) => resolve(a));
   const missing = extra.filter((path) => !existsSync(path));
   if (missing.length) throw new Error(`Graph file not found: ${missing.join(", ")}`);
+  // Checked before any download: the seed's terms and the seed report are part of every build.
+  if (!existsSync(SEED_GRAPH)) {
+    throw new Error(`${rel(SEED_GRAPH)} not found. It is the team's graph the reference covers (pipeline/build_graph.py writes it).`);
+  }
   const graphs = [...new Set([SEED_GRAPH, ...extra, ...OPTIONAL_GRAPHS.filter((path) => existsSync(path))])];
   return { refresh: args.includes("--refresh"), graphs };
 }
@@ -645,9 +644,8 @@ async function main(): Promise<void> {
     for (const id of ids) (HP_ID.test(id) ? inputIds : skipped).add(id);
     console.log(`  ${rel(path)}: ${ids.length} phenotype nodes`);
   }
-  const required = requiredIds();
-  for (const id of required.ids) inputIds.add(id);
-  console.log(`  ${rel(CURATED_FACTS)} and the onset ladder: ${required.curated} curated onset and inheritance terms, ${ONSET_LADDER.length} onset steps`);
+  for (const id of requiredIds()) inputIds.add(id);
+  console.log(`  the onset ladder: ${ONSET_LADDER.length} onset steps`);
   if (skipped.size) console.warn(`Warning: ${skipped.size} phenotype ids are not HPO ids and were skipped: ${[...skipped].sort().slice(0, 10).join(", ")}`);
   const unknown = [...inputIds].filter((id) => !ontology.labels.has(id)).sort();
   if (unknown.length) console.warn(`Warning: ${unknown.length} ids are not in HPO ${ontology.version}: ${unknown.slice(0, 10).join(", ")}`);

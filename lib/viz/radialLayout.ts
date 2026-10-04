@@ -1,9 +1,15 @@
 // Rings and sectors: on this map placement means something. Distance from the center is relevance to
-// what was searched (100% on the inner ring, 0% on the outer one), and direction is what kind of thing
-// a node is: diseases at the top, research at the upper right, groups and registries at the lower
-// right, symptoms at the bottom, genes and mechanisms on the left. Inside a sector, a related disease's
-// own evidence sits together. Deterministic: overlaps are resolved by sliding a node along its ring
-// inside its sector, and a node is pushed outward only when its sector is full there.
+// what was searched (100% nearest, 0% on the outer ring), and direction is what kind of thing a node
+// is: diseases at the top, research at the upper right, groups and registries at the lower right,
+// symptoms at the bottom, genes and mechanisms on the left. Inside a sector, a related disease's own
+// evidence sits together. Deterministic.
+//
+// Distance stays honest when a sector is crowded. The relevance filter moves in whole percents, so
+// a node stays between the ring of its own whole percent and the ring one percent above it: at
+// every filter it is inside the dashed ring when shown and outside it when faint. A crowded node
+// slides along that band to a free spot, and only overlaps when the band is full. Direct links
+// (100%) can be many, so they get a zone of their own around the center; every other ring starts
+// at the edge of that zone.
 import type { NodeType } from "../graph/types.ts";
 
 export type SectorId = "diseases" | "research" | "community" | "symptoms" | "biology";
@@ -56,7 +62,8 @@ export interface RadialNode {
 export interface RadialGeometry {
   cx: number;
   cy: number;
-  inner: number; // ring of 100% relevance
+  inner: number; // the innermost row of direct (100%) links
+  direct: number; // the ring of 100% relevance: the outer edge of the direct links' zone
   outer: number; // ring of 0% relevance
 }
 
@@ -66,20 +73,30 @@ const RING_GAMMA = 0.6;
 
 export function ringRadius(geometry: RadialGeometry, relevance: number): number {
   const r = Math.max(0, Math.min(1, relevance));
-  return geometry.inner + Math.pow(1 - r, RING_GAMMA) * (geometry.outer - geometry.inner);
+  const start = geometry.direct ?? geometry.inner;
+  return start + Math.pow(1 - r, RING_GAMMA) * (geometry.outer - start);
 }
 
 export function geometryFor(width: number, height: number): RadialGeometry {
   const outer = Math.min(width, height) / 2 - 56;
-  return { cx: width / 2, cy: height / 2 + 8, inner: Math.max(92, outer * 0.26), outer };
+  const inner = Math.max(92, outer * 0.26);
+  return { cx: width / 2, cy: height / 2 + 8, inner, direct: inner, outer };
 }
 
 function cmp(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-const GAP = 8;
-const STEP = (2.5 * Math.PI) / 180;
+const GAP = 6; // clear space between two nodes
+const STEP = (1.5 * Math.PI) / 180; // angle step when sliding along a ring
+const RADIAL_STEP = 7; // radius step when moving inward
+// The whole percent a relevance is shown at: a node of 0.7099 is shown by a 70% filter, not 71%.
+export function percentBand(relevance: number): number {
+  return Math.floor(relevance * 100 + 1e-6) / 100;
+}
+// The zone of direct links grows outward as rows are needed, up to this share of the map's depth.
+const DIRECT_ZONE = 0.34;
+const EPS = 1e-9;
 
 export function radialLayout(
   nodes: readonly RadialNode[],
@@ -94,74 +111,111 @@ export function radialLayout(
   positions.set(focusId, [g.cx, g.cy]);
   placed.push({ x: g.cx, y: g.cy, r: focus?.radius ?? 30 });
 
-  const fits = (x: number, y: number, r: number) => placed.every((p) => Math.hypot(p.x - x, p.y - y) >= p.r + r + GAP);
+  const at = (angle: number, radius: number) => [g.cx + Math.cos(angle) * radius, g.cy + Math.sin(angle) * radius] as const;
+  const clearance = (x: number, y: number, r: number, gap = GAP) => Math.min(...placed.map((p) => Math.hypot(p.x - x, p.y - y) - p.r - r - gap));
+  const put = (n: RadialNode, x: number, y: number) => {
+    positions.set(n.id, [round2(x), round2(y)]);
+    placed.push({ x, y, r: n.radius });
+  };
 
-  // Diseases: clusters get neighbouring sub-arcs, best cluster in the middle of the top.
+  const sectorFor = (n: RadialNode) => SECTORS.find((s) => s.id === sectorOf(n.type === "Bubble" ? n.bubbleType! : n.type))!;
+  const members = (sector: Sector, direct: boolean) =>
+    nodes
+      .filter((n) => n.id !== focusId && sectorFor(n).id === sector.id && n.relevance >= 1 - EPS === direct)
+      .sort((a, b) => b.relevance - a.relevance || a.ownerRank - b.ownerRank || cmp(a.id, b.id));
+
+  // Preferred angle: owners fan out from the sector's middle; diseases group by cluster, and the
+  // members of one cluster fan out a little too, so a line from the center to a farther disease
+  // never runs straight through a nearer one.
   const clusterOrder = new Map<string, number>();
-  const diseases = nodes
-    .filter((n) => n.id !== focusId && sectorOf(n.type === "Bubble" ? n.bubbleType! : n.type) === "diseases")
-    .sort((a, b) => b.relevance - a.relevance || cmp(a.id, b.id));
-  for (const d of diseases) {
-    const key = d.cluster ?? "~";
+  const clusterSize = new Map<string, number>();
+  for (const d of nodes.filter((n) => n.id !== focusId && sectorFor(n).id === "diseases").sort((a, b) => b.relevance - a.relevance || cmp(a.id, b.id))) {
+    const key = d.cluster ?? `~${d.id}`;
     if (!clusterOrder.has(key)) clusterOrder.set(key, clusterOrder.size);
   }
-
-  for (const sector of SECTORS) {
-    const members = nodes
-      .filter((n) => n.id !== focusId && sectorOf(n.type === "Bubble" ? n.bubbleType! : n.type) === sector.id)
-      .sort((a, b) => b.relevance - a.relevance || a.ownerRank - b.ownerRank || cmp(a.id, b.id));
+  const fan = (slot: number) => (slot === 0 ? 0 : (slot % 2 === 1 ? 1 : -1) * Math.ceil(slot / 2));
+  const preferredAngle = (n: RadialNode, sector: Sector) => {
     const start = (sector.start * Math.PI) / 180;
     const end = (sector.end * Math.PI) / 180;
-    const span = end - start;
     const center = (start + end) / 2;
-    for (const n of members) {
-      // Preferred angle: owners (and, for diseases, clusters) fan out from the sector's middle.
-      const slot = sector.id === "diseases" ? (clusterOrder.get(n.cluster ?? "~") ?? 0) : n.ownerRank;
-      const fan = slot === 0 ? 0 : (slot % 2 === 1 ? 1 : -1) * Math.ceil(slot / 2);
-      const preferred = Math.max(start, Math.min(end, center + fan * (span / 7)));
-      let radius = ringRadius(g, n.relevance);
-      let done = false;
-      // A full sector pushes a node outward a little, never far past the outer ring.
-      for (let attempt = 0; attempt < 30 && !done && radius <= g.outer + 36; attempt++) {
-        const margin = Math.min(span / 2, (n.radius + GAP) / Math.max(radius, 1));
-        for (let k = 0; k < 400; k++) {
-          const offset = (k % 2 === 1 ? 1 : -1) * Math.ceil(k / 2) * STEP;
-          const angle = preferred + offset;
-          if (angle < start + margin || angle > end - margin) {
-            if (Math.abs(offset) > span) break;
-            continue;
-          }
-          const x = g.cx + Math.cos(angle) * radius;
-          const y = g.cy + Math.sin(angle) * radius;
-          if (fits(x, y, n.radius)) {
-            positions.set(n.id, [round2(x), round2(y)]);
-            placed.push({ x, y, r: n.radius });
-            done = true;
-            break;
-          }
+    if (sector.id !== "diseases") return Math.max(start, Math.min(end, center + fan(n.ownerRank) * ((end - start) / 7)));
+    const key = n.cluster ?? `~${n.id}`;
+    const k = clusterSize.get(key) ?? 0;
+    clusterSize.set(key, k + 1);
+    const angle = center + fan(clusterOrder.get(key) ?? 0) * ((end - start) / 7) + fan(k) * ((10 * Math.PI) / 180);
+    return Math.max(start, Math.min(end, angle));
+  };
+
+  // Free spots along one ring of a sector, nearest to the preferred angle first.
+  const along = (n: RadialNode, sector: Sector, preferred: number, radius: number, gap = GAP): [number, number] | null => {
+    const start = (sector.start * Math.PI) / 180;
+    const end = (sector.end * Math.PI) / 180;
+    const margin = Math.min((end - start) / 2, (n.radius + GAP / 2) / Math.max(radius, 1));
+    const reach = Math.ceil((end - start) / STEP) + 1;
+    for (let k = 0; k <= 2 * reach; k++) {
+      const angle = preferred + (k % 2 === 1 ? 1 : -1) * Math.ceil(k / 2) * STEP;
+      if (angle < start + margin - EPS || angle > end - margin + EPS) continue;
+      const [x, y] = at(angle, radius);
+      if (clearance(x, y, n.radius, gap) >= 0) return [x, y];
+    }
+    return null;
+  };
+
+  // The least crowded spot between two radii, when nothing fits: it may overlap, but its distance
+  // still tells the truth.
+  const leastCrowded = (n: RadialNode, sector: Sector, low: number, high: number): [number, number] => {
+    const start = (sector.start * Math.PI) / 180;
+    const end = (sector.end * Math.PI) / 180;
+    let best: [number, number] = [...at((start + end) / 2, high)] as [number, number];
+    let bestGap = -Infinity;
+    const rows = Math.max(1, Math.ceil((high - low) / RADIAL_STEP));
+    for (let i = 0; i <= rows; i++) {
+      const radius = high - ((high - low) * i) / rows;
+      for (let k = 0; k <= 40; k++) {
+        const [x, y] = at(start + ((end - start) * (k + 0.5)) / 41, radius);
+        const gap = clearance(x, y, n.radius);
+        if (gap > bestGap + EPS) {
+          bestGap = gap;
+          best = [x, y];
         }
-        if (!done) radius += (n.radius + GAP) / 2; // sector full at this ring: step outward
       }
-      if (!done) {
-        // Out of room: settle on the ring at the free-est angle rather than leave the canvas.
-        const r = Math.min(radius, g.outer + 36);
-        let bestAngle = preferred;
-        let bestGap = -Infinity;
-        for (let k = 0; k <= 40; k++) {
-          const angle = start + (span * k) / 40;
-          const x = g.cx + Math.cos(angle) * r;
-          const y = g.cy + Math.sin(angle) * r;
-          const gap = Math.min(...placed.map((p) => Math.hypot(p.x - x, p.y - y) - p.r));
-          if (gap > bestGap) {
-            bestGap = gap;
-            bestAngle = angle;
-          }
-        }
-        const x = g.cx + Math.cos(bestAngle) * r;
-        const y = g.cy + Math.sin(bestAngle) * r;
-        positions.set(n.id, [round2(x), round2(y)]);
-        placed.push({ x, y, r: n.radius });
-      }
+    }
+    return best;
+  };
+
+  // 1. Direct links: rows from the innermost ring outward, as many as the busiest sector needs.
+  const zoneEnd = g.inner + DIRECT_ZONE * (g.outer - g.inner);
+  let direct = g.inner;
+  for (const sector of SECTORS) {
+    for (const n of members(sector, true)) {
+      const preferred = preferredAngle(n, sector);
+      let spot: [number, number] | null = null;
+      for (let radius = g.inner; radius <= zoneEnd + EPS && !spot; radius += RADIAL_STEP) spot = along(n, sector, preferred, radius);
+      spot ??= leastCrowded(n, sector, g.inner, zoneEnd);
+      put(n, spot[0], spot[1]);
+      direct = Math.max(direct, Math.hypot(spot[0] - g.cx, spot[1] - g.cy));
+    }
+  }
+  g.direct = Math.round(direct * 100) / 100;
+
+  // 2. Everything else: inside the band of its own whole percent, never into the zone of direct
+  // links. A crowded band first lets nodes touch, then takes the least crowded spot.
+  const inBand = (n: RadialNode, sector: Sector, preferred: number, high: number, low: number, gap: number) => {
+    const rows = Math.ceil((high - low) / RADIAL_STEP - EPS);
+    for (let i = 0; i <= rows; i++) {
+      const spot = along(n, sector, preferred, rows ? high - ((high - low) * i) / rows : high, gap);
+      if (spot) return spot;
+    }
+    return null;
+  };
+  for (const sector of SECTORS) {
+    for (const n of members(sector, false)) {
+      const preferred = preferredAngle(n, sector);
+      const band = percentBand(n.relevance);
+      const high = ringRadius(g, band);
+      const low = Math.min(high, Math.max(ringRadius(g, Math.min(1, band + 0.01)), g.direct) + 0.25);
+      const spot = inBand(n, sector, preferred, high, low, GAP) ?? inBand(n, sector, preferred, high, low, 0) ?? leastCrowded(n, sector, low, high);
+      put(n, spot[0], spot[1]);
     }
   }
   return { positions, geometry: g };

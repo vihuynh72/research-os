@@ -6,13 +6,35 @@ import { analyze } from "./analytics.ts";
 import {
   CAPS,
   CLINICAL_THRESHOLDS,
+  COLLAB_BASE,
+  DISEASE_FACET_WEIGHTS,
+  GENERIC_IC,
   MAX_NEIGHBORS,
   MECHANISM_FLOOR,
+  MECHANISM_STATUS,
+  MIN_ANNOTATIONS,
+  MIN_ATLAS_FOR_SPECIFICITY,
+  ONSET_LADDER,
+  PHENOTYPE_STATUS,
+  PHENOTYPE_STATUS_UNCALIBRATED,
+  ROUND,
+  SPECIFIC_IC,
   SYMPTOM_FLOOR_PERCENTILE,
   SYMPTOM_GATE_PERCENTILE,
+  SYMPTOM_TOP_FALLBACK,
   TIER_THRESHOLDS,
+  UMBRELLA_MIN,
+  UMBRELLA_SHARE,
 } from "./config.ts";
 import {
+  CONTEXT_STATUS,
+  HUMAN_GENES,
+  MIN_CLASSIFIED,
+  MOSTLY_LOF,
+  ONSET_NEIGHBOUR,
+  RARELY_LOF,
+  SAME_DISEASE_SCORE,
+  VARIANT_STATUS,
   buildContext,
   byText,
   candidatePairs,
@@ -22,15 +44,16 @@ import {
   resolveTerm,
   round,
   scoreDimensions,
+  umbrellaCutoff,
   type GradingContext,
 } from "./dimensions.ts";
-import { synthesizePair } from "./synthesize.ts";
+import { CLINICAL_ORDER, synthesizePair } from "./synthesize.ts";
 import {
+  CLINICAL_TIER_WORD,
   DIMENSIONS,
   ENGINE_VERSION,
   TIER_ORDER,
   pairKey,
-  type ClinicalTier,
   type Dimension,
   type DimensionResult,
   type DiseaseEntry,
@@ -135,11 +158,42 @@ function byNeighborOrder(x: NeighborRef, y: NeighborRef): number {
   );
 }
 
-function byClinicalOrder(x: NeighborRef, y: NeighborRef): number {
-  return y.clinical - x.clinical || y.relevance - x.relevance || y.collaboration - x.collaboration || byText(x.id, y.id);
+// Look-alikes by clinical tier first, as neighbors go by biology tier: a tier capped for a thin
+// record ranks below the tiers it was capped from, whatever its score.
+function byClinicalOrder(x: { grade: PairGrade; ref: NeighborRef }, y: { grade: PairGrade; ref: NeighborRef }): number {
+  return (
+    CLINICAL_ORDER[y.grade.clinical_tier] - CLINICAL_ORDER[x.grade.clinical_tier] ||
+    y.ref.clinical - x.ref.clinical ||
+    y.ref.relevance - x.ref.relevance ||
+    y.ref.collaboration - x.ref.collaboration ||
+    byText(x.ref.id, y.ref.id)
+  );
 }
 
-const CLINICAL_ORDER: Record<ClinicalTier, number> = { very_similar: 3, similar: 2, somewhat: 1, different: 0 };
+// Every setting behind a grade that the meta fields do not already hold (caps, tier and clinical
+// thresholds, the symptom scale and MAX_NEIGHBORS have their own), so a grade can be traced to the
+// settings that produced it: the constants of config.ts and the fixed rules of dimensions.ts.
+function settingsNote(diseases: number): string {
+  return [
+    `Settings (lib/grading/config.ts and the fixed rules in lib/grading/dimensions.ts):`,
+    `mechanism match at ${MECHANISM_STATUS.match}, specificity once ${MIN_ATLAS_FOR_SPECIFICITY} diseases have a mechanism, pathway size weighed against ${HUMAN_GENES} genes;`,
+    `variant type compares only variants that can stand for the disease (linked to it, or of a gene with no other disease here), needs ${MIN_CLASSIFIED} classified a side, matches at ${VARIANT_STATUS.match} or the same kind on both sides (mostly loss-of-function from ${MOSTLY_LOF === 2 / 3 ? "2/3" : round(MOSTLY_LOF)}, mostly missense or in-frame up to ${RARELY_LOF}), partial at ${VARIANT_STATUS.partial}, and counts toward biology only at match or partial;`,
+    `symptoms match at ${PHENOTYPE_STATUS.match} and partial at ${PHENOTYPE_STATUS.partial} on the scaled score (raw overlap ${PHENOTYPE_STATUS_UNCALIBRATED.match} and ${PHENOTYPE_STATUS_UNCALIBRATED.partial} without a reference), top ${SYMPTOM_TOP_FALLBACK} when a reference has no same-disease anchor, worded "as much as two records of the same disease" from ${SAME_DISEASE_SCORE};`,
+    `a symptom is rare at ic ${SPECIFIC_IC} or more and generic below ${GENERIC_IC}, and fewer than ${MIN_ANNOTATIONS} symptoms is a thin record: a pair with a thin record that shares at most one identical symptom, or no rare one, is at most "${CLINICAL_TIER_WORD.somewhat}";`,
+    `onset ladder ${ONSET_LADDER.join(", ")} with neighbouring steps at ${ONSET_NEIGHBOUR}, onset ${DISEASE_FACET_WEIGHTS.onset} and inheritance ${DISEASE_FACET_WEIGHTS.inheritance}, match at ${CONTEXT_STATUS.match} and partial at ${CONTEXT_STATUS.partial};`,
+    `collaboration 1 - prod(1 - ${COLLAB_BASE} x w) over shared items, w the item's specificity among the diseases with any item of that kind on record;`,
+    `umbrella resources (flagged, never a bridge) are items linked to more than max(${UMBRELLA_MIN}, ${UMBRELLA_SHARE} x N) diseases, ${round(umbrellaCutoff(diseases))} here;`,
+    `numbers rounded to ${ROUND} decimals.`,
+  ].join(" ");
+}
+
+// Which variants can stand for a disease: those linked to it, and those of a gene no other disease
+// here has. A gene of several diseases records its variants for the gene.
+function variantNote(ctx: GradingContext): string {
+  const genes = [...ctx.geneReach.values()];
+  const single = genes.filter((n) => n === 1).length;
+  return `Variant type compares only the variants that can stand for each disease: those linked to the disease, and those of a gene with no other disease here (${single} of ${genes.length} genes); a gene of several diseases records its variants for the gene, not for any one of its diseases, so those are set aside.`;
+}
 
 export function gradeGraph(
   graph: AtlasGraph,
@@ -190,8 +244,8 @@ export function gradeGraph(
     // Diseases that look alike, whatever their biology: the second question a parent asks.
     const lookAlikes = refs
       .filter(({ grade }) => CLINICAL_ORDER[grade.clinical_tier] > CLINICAL_ORDER.different)
-      .map(({ ref }) => ref)
       .sort(byClinicalOrder)
+      .map(({ ref }) => ref)
       .slice(0, MAX_NEIGHBORS);
     for (const neighbor of [...neighbors, ...lookAlikes]) listed.add(pairKey(id, neighbor.id));
     diseases[id] = {
@@ -205,10 +259,14 @@ export function gradeGraph(
       clinical_neighbors: lookAlikes,
     };
   }
-  for (const bridge of analysis.bridges) listed.add(pairKey(bridge.a, bridge.b));
+  // A research bridge between two diseases that list each other nowhere stays in `bridges`, which
+  // carries its reason and edges. Adding the whole pair (eleven dimensions) here would let one broad
+  // directory listing, such as a group listed for a quarter of the atlas, fill the file the browser
+  // loads with hundreds of pairs that share no biology.
   const pairs = [...listed]
     .flatMap((key) => grades.get(key) ?? [])
     .sort((x, y) => byText(x.a, y.a) || byText(x.b, y.b));
+  const bridgeOnly = analysis.bridges.filter((bridge) => !listed.has(pairKey(bridge.a, bridge.b))).length;
 
   const n = ctx.diseases.length;
   const possible = (n * (n - 1)) / 2;
@@ -217,7 +275,9 @@ export function gradeGraph(
       ? `Graded all ${possible} disease pairs.`
       : `Graded ${candidates.length} of ${possible} disease pairs; the others share no gene, variant or mechanism, too little symptom overlap to score, and no research item beyond umbrella resources.`,
     "Three scores, never mixed: biology (gene, variant type, mechanism) sets the distance on the map; clinical resemblance (symptoms, onset, inheritance) is shown beside it; collaboration (shared groups, papers, studies, grants, researchers, registries) never moves a disease.",
-    `Mechanism specificity within this atlas: a mechanism reached by n of N diseases weighs (1 - ln n / ln N) / (1 - ln 2 / ln N), at least ${MECHANISM_FLOOR}; a pair scores the weight of the most specific mechanism both reach.`,
+    `Pairs listed: every pair in a disease's biology neighbors or clinical look-alikes${bridgeOnly ? `; ${count(bridgeOnly, "research bridge")} between diseases outside those lists ${bridgeOnly === 1 ? "is" : "are"} in bridges only` : ""}.`,
+    `Mechanism specificity within this atlas: a mechanism reached by n of the N diseases that have any mechanism on record (N = ${ctx.mechanismDiseases} of ${n} here) weighs (1 - ln n / ln N) / (1 - ln 2 / ln N), at least ${MECHANISM_FLOOR}; a pair scores the weight of the most specific mechanism both reach, and a mechanism that comes only with a gene the pair shares is not counted again.`,
+    variantNote(ctx),
   ];
   if (reference && ctx.scale) {
     const { meta } = reference;
@@ -231,6 +291,7 @@ export function gradeGraph(
   } else {
     notes.push("No HPO reference: symptom overlap is raw Jaccard (uncalibrated) and onset and inheritance are not assessed.");
   }
+  notes.push(settingsNote(n));
   if (ctx.missingTerms.length) {
     notes.push(
       `${ctx.missingTerms.length} phenotype ids are missing from the HPO reference and were left out (rebuild it with npm run data:hpo).`,
@@ -281,7 +342,7 @@ export function gradeGraph(
   };
 }
 
-// Phenotype labels follow the HPO reference when it has the term (the seed's own are misaligned).
+// Phenotype labels follow the HPO reference when it has the term (ids are the key; names can be wrong).
 function nodeLabel(node: GraphNode, reference: HpoReference | null): string {
   const term = node.type === "Phenotype" ? reference?.terms[node.id] : undefined;
   return term ? term.label : node.label;

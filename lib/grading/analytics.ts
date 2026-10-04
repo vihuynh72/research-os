@@ -265,27 +265,35 @@ interface Naming {
   mechanisms: string[];
 }
 
-// Name a cluster by the mechanism most of its pairs share, else its rarest shared symptom, else
-// by number. When several mechanisms are shared by as many pairs, the most specific one names the
-// cluster (a family-wide process every pair shares never beats the process that sets the group
-// apart). Larger clusters choose first, and no two clusters take the same name.
+// Name a cluster by the biology most of its pairs share: a mechanism, or a gene ("Same gene:
+// COL2A1") when the links come from diseases of one gene. Clusters are built from biology links, so
+// a biology name says why the group exists; only a group with none falls back to its rarest shared
+// symptom, then to a number. When several names are shared by as many pairs, the most specific wins
+// (a family-wide process every pair shares never beats the process or gene that sets the group
+// apart), and a mechanism wins a tie with a gene because it says what the gene does. Larger
+// clusters choose first, and no two clusters take the same name.
 function nameClusters(communities: string[][], grades: PairGrade[]): Map<string[], Naming> {
   const ordered = [...communities].sort((x, y) => y.length - x.length || byText(x[0], y[0]));
-  const usedMechanisms = new Set<string>();
+  const usedNames = new Set<string>();
   const usedSymptoms = new Set<string>();
   const usedIds = new Set<string>();
   const names = new Map<string[], Naming>();
   ordered.forEach((members, position) => {
     const inside = new Set(members);
     const intra = grades.filter((g) => inside.has(g.a) && inside.has(g.b));
-    const mechanismPairs = new Map<string, { label: string; pairs: number; weight: number }>();
+    const shared = new Map<string, { label: string; pairs: number; weight: number; gene: boolean }>();
     let rarest: { id: string; label: string; weight: number } | null = null;
     for (const grade of intra) {
-      for (const item of grade.dimensions.mechanism.shared) {
-        const entry = mechanismPairs.get(item.id) ?? { label: item.label, pairs: 0, weight: item.weight };
-        entry.pairs += 1;
-        entry.weight = Math.max(entry.weight, item.weight);
-        mechanismPairs.set(item.id, entry);
+      for (const [items, gene] of [
+        [grade.dimensions.mechanism.shared, false],
+        [grade.dimensions.gene.shared, true],
+      ] as const) {
+        for (const item of items) {
+          const entry = shared.get(item.id) ?? { label: item.label, pairs: 0, weight: item.weight, gene };
+          entry.pairs += 1;
+          entry.weight = Math.max(entry.weight, item.weight);
+          shared.set(item.id, entry);
+        }
       }
       for (const item of grade.dimensions.phenotype.shared) {
         if (usedSymptoms.has(item.id)) continue;
@@ -296,14 +304,20 @@ function nameClusters(communities: string[][], grades: PairGrade[]): Map<string[
         if (better) rarest = { id: item.id, label: item.label, weight: item.weight };
       }
     }
-    const mechanism = [...mechanismPairs.entries()]
-      .filter(([id]) => !usedMechanisms.has(id))
-      .sort((x, y) => y[1].pairs - x[1].pairs || y[1].weight - x[1].weight || byText(x[0], y[0]))[0];
+    const biology = [...shared.entries()]
+      .filter(([id]) => !usedNames.has(id))
+      .sort(
+        (x, y) =>
+          y[1].pairs - x[1].pairs || y[1].weight - x[1].weight || Number(x[1].gene) - Number(y[1].gene) || byText(x[0], y[0]),
+      )[0];
 
     let naming: Naming;
-    if (mechanism) {
-      usedMechanisms.add(mechanism[0]);
-      naming = { id: `c-${sanitize(mechanism[0])}`, label: mechanism[1].label, mechanisms: [mechanism[0]] };
+    if (biology) {
+      const [id, entry] = biology;
+      usedNames.add(id);
+      naming = entry.gene
+        ? { id: `c-${sanitize(id)}`, label: `Same gene: ${entry.label}`, mechanisms: [] }
+        : { id: `c-${sanitize(id)}`, label: entry.label, mechanisms: [id] };
     } else if (rarest) {
       usedSymptoms.add(rarest.id);
       naming = { id: `c-group-${position + 1}`, label: `Shared symptoms: ${rarest.label}`, mechanisms: [] };

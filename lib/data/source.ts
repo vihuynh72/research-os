@@ -7,11 +7,18 @@ import path from "node:path";
 import type { AtlasGraph } from "../graph/types.ts";
 import { ENGINE_VERSION, type RelevanceDoc } from "../grading/types.ts";
 
+// Something about the data people should know. `text` is for everyone on the page, in plain words;
+// `detail` says what a developer should do about it (shown in researcher mode and logged by the server).
+export interface DataNote {
+  text: string;
+  detail: string;
+}
+
 export interface AtlasData {
   graph: AtlasGraph;
   relevance: RelevanceDoc;
   sample: boolean;
-  notes: string[]; // shown to people: stale grades, a graph waiting to be graded
+  notes: DataNote[]; // stale grades, a graph waiting to be graded
 }
 
 export type AtlasDataResult = { ok: true; data: AtlasData } | { ok: false; dir: string; missing: string[]; error?: string };
@@ -48,9 +55,11 @@ function isRelevance(value: unknown): value is RelevanceDoc {
   return !!v && typeof v === "object" && !!v.meta && !!v.diseases && typeof v.diseases === "object" && Array.isArray(v.pairs);
 }
 
+// The data folder is chosen at run time (ATLAS_DATA_DIR), so these paths are marked for the bundler
+// not to trace: tracing them would pull the whole project into the server output.
 export function loadAtlasData(): AtlasDataResult {
   const dir = dataDir();
-  const exists = (name: string) => fs.existsSync(path.join(dir, name));
+  const exists = (name: string) => fs.existsSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ dir, name));
   const pair = PAIRS.find((p) => exists(p.graph) && exists(p.relevance));
   if (!pair) {
     const missing = [PAIRS[1].graph, PAIRS[1].relevance].filter((name) => !exists(name));
@@ -59,8 +68,8 @@ export function loadAtlasData(): AtlasDataResult {
   let graph: unknown;
   let relevance: unknown;
   try {
-    graph = readJson(path.join(dir, pair.graph));
-    relevance = readJson(path.join(dir, pair.relevance));
+    graph = readJson(path.join(/*turbopackIgnore: true*/ dir, pair.graph));
+    relevance = readJson(path.join(/*turbopackIgnore: true*/ dir, pair.relevance));
   } catch (err) {
     return { ok: false, dir, missing: [], error: `Could not read ${pair.graph} or ${pair.relevance}: ${(err as Error).message}` };
   }
@@ -68,16 +77,25 @@ export function loadAtlasData(): AtlasDataResult {
     return { ok: false, dir, missing: [], error: `${pair.graph} or ${pair.relevance} does not have the expected shape.` };
   }
 
-  const notes: string[] = [];
+  const notes: DataNote[] = [];
   if (pair.sample && exists(PAIRS[0].graph)) {
-    notes.push("A full graph (graph.json) is present but not graded yet, so the sample is shown. Run npm run grade.");
+    notes.push({
+      text: "A larger atlas is being prepared; this page shows the sample until its grades are ready.",
+      detail: "public/graph.json is present but not graded yet, so the sample pair is shown. Run npm run grade.",
+    });
   }
   if (relevance.meta.graph_generated_at !== graph.meta.generated_at) {
-    notes.push("The grades were computed for a different build of the graph. Run npm run grade again.");
+    notes.push({
+      text: "Grades are being updated: some links may not match the latest data yet.",
+      detail: "The grades were computed for a different build of the graph. Run npm run grade again.",
+    });
   } else if (relevance.meta.engine_version !== ENGINE_VERSION) {
     // The sample graph pins generated_at for reproducible builds, so the date cannot reveal
     // stale grades; an engine upgrade without a regrade still can.
-    notes.push(`The grades come from engine ${relevance.meta.engine_version}; this app expects ${ENGINE_VERSION}. Run npm run grade again.`);
+    notes.push({
+      text: "Grades are being updated: some links may not match the latest data yet.",
+      detail: `The grades come from engine ${relevance.meta.engine_version}; this app expects ${ENGINE_VERSION}. Run npm run grade again.`,
+    });
   }
   return { ok: true, data: { graph, relevance, sample: pair.sample, notes } };
 }

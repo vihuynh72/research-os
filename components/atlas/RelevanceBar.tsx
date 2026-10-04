@@ -3,11 +3,12 @@
 // The relevance bar beside the map: one threshold filters every node by its relevance to the
 // searched disease. The mini histogram shows what lowering the bar would reveal, so the user is
 // never guessing. Vertical beside the map; horizontal under it on phones.
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { NodeType } from "@/lib/graph/types";
 import { ICON_PATH } from "@/lib/viz/icons";
 import { TYPE_NAME } from "@/lib/graph/vocab";
 import { KIND_OF, KIND_STYLE } from "./kinds";
+import { labelledTicks } from "./barTicks";
 
 export interface RelevanceBarProps {
   value: number; // 0..1
@@ -62,6 +63,19 @@ export default function RelevanceBar(props: RelevanceBarProps) {
     { v: thresholds.moderate, label: "Moderate" },
     { v: thresholds.exploratory, label: "Exploratory" },
   ];
+  // The bar's length on screen, to keep tick labels apart.
+  const labelsRef = useRef<HTMLDivElement>(null);
+  const [length, setLength] = useState(0);
+  useEffect(() => {
+    const el = labelsRef.current;
+    if (!el) return;
+    const measure = () => setLength(vertical ? el.clientHeight : el.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [vertical]);
+  const labelled = labelledTicks(ticks, length, vertical);
 
   const fromPointer = (clientX: number, clientY: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
@@ -84,7 +98,7 @@ export default function RelevanceBar(props: RelevanceBarProps) {
 
   const track = (
     <div
-      className={`relative ${vertical ? "mx-auto h-full w-10" : "h-10 w-full"} ${disabled ? "opacity-40" : "cursor-pointer"} touch-none`}
+      className={`relative ${vertical ? "mx-auto w-10 self-stretch" : "h-10 w-full"} ${disabled ? "opacity-40" : "cursor-pointer"} touch-none`}
       onPointerDown={(event) => {
         if (disabled) return;
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -128,7 +142,7 @@ export default function RelevanceBar(props: RelevanceBarProps) {
 
   // Histogram: one bar per bucket; on the map (at or above the bar) in accent, the rest in gray.
   const bars = (
-    <div className={`relative ${vertical ? "h-full w-12" : "h-8 w-full"}`} aria-hidden>
+    <div className={`relative ${vertical ? "w-12 self-stretch" : "h-8 w-full"}`} aria-hidden>
       <div className={`absolute ${vertical ? "inset-y-2 left-0 right-0" : "inset-x-2 top-0 bottom-0"}`}>
         {histogram.map((count, i) => {
           const lo = i / histogram.length;
@@ -159,9 +173,9 @@ export default function RelevanceBar(props: RelevanceBarProps) {
   );
 
   const labels = (
-    <div className={`relative ${vertical ? "h-full w-20" : "h-4 w-full"} text-[10.5px] leading-none text-[var(--ink-2)]`} aria-hidden>
-      <div className={`absolute ${vertical ? "inset-y-2 right-0 left-0" : "inset-x-2 top-0 bottom-0"}`}>
-        {ticks.map((t) => (
+    <div className={`relative ${vertical ? "w-20 self-stretch" : "h-4 w-full"} text-[10.5px] leading-none text-[var(--ink-2)]`} aria-hidden>
+      <div ref={labelsRef} className={`absolute ${vertical ? "inset-y-2 right-0 left-0" : "inset-x-2 top-0 bottom-0"}`}>
+        {ticks.filter((t) => labelled.has(t.label)).map((t) => (
           <div
             key={t.label}
             className={`absolute whitespace-nowrap ${vertical ? "right-0 -translate-y-1/2 text-right" : "-translate-x-1/2"}`}
@@ -213,7 +227,9 @@ export default function RelevanceBar(props: RelevanceBarProps) {
           const hidden = props.hiddenTypes.has(type);
           const kind = KIND_STYLE[KIND_OF[type]];
           return (
-            <div key={type} className="group flex items-stretch gap-1">
+            // "only" sits over the count while pointed at, so the name keeps the row's width; on
+            // touch screens it stays beside the row.
+            <div key={type} className="group relative flex items-stretch gap-1">
               <button
                 type="button"
                 aria-pressed={!hidden}
@@ -238,7 +254,7 @@ export default function RelevanceBar(props: RelevanceBarProps) {
               <button
                 type="button"
                 onClick={() => props.onOnlyType(type)}
-                className="rounded-lg px-1.5 text-[10.5px] text-[var(--ink-2)] opacity-0 transition-opacity hover:bg-[var(--surface-2)] hover:text-[var(--ink)] focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                className="absolute inset-y-px right-px flex items-center rounded-[7px] bg-[var(--surface-2)] px-2 text-[10.5px] font-medium text-[var(--ink)] opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:static [@media(hover:none)]:rounded-lg [@media(hover:none)]:bg-transparent [@media(hover:none)]:font-normal [@media(hover:none)]:text-[var(--ink-2)] [@media(hover:none)]:opacity-100"
                 aria-label={`Show only ${TYPE_NAME[type].many}`}
               >
                 only
@@ -283,8 +299,9 @@ export default function RelevanceBar(props: RelevanceBarProps) {
     );
   }
 
+  // The column scrolls as a whole when it is short, so no type row is ever cut in half.
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div className="flex min-h-full flex-col gap-3">
       {header}
       <div className="flex min-h-[220px] flex-1 items-stretch">
         {labels}
@@ -292,7 +309,7 @@ export default function RelevanceBar(props: RelevanceBarProps) {
         {bars}
       </div>
       {readout}
-      <div className="min-h-0 overflow-y-auto">{typeToggles}</div>
+      {typeToggles}
       {reset}
     </div>
   );

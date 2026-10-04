@@ -8,7 +8,9 @@ import { SECTORS, type SectorId } from "@/lib/viz/radialLayout";
 import { ICON_PATH } from "@/lib/viz/icons";
 import type { NodeType } from "@/lib/graph/types";
 import { KIND_STYLE, type Kind } from "./kinds";
-import type { ClusterRow, Mode } from "./format";
+import { OTHER_CLUSTER, formatPercent, type ClusterRow, type Mode } from "./format";
+
+type Thresholds = { strong: number; moderate: number; exploratory: number };
 import { Dot } from "./NeighborList";
 
 interface ClusterProps {
@@ -162,12 +164,14 @@ const DIRECTIONS: { kind: Kind; where: string }[] = [
   { kind: "biology", where: "Genes and mechanisms on the left" },
 ];
 
-export function Legend() {
+// The rings follow the grade file's tier cutoffs, so the legend says what the map draws.
+export function Legend({ thresholds }: { thresholds: Thresholds }) {
   return (
     <ul role="list" className="space-y-3 text-[0.8125rem] text-ink-2">
       <Row glyph={<Glyph kind="distance" />}>
-        <span className="text-ink">Distance = relevance.</span> What you searched sits in the center; the closer something is, the more it matters to it. Rings mark 75%, 45% and
-        20%.
+        <span className="text-ink">Distance = relevance.</span> What you searched sits in the center; the closer something is, the more it matters to it. Direct links
+        sit nearest. The rings mark the strong ({formatPercent(thresholds.strong)}), moderate ({formatPercent(thresholds.moderate)}) and exploratory (
+        {formatPercent(thresholds.exploratory)}) cutoffs.
       </Row>
       <Row glyph={<Compass size={30} />}>
         <span className="text-ink">Direction = the kind of thing.</span>
@@ -215,7 +219,7 @@ export function LegendStrip() {
   );
   const short: Record<Kind, string> = { disease: "Diseases", biology: "Genes, mechanisms", clinical: "Symptoms", community: "Groups, registries", research: "Research" };
   return (
-    <div role="group" aria-label="How to read the map" className="space-y-1.5 text-xs text-ink-2">
+    <div role="group" aria-label="How to read the map" className="space-y-1.5 text-[11.5px] text-ink-2">
       <ul role="list" className="flex flex-wrap items-center gap-x-3.5 gap-y-1">
         {item(<Glyph kind="distance" width={24} />, "Closer = more relevant")}
         <li className="flex items-center gap-1.5">
@@ -265,10 +269,11 @@ interface Props extends ClusterProps {
   diseaseCount: number;
   mode: Mode;
   onMode(mode: Mode): void;
+  thresholds: Thresholds;
 }
 
-export default function ClusterPanel({ rows, activeId, onPick, diseaseCount, mode, onMode }: Props) {
-  const clustered = rows.filter((r) => r.id !== "other").reduce((n, r) => n + r.size, 0);
+export default function ClusterPanel({ rows, activeId, onPick, diseaseCount, mode, onMode, thresholds }: Props) {
+  const clustered = rows.filter((r) => r.id !== OTHER_CLUSTER).reduce((n, r) => n + r.size, 0);
   return (
     <div className="flex min-h-full flex-col gap-7">
       <section aria-labelledby="clusters-heading">
@@ -288,7 +293,7 @@ export default function ClusterPanel({ rows, activeId, onPick, diseaseCount, mod
         <h2 id="legend-heading" className="mb-3 text-[0.9375rem] font-semibold text-ink">
           How to read the map
         </h2>
-        <Legend />
+        <Legend thresholds={thresholds} />
       </section>
       <div className="mt-auto">
         <PersonaCard mode={mode} onMode={onMode} />

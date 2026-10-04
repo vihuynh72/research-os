@@ -199,6 +199,27 @@ describe("buildGraphIndex on a fixture", () => {
     assert.equal(many.search("seizure", 20).length, 12);
     assert.deepEqual(ids(many.search("seizure", 3)), ["HP:1000", "HP:1001", "HP:1002"]);
   });
+
+  test("a type filter keeps only those types", () => {
+    const index = buildGraphIndex(fixture);
+    const all = index.search("seizure", 20);
+    assert.ok(all.some((h) => h.node.type === "Trial") && all.some((h) => h.node.type === "Phenotype"));
+    const symptoms = index.search("seizure", 20, ["Phenotype"]);
+    assert.ok(symptoms.length > 0 && symptoms.every((h) => h.node.type === "Phenotype"));
+    const research = index.search("seizure", 20, ["Trial", "Paper", "Grant", "Investigator"]);
+    assert.ok(research.length > 0 && research.every((h) => ["Trial", "Paper", "Grant", "Investigator"].includes(h.node.type)));
+    assert.deepEqual(index.search("seizure", 20, []), all, "an empty filter means everything");
+  });
+
+  test("suggest lists a type's nodes that reach the most diseases", () => {
+    const index = buildGraphIndex(fixture);
+    const symptoms = index.suggest(["Phenotype"], 5);
+    assert.equal(symptoms[0].node.id, "HP:0001250", "Seizure reaches two diseases");
+    assert.ok(symptoms.every((h) => h.node.type === "Phenotype" && h.diseases.length > 0));
+    assert.ok(!symptoms.some((h) => h.node.id === "HP:0002133"), "a symptom reached only through a disputed edge is not suggested");
+    assert.deepEqual(index.suggest([], 5), []);
+    assert.equal(index.suggest(["Phenotype"], 1).length, 1);
+  });
 });
 
 // The generated seed sample (npm run data:sample), when present.

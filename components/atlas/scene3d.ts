@@ -6,12 +6,14 @@
 import type { HoodEdge, HoodNode, Neighborhood, ThresholdResult } from "../../lib/graph/neighborhood.ts";
 import { SECTORS, SECTOR_DEPTH, radialLayout, ringRadius, sectorOf, type RadialNode } from "../../lib/viz/radialLayout.ts";
 import { ICON_PATH } from "../../lib/viz/icons.ts";
-import { shortLabel } from "../../lib/graph/labels.ts";
+import { separate } from "../../lib/viz/project3d.ts";
 import { TYPE_NAME } from "../../lib/graph/vocab.ts";
 import type { NodeType } from "../../lib/graph/types.ts";
 import type { Graph3DLink, Graph3DNode, Graph3DRing, Graph3DSector } from "./Graph3D";
 import { KIND_OF, KIND_STYLE } from "./kinds.ts";
-import { TIER_WORD, clusterOf, diseaseColor, formatPercent, type AtlasModel } from "./format.ts";
+import { clusterOf, diseaseColor, formatPercent, tierWord, type AtlasModel } from "./format.ts";
+import { distinctNames, fitName } from "./names.ts";
+import { crowdedDiseases, mapNodeRadius } from "./mapSizes.ts";
 
 export interface Scene3D {
   nodes: Graph3DNode[];
@@ -25,17 +27,21 @@ export interface Scene3D {
 const W = 1200;
 const H = 840;
 const DOT = 0.78; // 3D dots a little smaller than the 2D ones: perspective makes the near ones grow
-
-export function mapNodeRadius(n: HoodNode, centrality: number): number {
-  if (n.role === "focus") return 30;
-  if (n.type === "Disease") return 17 + 7 * centrality;
-  if (n.role === "bubble") return 15;
-  if (n.role === "symptom") return 11;
-  return 13;
-}
+const CLOUD_GAP = 0.11; // closest two dots of the constellation may sit, in unit-sphere units
+const NAME = 26; // characters of a name on a dot
 
 const typeOf = (n: HoodNode): NodeType => (n.type === "Bubble" ? n.bubbleType! : n.type);
-const truncate = (label: string, max = 26) => (label.length <= max ? label : `${label.slice(0, max - 1).trimEnd()}…`);
+
+// One short name per disease, never two alike, as on the 2D map.
+const namesCache = new WeakMap<AtlasModel, Map<string, string>>();
+function diseaseNames(model: AtlasModel): Map<string, string> {
+  let names = namesCache.get(model);
+  if (!names) {
+    names = distinctNames(model.index.diseases, NAME);
+    namesCache.set(model, names);
+  }
+  return names;
+}
 
 function typeName(n: HoodNode): string {
   return n.type === "Bubble" ? `${TYPE_NAME[n.bubbleType!].many}, folded` : TYPE_NAME[n.type].one;
@@ -43,6 +49,8 @@ function typeName(n: HoodNode): string {
 
 export function neighborhoodScene(model: AtlasModel, hood: Neighborhood, filtered: ThresholdResult, threshold: number, selectedId: string | null): Scene3D {
   const centrality = (id: string) => model.relevance.diseases[id]?.centrality ?? 0;
+  const crowded = crowdedDiseases(hood);
+  const names = diseaseNames(model);
   const radial: RadialNode[] = hood.nodes.map((n) => ({
     id: n.id,
     type: n.type,
@@ -50,7 +58,7 @@ export function neighborhoodScene(model: AtlasModel, hood: Neighborhood, filtere
     role: n.role,
     relevance: n.relevance,
     ownerRank: n.ownerRank,
-    radius: mapNodeRadius(n, centrality(n.id)) + 2,
+    radius: mapNodeRadius(n, centrality(n.id), crowded) + 2,
     cluster: n.cluster ?? null,
   }));
   const { positions, geometry } = radialLayout(radial, hood.focus, W, H);
@@ -72,23 +80,22 @@ export function neighborhoodScene(model: AtlasModel, hood: Neighborhood, filtere
     const isBubble = n.role === "bubble";
     const ghost = ghosts.has(n.id);
     const c = centrality(n.id);
-    const synonyms = model.index.byId.get(n.id)?.synonyms;
     return {
       id: n.id,
       label: n.label,
-      shortLabel: isDisease ? shortLabel({ label: n.label, synonyms }) : truncate(isBubble ? n.label.replace(/^\d+ /, "") : n.label),
+      shortLabel: isDisease ? (names.get(n.id) ?? fitName(n.label, NAME)) : fitName(isBubble ? n.label.replace(/^\d+ /, "") : n.label, NAME),
       coords: coordsOf(n),
       color: isDisease ? diseaseColor(model, n.id) : kind.fill,
       ink: isDisease ? undefined : kind.ink,
       icon: isDisease || isBubble ? undefined : ICON_PATH[type],
       count: isBubble ? (n.members?.length ?? 0) : undefined,
       size: c,
-      radius: mapNodeRadius(n, c) * DOT,
+      radius: mapNodeRadius(n, c, crowded) * DOT,
       emphasis: isFocus ? "focus" : "neighbor",
       alpha: isFocus ? 1 : ghost ? 0.28 : 0.6 + 0.4 * n.relevance,
       ghost,
       labelled: isFocus || (isDisease && !ghost) || n.id === selectedId,
-      tierLabel: isDisease && !isFocus ? `${n.tier && n.tier !== "none" ? `${TIER_WORD[n.tier]} · ` : ""}${formatPercent(n.relevance)}` : undefined,
+      tierLabel: isDisease && !isFocus && n.role !== "anchor" ? `${n.tier && n.tier !== "none" ? `${tierWord(n.tier)} · ` : ""}${formatPercent(n.relevance)}` : undefined,
       detail: isFocus
         ? `${typeName(n)} · what you searched`
         : `${typeName(n)} · ${formatPercent(n.relevance)} relevant${n.kind ? ` · ${n.kind}` : ""}${ghost ? " · under your filter" : ""}`,
@@ -113,8 +120,10 @@ export function neighborhoodScene(model: AtlasModel, hood: Neighborhood, filtere
   };
   const links = [...filtered.faintEdges.map((e) => lineOf(e, true)), ...filtered.edges.map((e) => lineOf(e, false))];
 
+  // The tier rings at the grade file's cutoffs, as on the 2D map.
+  const { strong, moderate, exploratory } = model.relevance.meta.thresholds ?? { strong: 0.75, moderate: 0.45, exploratory: 0.2 };
   const rings: Graph3DRing[] = [
-    ...[0.75, 0.45, 0.2].map((t): Graph3DRing => ({ r: ringRadius(geometry, t) / scale, kind: "tier" })),
+    ...[strong, moderate, exploratory].filter((t) => t > 0 && t < 1).map((t): Graph3DRing => ({ r: ringRadius(geometry, t) / scale, kind: "tier" })),
     { r: ringRadius(geometry, threshold) / scale, kind: "filter", label: `${formatPercent(threshold)} filter` },
   ];
   const sectors: Graph3DSector[] = SECTORS.map((s) => ({ label: s.label, angle: (((s.start + s.end) / 2) * Math.PI) / 180 }));
@@ -125,16 +134,24 @@ export function constellationScene(model: AtlasModel): Scene3D {
   const diseases = model.index.diseases.filter((d) => model.relevance.diseases[d.id]);
   // Small atlases get names on the dots; big ones rely on hover, as on the 2D constellation.
   const named = diseases.length <= 30;
-  const nodes: Graph3DNode[] = diseases.map((d) => {
+  // Diseases that share no biology all sit at the middle of the similarity layout: spread them so
+  // every dot can be seen and pointed at, each staying near its place.
+  const spread = separate(
+    diseases.map((d) => model.relevance.diseases[d.id].coords3d),
+    CLOUD_GAP,
+    { min: [-1, -1, -1], max: [1, 1, 1] },
+  );
+  const nodes: Graph3DNode[] = diseases.map((d, i) => {
     const entry = model.relevance.diseases[d.id];
     const cluster = clusterOf(model, d.id);
     return {
       id: d.id,
       label: d.label,
-      shortLabel: shortLabel(d),
-      coords: entry.coords3d,
+      shortLabel: diseaseNames(model).get(d.id) ?? fitName(d.label, NAME),
+      coords: [spread[i][0], spread[i][1], spread[i][2]],
       color: diseaseColor(model, d.id),
       size: entry.centrality,
+      radius: named ? 5 + 4 * entry.centrality : 3.5 + 3 * entry.centrality,
       emphasis: "neighbor",
       labelled: named,
       detail: cluster ? cluster.label : "Not in a cluster",

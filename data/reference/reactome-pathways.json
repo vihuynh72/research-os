@@ -1,0 +1,1729 @@
+{
+  "meta": {
+    "source": "Reactome Analysis Service (https://reactome.org/AnalysisService)",
+    "release": 97,
+    "release_date": "2026-06-30",
+    "release_source": "https://reactome.org/ (\"Version 97 released on June 30, 2026\")",
+    "fetched": "2026-10-03",
+    "query": "POST https://reactome.org/AnalysisService/identifiers/?interactors=false&species=9606&pageSize=1000&page=1&sortBy=ENTITIES_PVALUE&order=ASC&resource=TOTAL&pValue=1&includeDisease=false with the 52 gene symbols of data/seed/rare_graph.json, one per line; then, on its token, GET ?resource=UNIPROT (pathway size in proteins) and POST /found/all?resource=TOTAL (our symbols found in each kept pathway).",
+    "kept": "Lowest-level pathways (llp) of Homo sapiens, disease pathways excluded, with at most 300 entities: 221 of the 332 pathways hit.",
+    "size": "Proteins (UniProt entries, isoforms counted apart) Reactome counts in the pathway; entities counts every molecule type, small molecules included.",
+    "symbols": 52,
+    "not_found": [
+      "AP3D1",
+      "FREM2",
+      "LMX1B",
+      "LYST",
+      "OPA3",
+      "SIX6",
+      "SLC38A8",
+      "SLC4A11",
+      "TACSTD2"
+    ],
+    "without_pathway": [
+      "AP3D1",
+      "FREM2",
+      "LMX1B",
+      "LYST",
+      "OPA3",
+      "SIX6",
+      "SLC38A8",
+      "SLC4A11",
+      "TACSTD2"
+    ]
+  },
+  "pathways": [
+    {
+      "stId": "R-HSA-109704",
+      "name": "PI3K Cascade",
+      "size": 50,
+      "entities": 58
+    },
+    {
+      "stId": "R-HSA-111465",
+      "name": "Apoptotic cleavage of cellular proteins",
+      "size": 38,
+      "entities": 38
+    },
+    {
+      "stId": "R-HSA-111885",
+      "name": "Opioid Signalling",
+      "size": 90,
+      "entities": 115
+    },
+    {
+      "stId": "R-HSA-112040",
+      "name": "G-protein mediated events",
+      "size": 54,
+      "entities": 75
+    },
+    {
+      "stId": "R-HSA-112043",
+      "name": "PLC beta mediated events",
+      "size": 49,
+      "entities": 69
+    },
+    {
+      "stId": "R-HSA-112399",
+      "name": "IRS-mediated signalling",
+      "size": 55,
+      "entities": 65
+    },
+    {
+      "stId": "R-HSA-114508",
+      "name": "Effects of PIP2 hydrolysis",
+      "size": 27,
+      "entities": 40
+    },
+    {
+      "stId": "R-HSA-114604",
+      "name": "GPVI-mediated activation cascade",
+      "size": 35,
+      "entities": 43
+    },
+    {
+      "stId": "R-HSA-114608",
+      "name": "Platelet degranulation",
+      "size": 128,
+      "entities": 142
+    },
+    {
+      "stId": "R-HSA-1227986",
+      "name": "Signaling by ERBB2",
+      "size": 56,
+      "entities": 68
+    },
+    {
+      "stId": "R-HSA-1236394",
+      "name": "Signaling by ERBB4",
+      "size": 62,
+      "entities": 82
+    },
+    {
+      "stId": "R-HSA-1237044",
+      "name": "Erythrocytes take up carbon dioxide and release oxygen",
+      "size": 12,
+      "entities": 24
+    },
+    {
+      "stId": "R-HSA-1247673",
+      "name": "Erythrocytes take up oxygen and release carbon dioxide",
+      "size": 8,
+      "entities": 16
+    },
+    {
+      "stId": "R-HSA-1250342",
+      "name": "PI3K events in ERBB4 signaling",
+      "size": 11,
+      "entities": 15
+    },
+    {
+      "stId": "R-HSA-1266695",
+      "name": "Interleukin-7 signaling",
+      "size": 25,
+      "entities": 31
+    },
+    {
+      "stId": "R-HSA-139853",
+      "name": "Elevation of cytosolic Ca2+ levels",
+      "size": 16,
+      "entities": 22
+    },
+    {
+      "stId": "R-HSA-1433557",
+      "name": "Signaling by SCF-KIT",
+      "size": 45,
+      "entities": 51
+    },
+    {
+      "stId": "R-HSA-1442490",
+      "name": "Collagen degradation",
+      "size": 64,
+      "entities": 69
+    },
+    {
+      "stId": "R-HSA-1445148",
+      "name": "Translocation of SLC2A4 (GLUT4) to the plasma membrane",
+      "size": 72,
+      "entities": 81
+    },
+    {
+      "stId": "R-HSA-1474228",
+      "name": "Degradation of the extracellular matrix",
+      "size": 140,
+      "entities": 148
+    },
+    {
+      "stId": "R-HSA-1475029",
+      "name": "Reversible hydration of carbon dioxide",
+      "size": 12,
+      "entities": 17
+    },
+    {
+      "stId": "R-HSA-1483255",
+      "name": "PI Metabolism",
+      "size": 84,
+      "entities": 113
+    },
+    {
+      "stId": "R-HSA-1489509",
+      "name": "DAG and IP3 signaling",
+      "size": 41,
+      "entities": 54
+    },
+    {
+      "stId": "R-HSA-1566977",
+      "name": "Fibronectin matrix formation",
+      "size": 20,
+      "entities": 21
+    },
+    {
+      "stId": "R-HSA-162710",
+      "name": "Synthesis of glycosylphosphatidylinositol (GPI)",
+      "size": 18,
+      "entities": 37
+    },
+    {
+      "stId": "R-HSA-163125",
+      "name": "Post-translational modification: synthesis of GPI-anchored proteins",
+      "size": 93,
+      "entities": 115
+    },
+    {
+      "stId": "R-HSA-1650814",
+      "name": "Collagen biosynthesis and modifying enzymes",
+      "size": 67,
+      "entities": 76
+    },
+    {
+      "stId": "R-HSA-1660499",
+      "name": "Synthesis of PIPs at the plasma membrane",
+      "size": 53,
+      "entities": 70
+    },
+    {
+      "stId": "R-HSA-1660514",
+      "name": "Synthesis of PIPs at the Golgi membrane",
+      "size": 18,
+      "entities": 32
+    },
+    {
+      "stId": "R-HSA-1660516",
+      "name": "Synthesis of PIPs at the early endosome membrane",
+      "size": 16,
+      "entities": 31
+    },
+    {
+      "stId": "R-HSA-1660517",
+      "name": "Synthesis of PIPs at the late endosome membrane",
+      "size": 11,
+      "entities": 22
+    },
+    {
+      "stId": "R-HSA-169911",
+      "name": "Regulation of Apoptosis",
+      "size": 40,
+      "entities": 42
+    },
+    {
+      "stId": "R-HSA-177929",
+      "name": "Signaling by EGFR",
+      "size": 55,
+      "entities": 64
+    },
+    {
+      "stId": "R-HSA-180292",
+      "name": "GAB1 signalosome",
+      "size": 17,
+      "entities": 23
+    },
+    {
+      "stId": "R-HSA-186763",
+      "name": "Downstream signal transduction",
+      "size": 31,
+      "entities": 37
+    },
+    {
+      "stId": "R-HSA-186797",
+      "name": "Signaling by PDGF",
+      "size": 60,
+      "entities": 70
+    },
+    {
+      "stId": "R-HSA-189451",
+      "name": "Heme biosynthesis",
+      "size": 15,
+      "entities": 49
+    },
+    {
+      "stId": "R-HSA-1912399",
+      "name": "Pre-NOTCH Processing in the Endoplasmic Reticulum",
+      "size": 6,
+      "entities": 10
+    },
+    {
+      "stId": "R-HSA-1912408",
+      "name": "Pre-NOTCH Transcription and Translation",
+      "size": 65,
+      "entities": 100
+    },
+    {
+      "stId": "R-HSA-1912420",
+      "name": "Pre-NOTCH Processing in Golgi",
+      "size": 18,
+      "entities": 24
+    },
+    {
+      "stId": "R-HSA-192105",
+      "name": "Synthesis of bile acids and bile salts",
+      "size": 34,
+      "entities": 105
+    },
+    {
+      "stId": "R-HSA-193368",
+      "name": "Synthesis of bile acids and bile salts via 7alpha-hydroxycholesterol",
+      "size": 23,
+      "entities": 74
+    },
+    {
+      "stId": "R-HSA-193775",
+      "name": "Synthesis of bile acids and bile salts via 24-hydroxycholesterol",
+      "size": 13,
+      "entities": 38
+    },
+    {
+      "stId": "R-HSA-193807",
+      "name": "Synthesis of bile acids and bile salts via 27-hydroxycholesterol",
+      "size": 14,
+      "entities": 33
+    },
+    {
+      "stId": "R-HSA-194138",
+      "name": "Signaling by VEGF",
+      "size": 110,
+      "entities": 141
+    },
+    {
+      "stId": "R-HSA-1963642",
+      "name": "PI3K events in ERBB2 signaling",
+      "size": 18,
+      "entities": 22
+    },
+    {
+      "stId": "R-HSA-1971475",
+      "name": "Glycosaminoglycan-protein linkage region biosynthesis",
+      "size": 29,
+      "entities": 41
+    },
+    {
+      "stId": "R-HSA-198203",
+      "name": "PI3K/AKT activation",
+      "size": 9,
+      "entities": 13
+    },
+    {
+      "stId": "R-HSA-198933",
+      "name": "Immunoregulatory interactions between a Lymphoid and a non-Lymphoid cell",
+      "size": 230,
+      "entities": 249
+    },
+    {
+      "stId": "R-HSA-199418",
+      "name": "Negative regulation of the PI3K/AKT network",
+      "size": 133,
+      "entities": 145
+    },
+    {
+      "stId": "R-HSA-199992",
+      "name": "trans-Golgi Network Vesicle Budding",
+      "size": 74,
+      "entities": 80
+    },
+    {
+      "stId": "R-HSA-201556",
+      "name": "Signaling by ALK",
+      "size": 31,
+      "entities": 46
+    },
+    {
+      "stId": "R-HSA-201681",
+      "name": "TCF dependent signaling in response to WNT",
+      "size": 190,
+      "entities": 204
+    },
+    {
+      "stId": "R-HSA-2022090",
+      "name": "Assembly of collagen fibrils and other multimeric structures",
+      "size": 61,
+      "entities": 67
+    },
+    {
+      "stId": "R-HSA-2022854",
+      "name": "Keratan sulfate biosynthesis",
+      "size": 29,
+      "entities": 39
+    },
+    {
+      "stId": "R-HSA-2022857",
+      "name": "Keratan sulfate degradation",
+      "size": 15,
+      "entities": 25
+    },
+    {
+      "stId": "R-HSA-2022870",
+      "name": "CS-GAG biosynthesis",
+      "size": 21,
+      "entities": 27
+    },
+    {
+      "stId": "R-HSA-2022923",
+      "name": "DS-GAG biosynthesis",
+      "size": 12,
+      "entities": 15
+    },
+    {
+      "stId": "R-HSA-2024101",
+      "name": "CS/DS degradation",
+      "size": 20,
+      "entities": 40
+    },
+    {
+      "stId": "R-HSA-202424",
+      "name": "Downstream TCR signaling",
+      "size": 91,
+      "entities": 99
+    },
+    {
+      "stId": "R-HSA-202733",
+      "name": "Cell surface interactions at the vascular wall",
+      "size": 246,
+      "entities": 257
+    },
+    {
+      "stId": "R-HSA-2029482",
+      "name": "Regulation of actin dynamics for phagocytic cup formation",
+      "size": 150,
+      "entities": 158
+    },
+    {
+      "stId": "R-HSA-2029485",
+      "name": "Role of phospholipids in phagocytosis",
+      "size": 114,
+      "entities": 131
+    },
+    {
+      "stId": "R-HSA-2032785",
+      "name": "YAP1- and WWTR1 (TAZ)-stimulated gene expression",
+      "size": 16,
+      "entities": 18
+    },
+    {
+      "stId": "R-HSA-210745",
+      "name": "Regulation of gene expression in beta cells",
+      "size": 23,
+      "entities": 35
+    },
+    {
+      "stId": "R-HSA-210993",
+      "name": "Tie2 Signaling",
+      "size": 19,
+      "entities": 23
+    },
+    {
+      "stId": "R-HSA-211897",
+      "name": "Cytochrome P450 - arranged by substrate type",
+      "size": 66,
+      "entities": 193
+    },
+    {
+      "stId": "R-HSA-211945",
+      "name": "Phase I - Functionalization of compounds",
+      "size": 105,
+      "entities": 300
+    },
+    {
+      "stId": "R-HSA-211976",
+      "name": "Endogenous sterols",
+      "size": 26,
+      "entities": 69
+    },
+    {
+      "stId": "R-HSA-2142845",
+      "name": "Hyaluronan metabolism",
+      "size": 20,
+      "entities": 41
+    },
+    {
+      "stId": "R-HSA-216083",
+      "name": "Integrin cell surface interactions",
+      "size": 85,
+      "entities": 86
+    },
+    {
+      "stId": "R-HSA-2160916",
+      "name": "Hyaluronan degradation",
+      "size": 16,
+      "entities": 31
+    },
+    {
+      "stId": "R-HSA-2172127",
+      "name": "DAP12 interactions",
+      "size": 46,
+      "entities": 52
+    },
+    {
+      "stId": "R-HSA-2197563",
+      "name": "NOTCH2 intracellular domain regulates transcription",
+      "size": 12,
+      "entities": 16
+    },
+    {
+      "stId": "R-HSA-2404192",
+      "name": "Signaling by Type 1 Insulin-like Growth Factor 1 Receptor (IGF1R)",
+      "size": 63,
+      "entities": 73
+    },
+    {
+      "stId": "R-HSA-2424491",
+      "name": "DAP12 signaling",
+      "size": 30,
+      "entities": 36
+    },
+    {
+      "stId": "R-HSA-2428924",
+      "name": "IGF1R signaling cascade",
+      "size": 62,
+      "entities": 72
+    },
+    {
+      "stId": "R-HSA-2428928",
+      "name": "IRS-related events triggered by IGF1R",
+      "size": 59,
+      "entities": 69
+    },
+    {
+      "stId": "R-HSA-2453902",
+      "name": "The canonical retinoid cycle in rods (twilight vision)",
+      "size": 22,
+      "entities": 43
+    },
+    {
+      "stId": "R-HSA-2454202",
+      "name": "Fc epsilon receptor (FCERI) signaling",
+      "size": 205,
+      "entities": 222
+    },
+    {
+      "stId": "R-HSA-264870",
+      "name": "Caspase-mediated cleavage of cytoskeletal proteins",
+      "size": 12,
+      "entities": 12
+    },
+    {
+      "stId": "R-HSA-264876",
+      "name": "Insulin processing",
+      "size": 25,
+      "entities": 33
+    },
+    {
+      "stId": "R-HSA-2672351",
+      "name": "Stimuli-sensing channels",
+      "size": 107,
+      "entities": 120
+    },
+    {
+      "stId": "R-HSA-2730905",
+      "name": "Role of LAT2/NTAL/LAB on calcium mobilization",
+      "size": 102,
+      "entities": 107
+    },
+    {
+      "stId": "R-HSA-2871809",
+      "name": "FCERI mediated Ca+2 mobilization",
+      "size": 117,
+      "entities": 129
+    },
+    {
+      "stId": "R-HSA-2892245",
+      "name": "POU5F1 (OCT4), SOX2, NANOG repress genes related to differentiation",
+      "size": 3,
+      "entities": 10
+    },
+    {
+      "stId": "R-HSA-2892247",
+      "name": "POU5F1 (OCT4), SOX2, NANOG activate genes related to proliferation",
+      "size": 13,
+      "entities": 21
+    },
+    {
+      "stId": "R-HSA-2979096",
+      "name": "NOTCH2 Activation and Transmission of Signal to the Nucleus",
+      "size": 25,
+      "entities": 26
+    },
+    {
+      "stId": "R-HSA-2980766",
+      "name": "Nuclear Envelope Breakdown",
+      "size": 58,
+      "entities": 65
+    },
+    {
+      "stId": "R-HSA-2995383",
+      "name": "Initiation of Nuclear Envelope (NE) Reformation",
+      "size": 20,
+      "entities": 27
+    },
+    {
+      "stId": "R-HSA-3000171",
+      "name": "Non-integrin membrane-ECM interactions",
+      "size": 80,
+      "entities": 83
+    },
+    {
+      "stId": "R-HSA-3000178",
+      "name": "ECM proteoglycans",
+      "size": 76,
+      "entities": 79
+    },
+    {
+      "stId": "R-HSA-3232118",
+      "name": "SUMOylation of transcription factors",
+      "size": 20,
+      "entities": 20
+    },
+    {
+      "stId": "R-HSA-3295583",
+      "name": "TRP channels",
+      "size": 28,
+      "entities": 32
+    },
+    {
+      "stId": "R-HSA-350054",
+      "name": "Notch-HLH transcription pathway",
+      "size": 28,
+      "entities": 28
+    },
+    {
+      "stId": "R-HSA-373753",
+      "name": "Nephrin family interactions",
+      "size": 23,
+      "entities": 25
+    },
+    {
+      "stId": "R-HSA-375165",
+      "name": "NCAM signaling for neurite out-growth",
+      "size": 64,
+      "entities": 70
+    },
+    {
+      "stId": "R-HSA-3769402",
+      "name": "Deactivation of the beta-catenin transactivating complex",
+      "size": 44,
+      "entities": 46
+    },
+    {
+      "stId": "R-HSA-381676",
+      "name": "Glucagon-like Peptide-1 (GLP1) regulates insulin secretion",
+      "size": 43,
+      "entities": 50
+    },
+    {
+      "stId": "R-HSA-381771",
+      "name": "Synthesis, secretion, and inactivation of Glucagon-like Peptide-1 (GLP-1)",
+      "size": 21,
+      "entities": 46
+    },
+    {
+      "stId": "R-HSA-382556",
+      "name": "ABC-family protein mediated transport",
+      "size": 90,
+      "entities": 111
+    },
+    {
+      "stId": "R-HSA-389356",
+      "name": "Co-stimulation by CD28",
+      "size": 50,
+      "entities": 56
+    },
+    {
+      "stId": "R-HSA-389357",
+      "name": "CD28 dependent PI3K/Akt signaling",
+      "size": 29,
+      "entities": 33
+    },
+    {
+      "stId": "R-HSA-389948",
+      "name": "Co-inhibition by PD-1",
+      "size": 191,
+      "entities": 219
+    },
+    {
+      "stId": "R-HSA-390471",
+      "name": "Association of TriC/CCT with target proteins during biosynthesis",
+      "size": 39,
+      "entities": 40
+    },
+    {
+      "stId": "R-HSA-392154",
+      "name": "Nitric oxide stimulates guanylate cyclase",
+      "size": 23,
+      "entities": 35
+    },
+    {
+      "stId": "R-HSA-400511",
+      "name": "Synthesis, secretion, and inactivation of Glucose-dependent Insulinotropic Polypeptide (GIP)",
+      "size": 13,
+      "entities": 21
+    },
+    {
+      "stId": "R-HSA-4085001",
+      "name": "Sialic acid metabolism",
+      "size": 33,
+      "entities": 67
+    },
+    {
+      "stId": "R-HSA-4086398",
+      "name": "Ca2+ pathway",
+      "size": 60,
+      "entities": 81
+    },
+    {
+      "stId": "R-HSA-416476",
+      "name": "G alpha (q) signalling events",
+      "size": 220,
+      "entities": 284
+    },
+    {
+      "stId": "R-HSA-418346",
+      "name": "Platelet homeostasis",
+      "size": 88,
+      "entities": 118
+    },
+    {
+      "stId": "R-HSA-418360",
+      "name": "Platelet calcium homeostasis",
+      "size": 28,
+      "entities": 35
+    },
+    {
+      "stId": "R-HSA-418457",
+      "name": "cGMP effects",
+      "size": 16,
+      "entities": 18
+    },
+    {
+      "stId": "R-HSA-418990",
+      "name": "Adherens junctions interactions",
+      "size": 236,
+      "entities": 267
+    },
+    {
+      "stId": "R-HSA-419037",
+      "name": "NCAM1 interactions",
+      "size": 42,
+      "entities": 44
+    },
+    {
+      "stId": "R-HSA-422356",
+      "name": "Regulation of insulin secretion",
+      "size": 79,
+      "entities": 109
+    },
+    {
+      "stId": "R-HSA-430116",
+      "name": "GP1b-IX-V activation signalling",
+      "size": 12,
+      "entities": 12
+    },
+    {
+      "stId": "R-HSA-432722",
+      "name": "Golgi Associated Vesicle Biogenesis",
+      "size": 56,
+      "entities": 61
+    },
+    {
+      "stId": "R-HSA-4419969",
+      "name": "Depolymerization of the Nuclear Lamina",
+      "size": 16,
+      "entities": 23
+    },
+    {
+      "stId": "R-HSA-4420097",
+      "name": "VEGFA-VEGFR2 Pathway",
+      "size": 100,
+      "entities": 130
+    },
+    {
+      "stId": "R-HSA-446107",
+      "name": "Type I hemidesmosome assembly",
+      "size": 11,
+      "entities": 11
+    },
+    {
+      "stId": "R-HSA-446193",
+      "name": "Biosynthesis of the N-glycan precursor (dolichol lipid-linked oligosaccharide, LLO) and transfer to a nascent protein",
+      "size": 80,
+      "entities": 173
+    },
+    {
+      "stId": "R-HSA-446219",
+      "name": "Synthesis of substrates in N-glycan biosythesis",
+      "size": 65,
+      "entities": 145
+    },
+    {
+      "stId": "R-HSA-451927",
+      "name": "Interleukin-2 family signaling",
+      "size": 45,
+      "entities": 47
+    },
+    {
+      "stId": "R-HSA-452723",
+      "name": "Transcriptional regulation of pluripotent stem cells",
+      "size": 24,
+      "entities": 45
+    },
+    {
+      "stId": "R-HSA-512988",
+      "name": "Interleukin-3, Interleukin-5 and GM-CSF signaling",
+      "size": 48,
+      "entities": 50
+    },
+    {
+      "stId": "R-HSA-5218921",
+      "name": "VEGFR2 mediated cell proliferation",
+      "size": 20,
+      "entities": 33
+    },
+    {
+      "stId": "R-HSA-5578775",
+      "name": "Ion homeostasis",
+      "size": 54,
+      "entities": 64
+    },
+    {
+      "stId": "R-HSA-5607763",
+      "name": "CLEC7A (Dectin-1) induces NFAT activation",
+      "size": 11,
+      "entities": 18
+    },
+    {
+      "stId": "R-HSA-5607764",
+      "name": "CLEC7A (Dectin-1) signaling",
+      "size": 85,
+      "entities": 107
+    },
+    {
+      "stId": "R-HSA-5617472",
+      "name": "Activation of anterior HOX genes in hindbrain development during early embryogenesis",
+      "size": 91,
+      "entities": 116
+    },
+    {
+      "stId": "R-HSA-5654687",
+      "name": "Downstream signaling of activated FGFR1",
+      "size": 35,
+      "entities": 42
+    },
+    {
+      "stId": "R-HSA-5654689",
+      "name": "PI-3K cascade:FGFR1",
+      "size": 23,
+      "entities": 28
+    },
+    {
+      "stId": "R-HSA-5654695",
+      "name": "PI-3K cascade:FGFR2",
+      "size": 26,
+      "entities": 31
+    },
+    {
+      "stId": "R-HSA-5654710",
+      "name": "PI-3K cascade:FGFR3",
+      "size": 19,
+      "entities": 24
+    },
+    {
+      "stId": "R-HSA-5654720",
+      "name": "PI-3K cascade:FGFR4",
+      "size": 20,
+      "entities": 25
+    },
+    {
+      "stId": "R-HSA-5662702",
+      "name": "Melanin biosynthesis",
+      "size": 5,
+      "entities": 25
+    },
+    {
+      "stId": "R-HSA-6785807",
+      "name": "Interleukin-4 and Interleukin-13 signaling",
+      "size": 111,
+      "entities": 211
+    },
+    {
+      "stId": "R-HSA-6806664",
+      "name": "Metabolism of vitamin K",
+      "size": 3,
+      "entities": 9
+    },
+    {
+      "stId": "R-HSA-6811558",
+      "name": "PI5P, PP2A and IER3 Regulate PI3K/AKT Signaling",
+      "size": 126,
+      "entities": 137
+    },
+    {
+      "stId": "R-HSA-68875",
+      "name": "Mitotic Prophase",
+      "size": 118,
+      "entities": 134
+    },
+    {
+      "stId": "R-HSA-70370",
+      "name": "Galactose catabolism",
+      "size": 6,
+      "entities": 21
+    },
+    {
+      "stId": "R-HSA-74751",
+      "name": "Insulin receptor signalling cascade",
+      "size": 61,
+      "entities": 72
+    },
+    {
+      "stId": "R-HSA-74752",
+      "name": "Signaling by Insulin receptor",
+      "size": 89,
+      "entities": 102
+    },
+    {
+      "stId": "R-HSA-75153",
+      "name": "Apoptotic execution phase",
+      "size": 52,
+      "entities": 54
+    },
+    {
+      "stId": "R-HSA-76005",
+      "name": "Response to elevated platelet cytosolic Ca2+",
+      "size": 133,
+      "entities": 149
+    },
+    {
+      "stId": "R-HSA-8851907",
+      "name": "MET activates PI3K/AKT signaling",
+      "size": 6,
+      "entities": 10
+    },
+    {
+      "stId": "R-HSA-8853659",
+      "name": "RET signaling",
+      "size": 41,
+      "entities": 43
+    },
+    {
+      "stId": "R-HSA-8873719",
+      "name": "RAB geranylgeranylation",
+      "size": 65,
+      "entities": 68
+    },
+    {
+      "stId": "R-HSA-8874081",
+      "name": "MET activates PTK2 signaling",
+      "size": 30,
+      "entities": 32
+    },
+    {
+      "stId": "R-HSA-8876198",
+      "name": "RAB GEFs exchange GTP for GDP on RABs",
+      "size": 90,
+      "entities": 94
+    },
+    {
+      "stId": "R-HSA-8878159",
+      "name": "Transcriptional regulation by RUNX3",
+      "size": 86,
+      "entities": 108
+    },
+    {
+      "stId": "R-HSA-8878166",
+      "name": "Transcriptional regulation by RUNX2",
+      "size": 107,
+      "entities": 133
+    },
+    {
+      "stId": "R-HSA-8939211",
+      "name": "ESR-mediated signaling",
+      "size": 195,
+      "entities": 257
+    },
+    {
+      "stId": "R-HSA-8948216",
+      "name": "Collagen chain trimerization",
+      "size": 44,
+      "entities": 44
+    },
+    {
+      "stId": "R-HSA-8951671",
+      "name": "RUNX3 regulates YAP1-mediated transcription",
+      "size": 8,
+      "entities": 9
+    },
+    {
+      "stId": "R-HSA-8980692",
+      "name": "RHOA GTPase cycle",
+      "size": 150,
+      "entities": 154
+    },
+    {
+      "stId": "R-HSA-8986944",
+      "name": "Transcriptional Regulation by MECP2",
+      "size": 61,
+      "entities": 100
+    },
+    {
+      "stId": "R-HSA-9006335",
+      "name": "Signaling by Erythropoietin",
+      "size": 26,
+      "entities": 35
+    },
+    {
+      "stId": "R-HSA-9009391",
+      "name": "Extra-nuclear estrogen signaling",
+      "size": 80,
+      "entities": 112
+    },
+    {
+      "stId": "R-HSA-9013026",
+      "name": "RHOB GTPase cycle",
+      "size": 71,
+      "entities": 75
+    },
+    {
+      "stId": "R-HSA-9013106",
+      "name": "RHOC GTPase cycle",
+      "size": 75,
+      "entities": 79
+    },
+    {
+      "stId": "R-HSA-9013148",
+      "name": "CDC42 GTPase cycle",
+      "size": 155,
+      "entities": 159
+    },
+    {
+      "stId": "R-HSA-9013149",
+      "name": "RAC1 GTPase cycle",
+      "size": 185,
+      "entities": 191
+    },
+    {
+      "stId": "R-HSA-9013404",
+      "name": "RAC2 GTPase cycle",
+      "size": 88,
+      "entities": 92
+    },
+    {
+      "stId": "R-HSA-9013405",
+      "name": "RHOD GTPase cycle",
+      "size": 53,
+      "entities": 57
+    },
+    {
+      "stId": "R-HSA-9013408",
+      "name": "RHOG GTPase cycle",
+      "size": 74,
+      "entities": 78
+    },
+    {
+      "stId": "R-HSA-9013409",
+      "name": "RHOJ GTPase cycle",
+      "size": 55,
+      "entities": 59
+    },
+    {
+      "stId": "R-HSA-9013420",
+      "name": "RHOU GTPase cycle",
+      "size": 40,
+      "entities": 44
+    },
+    {
+      "stId": "R-HSA-9013423",
+      "name": "RAC3 GTPase cycle",
+      "size": 94,
+      "entities": 100
+    },
+    {
+      "stId": "R-HSA-9013424",
+      "name": "RHOV GTPase cycle",
+      "size": 37,
+      "entities": 39
+    },
+    {
+      "stId": "R-HSA-9013695",
+      "name": "NOTCH4 Intracellular Domain Regulates Transcription",
+      "size": 20,
+      "entities": 26
+    },
+    {
+      "stId": "R-HSA-9027276",
+      "name": "Erythropoietin activates Phosphoinositide-3-kinase (PI3K)",
+      "size": 12,
+      "entities": 16
+    },
+    {
+      "stId": "R-HSA-9028335",
+      "name": "Activated NTRK2 signals through PI3K",
+      "size": 7,
+      "entities": 11
+    },
+    {
+      "stId": "R-HSA-9034015",
+      "name": "Signaling by NTRK3 (TRKC)",
+      "size": 19,
+      "entities": 27
+    },
+    {
+      "stId": "R-HSA-9035034",
+      "name": "RHOF GTPase cycle",
+      "size": 42,
+      "entities": 46
+    },
+    {
+      "stId": "R-HSA-912526",
+      "name": "Interleukin receptor SHC signaling",
+      "size": 27,
+      "entities": 29
+    },
+    {
+      "stId": "R-HSA-912631",
+      "name": "Regulation of signaling by CBL",
+      "size": 22,
+      "entities": 24
+    },
+    {
+      "stId": "R-HSA-917937",
+      "name": "Iron uptake and transport",
+      "size": 58,
+      "entities": 83
+    },
+    {
+      "stId": "R-HSA-917977",
+      "name": "Transferrin endocytosis and recycling",
+      "size": 31,
+      "entities": 42
+    },
+    {
+      "stId": "R-HSA-947581",
+      "name": "Molybdenum cofactor biosynthesis",
+      "size": 8,
+      "entities": 27
+    },
+    {
+      "stId": "R-HSA-9603381",
+      "name": "Activated NTRK3 signals through PI3K",
+      "size": 6,
+      "entities": 10
+    },
+    {
+      "stId": "R-HSA-9607240",
+      "name": "FLT3 Signaling",
+      "size": 39,
+      "entities": 48
+    },
+    {
+      "stId": "R-HSA-9619665",
+      "name": "EGR2 and SOX10-mediated initiation of Schwann cell myelination",
+      "size": 29,
+      "entities": 40
+    },
+    {
+      "stId": "R-HSA-9662361",
+      "name": "Sensory processing of sound by outer hair cells of the cochlea",
+      "size": 56,
+      "entities": 64
+    },
+    {
+      "stId": "R-HSA-9668328",
+      "name": "Sealing of the nuclear envelope (NE) by ESCRT-III",
+      "size": 32,
+      "entities": 39
+    },
+    {
+      "stId": "R-HSA-9680350",
+      "name": "Signaling by CSF1 (M-CSF) in myeloid cells",
+      "size": 31,
+      "entities": 41
+    },
+    {
+      "stId": "R-HSA-9696264",
+      "name": "RND3 GTPase cycle",
+      "size": 42,
+      "entities": 43
+    },
+    {
+      "stId": "R-HSA-9696270",
+      "name": "RND2 GTPase cycle",
+      "size": 43,
+      "entities": 44
+    },
+    {
+      "stId": "R-HSA-9696273",
+      "name": "RND1 GTPase cycle",
+      "size": 42,
+      "entities": 43
+    },
+    {
+      "stId": "R-HSA-9725554",
+      "name": "Differentiation of Keratinocytes in Interfollicular Epidermis in Mammalian Skin",
+      "size": 40,
+      "entities": 47
+    },
+    {
+      "stId": "R-HSA-9754189",
+      "name": "Germ layer formation at gastrulation",
+      "size": 17,
+      "entities": 24
+    },
+    {
+      "stId": "R-HSA-9759476",
+      "name": "Regulation of Homotypic Cell-Cell Adhesion",
+      "size": 188,
+      "entities": 215
+    },
+    {
+      "stId": "R-HSA-9764265",
+      "name": "Regulation of CDH1 Expression and Function",
+      "size": 171,
+      "entities": 192
+    },
+    {
+      "stId": "R-HSA-9764274",
+      "name": "Regulation of Expression and Function of Type I Classical Cadherins",
+      "size": 171,
+      "entities": 192
+    },
+    {
+      "stId": "R-HSA-9764560",
+      "name": "Regulation of CDH1 Gene Transcription",
+      "size": 72,
+      "entities": 78
+    },
+    {
+      "stId": "R-HSA-9764725",
+      "name": "Negative Regulation of CDH1 Gene Transcription",
+      "size": 62,
+      "entities": 68
+    },
+    {
+      "stId": "R-HSA-977225",
+      "name": "Amyloid fiber formation",
+      "size": 81,
+      "entities": 89
+    },
+    {
+      "stId": "R-HSA-9823739",
+      "name": "Formation of the anterior neural plate",
+      "size": 11,
+      "entities": 19
+    },
+    {
+      "stId": "R-HSA-9824585",
+      "name": "Regulation of MITF-M-dependent genes involved in pigmentation",
+      "size": 42,
+      "entities": 53
+    },
+    {
+      "stId": "R-HSA-9824594",
+      "name": "Regulation of MITF-M-dependent genes involved in apoptosis",
+      "size": 18,
+      "entities": 26
+    },
+    {
+      "stId": "R-HSA-9825892",
+      "name": "Regulation of MITF-M-dependent genes involved in cell cycle and proliferation",
+      "size": 18,
+      "entities": 27
+    },
+    {
+      "stId": "R-HSA-9825895",
+      "name": "Regulation of MITF-M-dependent genes involved in DNA replication, damage repair and senescence",
+      "size": 6,
+      "entities": 11
+    },
+    {
+      "stId": "R-HSA-9832991",
+      "name": "Formation of the posterior neural plate",
+      "size": 10,
+      "entities": 14
+    },
+    {
+      "stId": "R-HSA-9834899",
+      "name": "Specification of the neural plate border",
+      "size": 17,
+      "entities": 24
+    },
+    {
+      "stId": "R-HSA-983695",
+      "name": "Antigen activates B Cell Receptor (BCR) leading to generation of second messengers",
+      "size": 95,
+      "entities": 103
+    },
+    {
+      "stId": "R-HSA-983712",
+      "name": "Ion channel transport",
+      "size": 184,
+      "entities": 207
+    },
+    {
+      "stId": "R-HSA-9837999",
+      "name": "Mitochondrial protein degradation",
+      "size": 98,
+      "entities": 104
+    },
+    {
+      "stId": "R-HSA-9840310",
+      "name": "Glycosphingolipid catabolism",
+      "size": 39,
+      "entities": 78
+    },
+    {
+      "stId": "R-HSA-9842663",
+      "name": "Signaling by LTK",
+      "size": 14,
+      "entities": 16
+    },
+    {
+      "stId": "R-HSA-9854907",
+      "name": "Regulation of MITF-M dependent genes involved in metabolism",
+      "size": 3,
+      "entities": 5
+    },
+    {
+      "stId": "R-HSA-9854909",
+      "name": "Regulation of MITF-M dependent genes involved in invasion",
+      "size": 4,
+      "entities": 7
+    },
+    {
+      "stId": "R-HSA-9856649",
+      "name": "Transcriptional and post-translational regulation of MITF-M expression and activity",
+      "size": 63,
+      "entities": 79
+    },
+    {
+      "stId": "R-HSA-9857377",
+      "name": "Regulation of MITF-M-dependent genes involved in lysosome biogenesis and autophagy",
+      "size": 12,
+      "entities": 28
+    },
+    {
+      "stId": "R-HSA-9909648",
+      "name": "Regulation of PD-L1(CD274) expression",
+      "size": 164,
+      "entities": 191
+    },
+    {
+      "stId": "R-HSA-9909649",
+      "name": "Regulation of PD-L1(CD274) transcription",
+      "size": 70,
+      "entities": 74
+    },
+    {
+      "stId": "R-HSA-9925563",
+      "name": "Developmental Lineage of Pancreatic Ductal Cells",
+      "size": 48,
+      "entities": 77
+    },
+    {
+      "stId": "R-HSA-9926550",
+      "name": "Regulation of MITF-M-dependent genes involved in extracellular matrix, focal adhesion and epithelial-to-mesenchymal transition",
+      "size": 12,
+      "entities": 23
+    },
+    {
+      "stId": "R-HSA-9927354",
+      "name": "Co-stimulation by ICOS",
+      "size": 11,
+      "entities": 11
+    },
+    {
+      "stId": "R-HSA-9976102",
+      "name": "Differentiation of naive CD4+ T cells to T helper 2 cells (Th2 cells)",
+      "size": 75,
+      "entities": 82
+    },
+    {
+      "stId": "R-HSA-9981148",
+      "name": "Developmental Lineage of Pancreatic Endocrine Mid Progenitor Cells",
+      "size": 33,
+      "entities": 45
+    }
+  ],
+  "genes": {
+    "ABCA4": [
+      "R-HSA-2453902",
+      "R-HSA-382556"
+    ],
+    "AP3B1": [
+      "R-HSA-199992",
+      "R-HSA-432722"
+    ],
+    "AP3D1": [],
+    "BEST1": [
+      "R-HSA-2672351",
+      "R-HSA-983712"
+    ],
+    "CA2": [
+      "R-HSA-1237044",
+      "R-HSA-1247673",
+      "R-HSA-1475029",
+      "R-HSA-9925563"
+    ],
+    "CHST6": [
+      "R-HSA-2022854"
+    ],
+    "COL17A1": [
+      "R-HSA-1442490",
+      "R-HSA-1474228",
+      "R-HSA-1650814",
+      "R-HSA-198933",
+      "R-HSA-2022090",
+      "R-HSA-446107",
+      "R-HSA-8948216",
+      "R-HSA-9725554"
+    ],
+    "COL2A1": [
+      "R-HSA-1442490",
+      "R-HSA-1474228",
+      "R-HSA-1566977",
+      "R-HSA-1650814",
+      "R-HSA-186797",
+      "R-HSA-198933",
+      "R-HSA-2022090",
+      "R-HSA-216083",
+      "R-HSA-3000171",
+      "R-HSA-3000178",
+      "R-HSA-375165",
+      "R-HSA-419037",
+      "R-HSA-8874081",
+      "R-HSA-8948216",
+      "R-HSA-9925563",
+      "R-HSA-9981148"
+    ],
+    "CYP27A1": [
+      "R-HSA-192105",
+      "R-HSA-193368",
+      "R-HSA-193775",
+      "R-HSA-193807",
+      "R-HSA-211897",
+      "R-HSA-211945",
+      "R-HSA-211976"
+    ],
+    "DCN": [
+      "R-HSA-1474228",
+      "R-HSA-1971475",
+      "R-HSA-2022870",
+      "R-HSA-2022923",
+      "R-HSA-2024101",
+      "R-HSA-3000178"
+    ],
+    "DTNBP1": [
+      "R-HSA-199992",
+      "R-HSA-432722"
+    ],
+    "FLVCR1": [
+      "R-HSA-189451",
+      "R-HSA-917937"
+    ],
+    "FREM2": [],
+    "GALC": [
+      "R-HSA-9840310"
+    ],
+    "GALK1": [
+      "R-HSA-70370"
+    ],
+    "GALT": [
+      "R-HSA-70370"
+    ],
+    "GBA1": [
+      "R-HSA-390471",
+      "R-HSA-9840310"
+    ],
+    "GLB1": [
+      "R-HSA-2022857",
+      "R-HSA-2024101",
+      "R-HSA-4085001",
+      "R-HSA-446193",
+      "R-HSA-446219",
+      "R-HSA-9840310"
+    ],
+    "GSN": [
+      "R-HSA-111465",
+      "R-HSA-264870",
+      "R-HSA-75153",
+      "R-HSA-9662361",
+      "R-HSA-977225"
+    ],
+    "HEXA": [
+      "R-HSA-2022857",
+      "R-HSA-2024101",
+      "R-HSA-2142845",
+      "R-HSA-2160916",
+      "R-HSA-9840310"
+    ],
+    "HEXB": [
+      "R-HSA-2022857",
+      "R-HSA-2024101",
+      "R-HSA-2142845",
+      "R-HSA-2160916",
+      "R-HSA-9840310"
+    ],
+    "ITPR1": [
+      "R-HSA-111885",
+      "R-HSA-112040",
+      "R-HSA-112043",
+      "R-HSA-114508",
+      "R-HSA-139853",
+      "R-HSA-1489509",
+      "R-HSA-194138",
+      "R-HSA-2029485",
+      "R-HSA-2454202",
+      "R-HSA-2871809",
+      "R-HSA-381676",
+      "R-HSA-392154",
+      "R-HSA-4086398",
+      "R-HSA-416476",
+      "R-HSA-418346",
+      "R-HSA-418360",
+      "R-HSA-418457",
+      "R-HSA-422356",
+      "R-HSA-4420097",
+      "R-HSA-5218921",
+      "R-HSA-5578775",
+      "R-HSA-5607763",
+      "R-HSA-5607764",
+      "R-HSA-983695"
+    ],
+    "LEMD2": [
+      "R-HSA-2980766",
+      "R-HSA-2995383",
+      "R-HSA-4419969",
+      "R-HSA-68875",
+      "R-HSA-9668328"
+    ],
+    "LMX1B": [],
+    "LYST": [],
+    "MCOLN1": [
+      "R-HSA-2672351",
+      "R-HSA-3295583",
+      "R-HSA-917937",
+      "R-HSA-917977",
+      "R-HSA-983712"
+    ],
+    "MITF": [
+      "R-HSA-3232118",
+      "R-HSA-9824585",
+      "R-HSA-9824594",
+      "R-HSA-9825892",
+      "R-HSA-9825895",
+      "R-HSA-9854907",
+      "R-HSA-9854909",
+      "R-HSA-9856649",
+      "R-HSA-9857377",
+      "R-HSA-9926550"
+    ],
+    "MLPH": [
+      "R-HSA-9824585"
+    ],
+    "MOCS2": [
+      "R-HSA-947581"
+    ],
+    "MYO5A": [
+      "R-HSA-1445148",
+      "R-HSA-2029482",
+      "R-HSA-264876",
+      "R-HSA-9824585"
+    ],
+    "NOTCH2": [
+      "R-HSA-1912399",
+      "R-HSA-1912408",
+      "R-HSA-1912420",
+      "R-HSA-2197563",
+      "R-HSA-2979096",
+      "R-HSA-350054",
+      "R-HSA-9013695",
+      "R-HSA-9976102"
+    ],
+    "OCA2": [
+      "R-HSA-5662702"
+    ],
+    "OPA1": [
+      "R-HSA-169911",
+      "R-HSA-9837999"
+    ],
+    "OPA3": [],
+    "PAX6": [
+      "R-HSA-210745",
+      "R-HSA-381771",
+      "R-HSA-400511",
+      "R-HSA-5617472",
+      "R-HSA-9823739"
+    ],
+    "PIGL": [
+      "R-HSA-162710",
+      "R-HSA-163125"
+    ],
+    "PIK3R1": [
+      "R-HSA-109704",
+      "R-HSA-112399",
+      "R-HSA-114604",
+      "R-HSA-1227986",
+      "R-HSA-1236394",
+      "R-HSA-1250342",
+      "R-HSA-1266695",
+      "R-HSA-1433557",
+      "R-HSA-1483255",
+      "R-HSA-1660499",
+      "R-HSA-177929",
+      "R-HSA-180292",
+      "R-HSA-186763",
+      "R-HSA-186797",
+      "R-HSA-194138",
+      "R-HSA-1963642",
+      "R-HSA-198203",
+      "R-HSA-199418",
+      "R-HSA-201556",
+      "R-HSA-202424",
+      "R-HSA-202733",
+      "R-HSA-2029485",
+      "R-HSA-210993",
+      "R-HSA-2172127",
+      "R-HSA-2404192",
+      "R-HSA-2424491",
+      "R-HSA-2428924",
+      "R-HSA-2428928",
+      "R-HSA-2454202",
+      "R-HSA-2730905",
+      "R-HSA-373753",
+      "R-HSA-389356",
+      "R-HSA-389357",
+      "R-HSA-416476",
+      "R-HSA-430116",
+      "R-HSA-4420097",
+      "R-HSA-451927",
+      "R-HSA-512988",
+      "R-HSA-5654687",
+      "R-HSA-5654689",
+      "R-HSA-5654695",
+      "R-HSA-5654710",
+      "R-HSA-5654720",
+      "R-HSA-6785807",
+      "R-HSA-6811558",
+      "R-HSA-74751",
+      "R-HSA-74752",
+      "R-HSA-8851907",
+      "R-HSA-8853659",
+      "R-HSA-8939211",
+      "R-HSA-8980692",
+      "R-HSA-9006335",
+      "R-HSA-9009391",
+      "R-HSA-9013026",
+      "R-HSA-9013106",
+      "R-HSA-9013148",
+      "R-HSA-9013149",
+      "R-HSA-9013404",
+      "R-HSA-9013405",
+      "R-HSA-9013408",
+      "R-HSA-9013409",
+      "R-HSA-9013420",
+      "R-HSA-9013423",
+      "R-HSA-9013424",
+      "R-HSA-9027276",
+      "R-HSA-9028335",
+      "R-HSA-9034015",
+      "R-HSA-9035034",
+      "R-HSA-912526",
+      "R-HSA-912631",
+      "R-HSA-9603381",
+      "R-HSA-9607240",
+      "R-HSA-9680350",
+      "R-HSA-9696264",
+      "R-HSA-9696270",
+      "R-HSA-9696273",
+      "R-HSA-983695",
+      "R-HSA-9842663",
+      "R-HSA-9927354"
+    ],
+    "PIKFYVE": [
+      "R-HSA-1483255",
+      "R-HSA-1660514",
+      "R-HSA-1660516",
+      "R-HSA-1660517"
+    ],
+    "RAB27A": [
+      "R-HSA-264876",
+      "R-HSA-8873719",
+      "R-HSA-8876198",
+      "R-HSA-9824585"
+    ],
+    "SIX6": [],
+    "SLC38A8": [],
+    "SLC45A2": [
+      "R-HSA-5662702"
+    ],
+    "SLC4A11": [],
+    "SOX2": [
+      "R-HSA-201681",
+      "R-HSA-2892245",
+      "R-HSA-2892247",
+      "R-HSA-3769402",
+      "R-HSA-452723",
+      "R-HSA-6785807",
+      "R-HSA-8986944",
+      "R-HSA-9754189",
+      "R-HSA-9823739",
+      "R-HSA-9832991",
+      "R-HSA-9834899",
+      "R-HSA-9856649",
+      "R-HSA-9926550"
+    ],
+    "TACSTD2": [],
+    "TEAD1": [
+      "R-HSA-2032785",
+      "R-HSA-389948",
+      "R-HSA-8878159",
+      "R-HSA-8951671",
+      "R-HSA-9619665",
+      "R-HSA-9909648",
+      "R-HSA-9909649"
+    ],
+    "TGFBI": [
+      "R-HSA-977225"
+    ],
+    "TIMP3": [
+      "R-HSA-114608",
+      "R-HSA-76005"
+    ],
+    "TWIST2": [
+      "R-HSA-418990",
+      "R-HSA-8878166",
+      "R-HSA-9759476",
+      "R-HSA-9764265",
+      "R-HSA-9764274",
+      "R-HSA-9764560",
+      "R-HSA-9764725"
+    ],
+    "TYR": [
+      "R-HSA-5662702",
+      "R-HSA-9824585"
+    ],
+    "TYRP1": [
+      "R-HSA-5662702",
+      "R-HSA-9824585"
+    ],
+    "UBIAD1": [
+      "R-HSA-6806664"
+    ]
+  }
+}

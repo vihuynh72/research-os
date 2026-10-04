@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import AtlasApp from "@/components/atlas/AtlasApp";
 import { nodeName } from "@/components/atlas/format";
 import { parseState, type Query } from "@/components/atlas/urlState";
-import { loadAtlasData } from "@/lib/data/source";
+import { loadAtlasData, type DataNote } from "@/lib/data/source";
 
 type SearchParams = Promise<Query>;
 
@@ -26,7 +26,19 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
   if (!result.ok) return <DataMissing dir={result.dir} missing={result.missing} error={result.error} />;
 
   const { graph, relevance, sample, notes } = result.data;
+  logNotes(notes);
   return <AtlasApp graph={graph} relevance={relevance} sample={sample} notes={notes} initial={initial} />;
+}
+
+// What a developer should do about the data goes to the server log, once per message, instead of
+// onto the page that families read.
+const logged = new Set<string>();
+function logNotes(notes: DataNote[]) {
+  for (const note of notes) {
+    if (logged.has(note.detail)) continue;
+    logged.add(note.detail);
+    console.info(`[atlas data] ${note.detail}`);
+  }
 }
 
 function DataMissing({ dir, missing, error }: { dir: string; missing: string[]; error?: string }) {
@@ -38,7 +50,7 @@ function DataMissing({ dir, missing, error }: { dir: string; missing: string[]; 
       <div className="rounded-xl border border-line bg-surface p-5">
         <h2 className="font-semibold">Data not built yet</h2>
         <p className="mt-1 text-ink-2">
-          Run <code className="rounded bg-surface-2 px-1.5 py-0.5 text-[0.9em] text-ink">npm run data:sample &amp;&amp; npm run grade</code>, then reload.
+          Run <code className="rounded bg-surface-2 px-1.5 py-0.5 text-[0.9em] text-ink">npm run data:graph &amp;&amp; npm run grade</code>, then reload.
         </p>
         {missing.length > 0 && (
           <p className="mt-3 text-sm text-ink-2">

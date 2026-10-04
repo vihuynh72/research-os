@@ -1,6 +1,6 @@
-// Validates schema.json, its embedded examples, and any graph files passed as arguments
-// (default: public/graph.json and public/graph.sample.json, each when it exists). JSON Schema
-// cannot check cross-references, so unique ids and edge endpoints are checked here too.
+// Validates schema.json, its embedded examples, and the graph files passed as arguments (default:
+// public/graph.json, which must exist: it is the atlas). JSON Schema cannot check cross-references,
+// so unique ids and edge endpoints are checked here too.
 import { existsSync, readFileSync } from "node:fs";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
@@ -37,16 +37,13 @@ function integrityErrors(doc) {
 }
 
 const targets = (schema.examples ?? []).map((doc, i) => [`schema.json examples[${i}]`, doc]);
-const files = process.argv.length > 2 ? process.argv.slice(2) : ["public/graph.json", "public/graph.sample.json"];
-for (const file of files) {
-  if (existsSync(file)) targets.push([file, readJson(file)]);
-  else if (process.argv.length > 2) targets.push([file, null]);
-}
+const files = process.argv.length > 2 ? process.argv.slice(2) : ["public/graph.json"];
+for (const file of files) targets.push([file, existsSync(file) ? readJson(file) : null]);
 
 let failed = false;
 for (const [name, doc] of targets) {
   let errors;
-  if (doc === null) errors = ["file not found"];
+  if (doc === null) errors = ["file not found (npm run data:graph writes public/graph.json)"];
   else if (!validate(doc)) errors = validate.errors.map((e) => `${e.instancePath || "/"} ${e.message}`);
   else errors = integrityErrors(doc);
 

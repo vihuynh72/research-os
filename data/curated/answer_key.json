@@ -1,27 +1,194 @@
 {
   "version": 1,
-  "rated_by": "literature",
+  "rated_by": "literature, needs mentor review",
   "rated_on": "2026-10-03",
-  "how_to_update": "A mentor or clinician can change any 'expected' value (high, medium, low) and set rated_by to their name. lib/grading/answer-key.test.ts then holds the engine to their ratings.",
+  "how_to_update": "A mentor or clinician can change any 'expected' value (high, medium, low) and set rated_by to their name and rated_on to the date. lib/grading/answer-key.test.ts then holds the engine to their ratings. 'source' names the reference that supports the rating; 'more_sources' lists any other reference the 'why' relies on.",
   "scale": {
-    "high": "Same kind of broken protein in the same place; a therapy or study design could plausibly transfer.",
-    "medium": "Same broad kind of protein but a different place or job; some shared research questions.",
-    "low": "Same disease family only (lipofuscin storage), different kind of protein; therapies do not transfer directly."
+    "high": "The same molecular machinery is broken: one protein through the same mechanism, or the parts of one enzyme or one complex. Findings, study designs or therapies could plausibly transfer.",
+    "medium": "Related but different biology: one protein broken in a different way (dominant versus biallelic, gain versus loss of function), or different steps of one specific pathway. Some research questions are shared.",
+    "low": "No shared molecular machinery beyond broad processes; findings and therapies would not transfer."
   },
   "sources": {
-    "zhang2025": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11808193/",
-    "nelvagal2022": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9566914/"
+    "tsuji2013": "https://pubmed.ncbi.nlm.nih.gov/23370522/",
+    "xiao2022": "https://pubmed.ncbi.nlm.nih.gov/35420740/",
+    "menasche2003": "https://pubmed.ncbi.nlm.nih.gov/12897212/",
+    "nagashima2002": "https://pubmed.ncbi.nlm.nih.gov/12062444/",
+    "hughes2023": "https://pubmed.ncbi.nlm.nih.gov/20301446/",
+    "gronskov2007": "https://pubmed.ncbi.nlm.nih.gov/17980020/",
+    "smith2000": "https://pubmed.ncbi.nlm.nih.gov/10851256/",
+    "george2016": "https://pubmed.ncbi.nlm.nih.gov/27889061/",
+    "canalis2014": "https://pubmed.ncbi.nlm.nih.gov/25491639/",
+    "kamath2012": "https://pubmed.ncbi.nlm.nih.gov/22209762/",
+    "demirbas2018": "https://pubmed.ncbi.nlm.nih.gov/29409891/",
+    "rubiogozalbo2021": "https://pubmed.ncbi.nlm.nih.gov/32807972/",
+    "sarangarajan2001": "https://pubmed.ncbi.nlm.nih.gov/11775055/",
+    "solomon2012": "https://pubmed.ncbi.nlm.nih.gov/22360545/",
+    "mortier2023": "https://pubmed.ncbi.nlm.nih.gov/20301479/",
+    "sly1983": "https://pubmed.ncbi.nlm.nih.gov/6405388/",
+    "dyment2013": "https://pubmed.ncbi.nlm.nih.gov/23810382/",
+    "huang2012": "https://pubmed.ncbi.nlm.nih.gov/22986007/",
+    "kammalorger2016": "https://pubmed.ncbi.nlm.nih.gov/26828927/",
+    "reactome_pancreatic_duct": "https://reactome.org/content/detail/R-HSA-9925563",
+    "reactome_bcr": "https://reactome.org/content/detail/R-HSA-983695",
+    "reactome_csds": "https://reactome.org/content/detail/R-HSA-2024101",
+    "williamson2006": "https://pubmed.ncbi.nlm.nih.gov/16543359/",
+    "reactome_mitf_ecm": "https://reactome.org/content/detail/R-HSA-9926550",
+    "reactome_mitf_regulation": "https://reactome.org/content/detail/R-HSA-9856649"
   },
   "biology": [
-    { "a": "MONDO:0009744", "b": "MONDO:0008769", "names": "CLN1-CLN2", "expected": "high", "why": "Both are soluble lysosomal enzymes (PPT1, TPP1); enzyme replacement and gene therapy can cross-correct.", "source": "nelvagal2022" },
-    { "a": "MONDO:0008767", "b": "MONDO:0012588", "names": "CLN3-CLN7", "expected": "high", "why": "Both are transmembrane proteins of the lysosome and endosome that move molecules or ions across its membrane.", "source": "zhang2025" },
-    { "a": "MONDO:0008767", "b": "MONDO:0011144", "names": "CLN3-CLN6", "expected": "medium", "why": "Both transmembrane proteins, but CLN6 works in the ER and CLN3 at the lysosome.", "source": "zhang2025" },
-    { "a": "MONDO:0011144", "b": "MONDO:0012588", "names": "CLN6-CLN7", "expected": "medium", "why": "Both transmembrane proteins, but CLN6 works in the ER and CLN7 at the lysosome.", "source": "zhang2025" },
-    { "a": "MONDO:0009744", "b": "MONDO:0008767", "names": "CLN1-CLN3", "expected": "low", "why": "Soluble enzyme versus membrane protein.", "source": "zhang2025" },
-    { "a": "MONDO:0009744", "b": "MONDO:0011144", "names": "CLN1-CLN6", "expected": "low", "why": "Soluble enzyme versus ER membrane protein.", "source": "zhang2025" },
-    { "a": "MONDO:0009744", "b": "MONDO:0012588", "names": "CLN1-CLN7", "expected": "low", "why": "Soluble enzyme versus membrane protein.", "source": "zhang2025" },
-    { "a": "MONDO:0008769", "b": "MONDO:0008767", "names": "CLN2-CLN3", "expected": "low", "why": "Soluble enzyme versus membrane protein.", "source": "zhang2025" },
-    { "a": "MONDO:0008769", "b": "MONDO:0011144", "names": "CLN2-CLN6", "expected": "low", "why": "Soluble enzyme versus ER membrane protein.", "source": "zhang2025" },
-    { "a": "MONDO:0008769", "b": "MONDO:0012588", "names": "CLN2-CLN7", "expected": "low", "why": "Soluble enzyme versus membrane protein.", "source": "zhang2025" }
+    {
+      "a": "MONDO:0010100",
+      "b": "MONDO:0010006",
+      "names": "Tay-Sachs-Sandhoff",
+      "expected": "high",
+      "why": "Both are GM2 gangliosidoses: HEXA and HEXB encode the alpha and beta subunits of beta-hexosaminidase A (an alpha-beta heterodimer), so both lose the enzyme that breaks down GM2 ganglioside; Sandhoff disease also loses beta-hexosaminidase B.",
+      "source": "tsuji2013",
+      "more_sources": [
+        "xiao2022"
+      ]
+    },
+    {
+      "a": "MONDO:0008962",
+      "b": "MONDO:0012220",
+      "names": "Griscelli 1-Griscelli 3",
+      "expected": "high",
+      "why": "Myosin Va (GS1) and melanophilin (GS3) are parts of one complex: melanophilin bridges Rab27a on melanosomes and myosin Va on actin filaments during melanosome transport. A melanophilin defect and a deletion of the tissue-restricted F-exon of MYO5A give the identical hypopigmentation-only form of Griscelli syndrome; GS1 adds a neurological disorder.",
+      "source": "menasche2003",
+      "more_sources": [
+        "nagashima2002"
+      ]
+    },
+    {
+      "a": "MONDO:0009265",
+      "b": "MONDO:0009266",
+      "names": "Gaucher 1-Gaucher 2",
+      "expected": "high",
+      "why": "One disease continuum: both are a deficiency of glucocerebrosidase from biallelic GBA1 variants; type 2 adds early, rapidly progressive disease of the central nervous system.",
+      "source": "hughes2023"
+    },
+    {
+      "a": "MONDO:0008745",
+      "b": "MONDO:0011749",
+      "names": "OCA1A-OCA1B",
+      "expected": "high",
+      "why": "Both are tyrosinase (TYR) deficiencies of melanin synthesis: OCA1A with a complete lack of melanin throughout life, OCA1B with some pigment that accumulates over time.",
+      "source": "gronskov2007"
+    },
+    {
+      "a": "MONDO:0007077",
+      "b": "MONDO:0015014",
+      "names": "Tietz-COMMAD",
+      "expected": "medium",
+      "why": "Same gene, different genetic mechanism: Tietz syndrome is fully penetrant autosomal dominant, from a monoallelic missense change in the basic region of MITF; COMMAD comes from biallelic MITF alleles and adds coloboma, microphthalmia and osteopetrosis, beyond what monoallelic MITF mutations cause.",
+      "source": "george2016",
+      "more_sources": [
+        "smith2000"
+      ]
+    },
+    {
+      "a": "MONDO:0007057",
+      "b": "MONDO:0012439",
+      "names": "Hajdu-Cheney-Alagille 2",
+      "expected": "medium",
+      "why": "Same gene, opposite effect: Hajdu-Cheney syndrome (acroosteolysis dominant type) comes from truncating variants in the last exon of NOTCH2 that give a stable protein with enhanced NOTCH2 signalling (gain of function); the NOTCH2 variants of Alagille syndrome decrease Notch signalling.",
+      "source": "canalis2014",
+      "more_sources": [
+        "kamath2012"
+      ]
+    },
+    {
+      "a": "MONDO:0009255",
+      "b": "MONDO:0009258",
+      "names": "GALK deficiency-classic galactosemia",
+      "expected": "medium",
+      "why": "Neighbouring steps of one pathway: galactokinase (GALK1) and galactose-1-phosphate uridylyltransferase (GALT) are consecutive enzymes of the Leloir pathway. GALT deficiency is life-threatening in newborns; GALK deficiency mainly causes cataract. A lactose-restricted diet is used for both.",
+      "source": "demirbas2018",
+      "more_sources": [
+        "rubiogozalbo2021"
+      ]
+    },
+    {
+      "a": "MONDO:0008745",
+      "b": "MONDO:0008747",
+      "names": "OCA1A-OCA3",
+      "expected": "medium",
+      "why": "Different steps of one pathway: both are disorders of melanin biosynthesis, but OCA1A lacks tyrosinase while OCA3 lacks tyrosinase-related protein 1, which takes part in eumelanin synthesis and helps keep tyrosinase stable.",
+      "source": "gronskov2007",
+      "more_sources": [
+        "sarangarajan2001"
+      ]
+    },
+    {
+      "a": "MONDO:0007097",
+      "b": "MONDO:0009258",
+      "names": "Finnish amyloidosis-classic galactosemia",
+      "expected": "low",
+      "why": "Unrelated: gelsolin variants whose cleaved fragments deposit as amyloid, versus a missing enzyme of galactose metabolism.",
+      "source": "solomon2012",
+      "more_sources": [
+        "demirbas2018"
+      ]
+    },
+    {
+      "a": "MONDO:0007160",
+      "b": "MONDO:0009818",
+      "names": "Stickler 1-osteopetrosis 3",
+      "expected": "low",
+      "why": "Unrelated machinery: type II collagen of cartilage and vitreous (COL2A1) versus carbonic anhydrase II, which bone resorption and urinary acidification need (CA2). Reactome places both genes only in a broad developmental pathway of pancreatic duct cells.",
+      "source": "sly1983",
+      "more_sources": [
+        "mortier2023",
+        "reactome_pancreatic_duct"
+      ]
+    },
+    {
+      "a": "MONDO:0010026",
+      "b": "MONDO:0007298",
+      "names": "SHORT-SCA29",
+      "expected": "low",
+      "why": "Unrelated machinery: the regulatory subunit of PI3 kinase (PIK3R1), whose loss lowers PI3K-AKT-mTOR signalling, versus the inositol 1,4,5-trisphosphate receptor type 1 (ITPR1) behind a congenital nonprogressive ataxia. Reactome places both only in broad signalling pathways.",
+      "source": "dyment2013",
+      "more_sources": [
+        "huang2012",
+        "reactome_bcr"
+      ]
+    },
+    {
+      "a": "MONDO:0010100",
+      "b": "MONDO:0012401",
+      "names": "Tay-Sachs-congenital stromal corneal dystrophy",
+      "expected": "low",
+      "why": "Unrelated machinery: a subunit of a lysosomal enzyme (HEXA) versus a truncated decorin that can no longer organise collagen in the corneal stroma (DCN). Reactome lists decorin in chondroitin and dermatan sulfate degradation as a substrate proteoglycan, not as an enzyme.",
+      "source": "kammalorger2016",
+      "more_sources": [
+        "tsuji2013",
+        "reactome_csds"
+      ]
+    },
+    {
+      "a": "MONDO:0010006",
+      "b": "MONDO:0012401",
+      "names": "Sandhoff-congenital stromal corneal dystrophy",
+      "expected": "low",
+      "why": "Unrelated machinery: the beta subunit of beta-hexosaminidase A and B (HEXB), whose loss stops the breakdown of GM2 ganglioside in lysosomes, versus a truncated decorin that can no longer organise collagen in the corneal stroma (DCN). Reactome lists decorin in chondroitin and dermatan sulfate degradation as a substrate proteoglycan, not as an enzyme.",
+      "source": "kammalorger2016",
+      "more_sources": [
+        "tsuji2013",
+        "reactome_csds"
+      ]
+    },
+    {
+      "a": "MONDO:0007077",
+      "b": "MONDO:0008799",
+      "names": "Tietz-AEG syndrome",
+      "expected": "low",
+      "why": "Different machinery in different tissues: Tietz syndrome comes from a monoallelic MITF change that disturbs melanocytes (hypopigmentation and deafness); anophthalmia-esophageal-genital syndrome comes from heterozygous loss of the SOX2 transcription factor in the developing eye and foregut. Reactome links the two genes only as a regulator and its target: SOX2 is a direct MITF-M target in melanoma cells, and SOX2 represses MITF-M in neural crest precursors.",
+      "source": "williamson2006",
+      "more_sources": [
+        "smith2000",
+        "reactome_mitf_ecm",
+        "reactome_mitf_regulation"
+      ]
+    }
   ]
 }

@@ -1,6 +1,6 @@
 // The eleven dimensions of a disease pair, scored from the graph alone. Every dimension is
 // derived from node types and edge endpoints, never from relation names, so the same code
-// grades the 5-disease seed and the full atlas. "Adjacent" means any edge in either direction
+// grades any graph in the schema format. "Adjacent" means any edge in either direction
 // that is not contradicted; contradicted edges never score, they only raise contradicted_evidence.
 import type { AtlasGraph, EdgeKind, GraphEdge, GraphNode, NodeType } from "../graph/types.ts";
 import { shortLabel } from "../graph/labels.ts";
@@ -101,8 +101,11 @@ export interface GradingContext {
   links: Map<string, Link[]>;
   diseases: string[]; // sorted ids
   profiles: Map<string, DiseaseProfile>;
+  geneReach: Map<string, number>; // gene -> diseases linked to it
   mechanismReach: Map<string, number>; // mechanism -> diseases that reach it
+  mechanismDiseases: number; // diseases with at least one mechanism on record: the N of mechanism specificity
   linkedDiseases: Record<CollaborationDimension, Map<string, number>>; // item -> diseases that reach it
+  collaborationDiseases: Record<CollaborationDimension, number>; // diseases with at least one such item: the N of its specificity
   missingTerms: string[]; // phenotype ids absent from the reference
   danglingEdges: number; // edges whose endpoints are not in the graph
 }
@@ -131,8 +134,11 @@ export function buildContext(graph: AtlasGraph, reference: HpoReference | null):
     links,
     diseases: [...new Set(graph.nodes.filter((node) => node.type === "Disease").map((node) => node.id))].sort(byText),
     profiles: new Map(),
+    geneReach: new Map(),
     mechanismReach: new Map(),
+    mechanismDiseases: 0,
     linkedDiseases: emptyRecord(() => new Map<string, number>()),
+    collaborationDiseases: emptyRecord(() => 0),
     missingTerms: [],
     danglingEdges,
   };
@@ -141,10 +147,15 @@ export function buildContext(graph: AtlasGraph, reference: HpoReference | null):
   ctx.missingTerms = [...missing].sort(byText);
 
   for (const profile of ctx.profiles.values()) {
-    for (const id of cleanIds(profile.mechanism)) ctx.mechanismReach.set(id, (ctx.mechanismReach.get(id) ?? 0) + 1);
+    for (const id of cleanIds(profile.gene)) ctx.geneReach.set(id, (ctx.geneReach.get(id) ?? 0) + 1);
+    const mechanisms = cleanIds(profile.mechanism);
+    if (mechanisms.length) ctx.mechanismDiseases += 1;
+    for (const id of mechanisms) ctx.mechanismReach.set(id, (ctx.mechanismReach.get(id) ?? 0) + 1);
     for (const dimension of COLLABORATION_DIMENSIONS) {
       const counts = ctx.linkedDiseases[dimension];
-      for (const id of cleanIds(profile.collaboration[dimension])) counts.set(id, (counts.get(id) ?? 0) + 1);
+      const items = cleanIds(profile.collaboration[dimension]);
+      if (items.length) ctx.collaborationDiseases[dimension] += 1;
+      for (const id of items) counts.set(id, (counts.get(id) ?? 0) + 1);
     }
   }
   return ctx;
@@ -323,10 +334,21 @@ export function cleanIds(map: ReachMap): string[] {
   return ids.sort(byText);
 }
 
+// An item linked to more than this many of the atlas's diseases is an umbrella resource.
+export function umbrellaCutoff(diseases: number): number {
+  return Math.max(UMBRELLA_MIN, UMBRELLA_SHARE * diseases);
+}
+
 export function isUmbrella(ctx: GradingContext, dimension: CollaborationDimension, id: string): boolean {
-  const n = ctx.diseases.length;
-  if (n < UMBRELLA_MIN) return false;
-  return (ctx.linkedDiseases[dimension].get(id) ?? 0) / n >= UMBRELLA_SHARE;
+  return (ctx.linkedDiseases[dimension].get(id) ?? 0) > umbrellaCutoff(ctx.diseases.length);
+}
+
+// How well a shared group, paper, study, grant, researcher or asset tells diseases apart, as for
+// mechanisms: n = diseases linked to the item, N = diseases with any item of that kind on record (a
+// disease the search found nothing for says nothing about how common an item is). Listed for two
+// diseases it weighs 1; listed for all of them, 0.
+export function collaborationWeight(ctx: GradingContext, dimension: CollaborationDimension, id: string): number {
+  return atlasSpecificity(ctx.linkedDiseases[dimension].get(id) ?? 0, ctx.collaborationDiseases[dimension]);
 }
 
 // ---- shared items, support and disputes -------------------------------------------------------
@@ -368,8 +390,8 @@ function sharedSet(
   return { items, observed };
 }
 
-// Phenotype labels come from the HPO reference when it has the term: the seed's own labels are
-// known to be misaligned with their ids.
+// Phenotype labels come from the HPO reference when it has the term: ids are the key, and a source
+// can pair ids with the wrong names (Monarch export lists did, for 295 of 303 terms).
 function itemLabel(ctx: GradingContext, id: string): string {
   const node = ctx.nodes.get(id);
   const term = ctx.reference?.terms[id];
@@ -422,18 +444,21 @@ export function sentence(text: string): string {
   return text ? `${text[0].toUpperCase()}${text.slice(1)}` : text;
 }
 
-// Lower-cases the first letter for running text, but leaves acronyms ("ER", "TGF-beta") alone.
+// Lower-cases the first letter for running text, but leaves acronyms ("ER", "TGF-beta") alone, and
+// names in title case ("Developmental Lineage of Pancreatic Ductal Cells", as Reactome writes many
+// pathways), which would read half-changed with only the first capital lowered.
 export function lowerFirst(text: string): string {
-  return /^[A-Z][a-z]/.test(text) ? `${text[0].toLowerCase()}${text.slice(1)}` : text;
+  if (!/^[A-Z][a-z]/.test(text) || /\s[A-Z][a-z]/.test(text)) return text;
+  return `${text[0].toLowerCase()}${text.slice(1)}`;
 }
 
 function withArticle(text: string): string {
   return `${/^[aeiou]/i.test(text) ? "an" : "a"} ${text}`;
 }
 
-// A mechanism label in running text after "both": "Soluble lysosomal enzyme missing" -> "both are
-// missing a soluble lysosomal enzyme"; "Transport across the lysosomal membrane" -> "both involve
-// transport across the lysosomal membrane"; "Lysosomal membrane protein" -> "both involve a
+// A mechanism label in running text after "both": "Melanin biosynthesis" -> "both involve melanin
+// biosynthesis"; a label ending in "missing" ("Membrane protein missing") -> "both are missing a
+// membrane protein"; one naming a kind of protein ("Lysosomal membrane protein") -> "both involve a
 // lysosomal membrane protein". Graph-agnostic: it reads only the label.
 export function mechanismPhrase(label: string): string {
   const text = label.trim();
@@ -539,14 +564,70 @@ function geneDimension(ctx: GradingContext, A: DiseaseProfile, B: DiseaseProfile
   });
 }
 
+// Genes both diseases reach by a path no source disputes.
+function sharedGeneIds(A: DiseaseProfile, B: DiseaseProfile): Set<string> {
+  return new Set(cleanIds(A.gene).filter((id) => B.gene.get(id)?.clean));
+}
+
 // ---- biology: variant type ---------------------------------------------------------------------
 
-const MIN_CLASSIFIED = 2;
+export const MIN_CLASSIFIED = 2;
+export const VARIANT_STATUS = { match: 0.75, partial: 0.4 };
 // "Mostly": at least two of every three classified variants. Compared on exact fractions, so 2 of 3
 // counts (rounded to 0.6667 it would miss a 0.67 cutoff).
 export const MOSTLY_LOF = 2 / 3;
 export const RARELY_LOF = 0.2;
 const EPSILON = 1e-9;
+
+// The variants that can stand for the disease itself: those linked to the disease, and those of a
+// gene no other disease here has. A gene with several diseases here (the pair's shared gene, or the
+// gene of a whole family such as COL2A1) has its variants recorded for the gene: they cannot say
+// which of its diseases they come from, so comparing them would compare the gene, not the disease.
+// For a pair that shares a gene this also keeps one list from being compared with itself.
+interface OwnVariants {
+  reach: ReachMap;
+  geneLevel: string[]; // the disease's genes whose variants are set aside, sorted
+}
+
+function geneHasOneDisease(ctx: GradingContext, id: string): boolean {
+  return (ctx.geneReach.get(id) ?? 0) <= 1;
+}
+
+function ownVariants(ctx: GradingContext, profile: DiseaseProfile): OwnVariants {
+  const genes: ReachMap = new Map([...profile.gene].filter(([id]) => geneHasOneDisease(ctx, id)));
+  return {
+    reach: reachThrough(ctx, genes, "Variant", reachDirect(ctx, profile.id, "Variant")),
+    geneLevel: cleanIds(profile.gene).filter((id) => !geneHasOneDisease(ctx, id)),
+  };
+}
+
+// Whose variants a side compares: its gene's when they all come through one gene, else the disease's.
+function variantOwner(ctx: GradingContext, profile: DiseaseProfile, reach: ReachMap): string {
+  const vias = new Set<string>();
+  let direct = false;
+  for (const id of cleanIds(reach)) {
+    const path = reach.get(id);
+    if (path?.direct) direct = true;
+    for (const via of path?.vias ?? []) vias.add(via);
+  }
+  return !direct && vias.size === 1 ? itemLabel(ctx, [...vias][0]) : diseaseName(ctx, profile.id);
+}
+
+// "ClinVar records" when every compared variant comes from one source, else "variants on record".
+function variantNoun(ctx: GradingContext, ids: string[]): string {
+  const sources = new Set(ids.map((id) => ctx.nodes.get(id)?.source ?? ""));
+  const [source] = [...sources];
+  return sources.size === 1 && source ? `${source} records` : "variants on record";
+}
+
+// "its gene COL2A1, which has 12 diseases here" / "MITF (2 diseases here) and TYR (2 diseases here)".
+function geneCountText(ctx: GradingContext, ids: string[], own: boolean): string {
+  const parts = ids
+    .map((id) => ({ label: itemLabel(ctx, id), n: ctx.geneReach.get(id) ?? 0 }))
+    .sort((x, y) => byText(x.label, y.label));
+  if (own && parts.length === 1) return `its gene ${parts[0].label}, which has ${parts[0].n} diseases here`;
+  return `${own ? "its genes " : ""}${joinList(parts.map((p) => `${p.label} (${p.n} diseases here)`), 4)}`;
+}
 
 function variantCounts(ctx: GradingContext, ids: string[]): VariantCounts {
   const counts: VariantCounts = { lof: 0, missense: 0, other: 0, unknown: 0 };
@@ -570,8 +651,15 @@ const LOF_WORDS: Record<LofKind, string> = {
 };
 
 function variantDimension(ctx: GradingContext, A: DiseaseProfile, B: DiseaseProfile): DimensionResult {
-  const a = cleanIds(A.variant);
-  const b = cleanIds(B.variant);
+  const genes = sharedGeneIds(A, B);
+  const ownA = ownVariants(ctx, A);
+  const ownB = ownVariants(ctx, B);
+  const ra = ownA.reach;
+  const rb = ownB.reach;
+  const allA = cleanIds(A.variant);
+  const allB = cleanIds(B.variant);
+  const a = cleanIds(ra);
+  const b = cleanIds(rb);
   const ca = variantCounts(ctx, a);
   const cb = variantCounts(ctx, b);
   const classifiedA = ca.lof + ca.missense + ca.other;
@@ -589,28 +677,60 @@ function variantDimension(ctx: GradingContext, A: DiseaseProfile, B: DiseaseProf
     lof_fraction_a: classifiedA ? round(ca.lof / classifiedA) : null,
     lof_fraction_b: classifiedB ? round(cb.lof / classifiedB) : null,
   };
-  withDisputes(flags, details, disputes(A.variant, B.variant));
+  // Variants left out because their gene has several diseases here: counted, so a reader sees why a
+  // pair with variants on record has none to compare.
+  const compared = new Set([...a, ...b]);
+  const setAside = [...new Set([...allA, ...allB])].filter((id) => !compared.has(id)).length;
+  if (setAside) details.gene_level_variants = setAside;
+  withDisputes(flags, details, disputes(ra, rb));
   // The variant type is read from the notation, so say so whenever a type was read.
   if (classifiedA || classifiedB) flags.push("derived_from_variant_notation");
-  const shared = sharedSet(ctx, A.variant, B.variant, () => 1);
-  const coverage = { a: a.length, b: b.length };
+  const shared = sharedSet(ctx, ra, rb, () => 1);
+  // Coverage counts every variant on record for the disease, set aside or not.
+  const coverage = { a: allA.length, b: allB.length };
   const nameA = diseaseName(ctx, A.id);
   const nameB = diseaseName(ctx, B.id);
 
   if (classifiedA < MIN_CLASSIFIED || classifiedB < MIN_CLASSIFIED) {
     flags.push("variant_effect_unknown");
-    if (!a.length || !b.length) flags.push("no_data");
-    const summary =
-      !a.length || !b.length
-        ? missingText(ctx, A.id, B.id, a.length, b.length, "variants")
-        : `Too few variants with a readable type to compare (${nameA}: ${classifiedA}, ${nameB}: ${classifiedB}; ${MIN_CLASSIFIED} needed each).`;
+    const missing = !allA.length || !allB.length;
+    if (missing) flags.push("no_data");
+    const tally = `${nameA}: ${classifiedA}, ${nameB}: ${classifiedB}; ${MIN_CLASSIFIED} needed each`;
+    const geneLevel = [...new Set([...ownA.geneLevel, ...ownB.geneLevel])].sort(byText);
+    const onlyShared = geneLevel.every((id) => genes.has(id));
+    // A side whose every variant is set aside has nothing of its own to compare.
+    const noneOwn = [
+      { name: nameA, own: a.length, genes: ownA.geneLevel },
+      { name: nameB, own: b.length, genes: ownB.geneLevel },
+    ].filter((side) => !side.own);
+    let summary: string;
+    if (missing) summary = missingText(ctx, A.id, B.id, allA.length, allB.length, "variants");
+    else if (!setAside) summary = `Too few variants with a readable type to compare (${tally}).`;
+    else if (noneOwn.length === 2 && onlyShared) {
+      summary = `The variants on record are listed for the shared gene ${joinList(labelsOf(ctx, geneLevel), 2)}, not for either disease, so variant type cannot tell the two apart.`;
+    } else if (noneOwn.length === 2) {
+      summary = `Variant type cannot be compared: the variants on record are listed for ${geneCountText(ctx, geneLevel, false)}, not for either disease itself.`;
+    } else if (noneOwn.length === 1) {
+      const [side] = noneOwn;
+      summary = `Variant type cannot be compared: the variants on record for ${side.name} are listed for ${geneCountText(ctx, side.genes, true)}, not for the disease itself.`;
+    } else {
+      const apart = onlyShared
+        ? `the variants of the shared gene ${joinList(labelsOf(ctx, geneLevel), 2)}`
+        : `the variants listed for ${geneCountText(ctx, geneLevel, false)}`;
+      summary = `Apart from ${apart}, too few with a readable type to compare (${tally}).`;
+    }
     return result("variant", { score: 0, status: "unknown", coverage, shared: [], support: null, summary, flags, details });
   }
 
   const score = round(1 - Math.abs(ca.lof / classifiedA - cb.lof / classifiedB));
-  const status: DimensionStatus = score >= 0.75 ? "match" : score >= 0.4 ? "partial" : "none";
   const ka = lofKind(ca.lof, classifiedA);
   const kb = lofKind(cb.lof, classifiedB);
+  // The same kind of lesion on both sides (mostly loss-of-function, or mostly missense) is a match
+  // even when the shares differ: with three variants a side, one variant moves the share by a
+  // third, so 2 of 3 against 3 of 3 is the same answer read from a small sample.
+  const sameKind = ka === kb && ka !== "mixed";
+  const status: DimensionStatus =
+    score >= VARIANT_STATUS.match || sameKind ? "match" : score >= VARIANT_STATUS.partial ? "partial" : "none";
   if ((ka === "mostly_lof" && kb === "mostly_not_lof") || (kb === "mostly_lof" && ka === "mostly_not_lof")) {
     flags.push("variant_type_conflict");
   }
@@ -619,17 +739,20 @@ function variantDimension(ctx: GradingContext, A: DiseaseProfile, B: DiseaseProf
   // The comparison rests on parsed notation, so it is inferred even when the variants are curated.
   const support: Support | null = score > 0 ? "inferred" : null;
   if (shared.items.length && support === "inferred") flags.push("inferred_only");
-  const tally = `${nameA} ${ca.lof} of ${classifiedA} loss-of-function, ${nameB} ${cb.lof} of ${classifiedB}`;
+  // Name what was compared: the records of a gene (its only disease here) or of the disease itself.
+  const ownerA = variantOwner(ctx, A, ra);
+  const ownerB = variantOwner(ctx, B, rb);
+  const noun = variantNoun(ctx, [...a, ...b]);
   const summary =
     ka === kb
-      ? `Both ${LOF_WORDS[ka]} (${tally}).`
-      : `${nameA} ${LOF_WORDS[ka]} (${ca.lof} of ${classifiedA} loss-of-function), ${nameB} ${LOF_WORDS[kb]} (${cb.lof} of ${classifiedB}).`;
+      ? `Both ${LOF_WORDS[ka]} (${noun}: ${ownerA} ${ca.lof} of ${classifiedA} loss-of-function, ${ownerB} ${cb.lof} of ${classifiedB}).`
+      : `${sentence(noun)}: ${ownerA} ${LOF_WORDS[ka]} (${ca.lof} of ${classifiedA} loss-of-function), ${ownerB} ${LOF_WORDS[kb]} (${cb.lof} of ${classifiedB}).`;
   return result("variant", { score, status, coverage, shared: shared.items, support, summary, flags, details });
 }
 
 // ---- biology: mechanism ------------------------------------------------------------------------
 
-const HUMAN_GENES = 20000; // protein-coding genes: a pathway this big says nothing specific
+export const HUMAN_GENES = 20000; // protein-coding genes: a pathway this big says nothing specific
 
 // Big pathways say little: a mechanism node that records its gene count weighs less.
 function sizeWeight(node: GraphNode | undefined): number {
@@ -650,11 +773,15 @@ export interface MechanismWeight {
   weight: number; // max(MECHANISM_FLOOR, specificity) * size weight: what the pair's score uses
   floored: boolean; // at the floor: a process most diseases here share
   n: number; // diseases in the atlas that reach it
-  N: number; // diseases in the atlas
+  N: number; // diseases in the atlas with any mechanism on record
 }
 
+// N counts only the diseases that have a mechanism on record, as HPO's information content counts
+// only annotated diseases. A disease with none recorded says nothing about how common a mechanism
+// is; counting it would make a pathway look more specific with every disease whose gene no pathway
+// database lists.
 export function mechanismWeight(ctx: GradingContext, id: string): MechanismWeight {
-  const N = ctx.diseases.length;
+  const N = ctx.mechanismDiseases;
   const n = ctx.mechanismReach.get(id) ?? 0;
   const specificity = atlasSpecificity(n, N);
   return {
@@ -665,19 +792,24 @@ export function mechanismWeight(ctx: GradingContext, id: string): MechanismWeigh
   };
 }
 
-function reachText(n: number, N: number): string {
-  return n === N ? `all ${N} diseases here` : `${n} of ${N} diseases here`;
+// "2 of 5 diseases here". When some diseases have no mechanism on record, N counts only those that
+// do, and the words say so.
+export function reachText(n: number, N: number, atlas: number): string {
+  const all = N === 2 ? "both" : `all ${N}`;
+  if (N === atlas) return n === N ? `${all} diseases here` : `${n} of ${N} diseases here`;
+  return n === N ? `${all} diseases with a mechanism on record` : `${n} of the ${N} diseases with a mechanism on record`;
 }
 
 // The pair's mechanism score is the weight of the most specific mechanism both reach (Resnik's
-// "most informative common ancestor"), not an overlap ratio: two enzymes with different substrates
-// still share "soluble lysosomal enzyme", which is what decides whether a therapy can transfer.
+// "most informative common ancestor"), not an overlap ratio: a gene in many pathways would otherwise
+// dilute the one specific pathway it shares with a neighbour.
 function mechanismDimension(ctx: GradingContext, A: DiseaseProfile, B: DiseaseProfile): DimensionResult {
   const a = cleanIds(A.mechanism);
   const b = cleanIds(B.mechanism);
   const flags: Flag[] = [];
-  const N = ctx.diseases.length;
-  const details: Details = { most_specific: null, n: null, N };
+  const N = ctx.mechanismDiseases;
+  const atlas = ctx.diseases.length;
+  const details: Details = { most_specific: null, n: null, N, atlas };
   withDisputes(flags, details, disputes(A.mechanism, B.mechanism));
   const coverage = { a: a.length, b: b.length };
   if (!a.length || !b.length) {
@@ -691,28 +823,94 @@ function mechanismDimension(ctx: GradingContext, A: DiseaseProfile, B: DiseasePr
     return result("mechanism", { score: 0, status: "none", coverage, shared: [], support: null, summary, flags, details });
   }
 
-  const best = shared.items[0];
+  // A mechanism that one disease reaches only through a gene both share is shared because the gene
+  // is: the same fact, not a second line of evidence. Such mechanisms are listed, and the score
+  // comes from the others when there are any.
+  const genes = sharedGeneIds(A, B);
+  const throughGenes = (id: string): string[] | null => {
+    for (const side of [A, B]) {
+      const reach = side.mechanism.get(id);
+      if (reach && !reach.direct && reach.vias.size && [...reach.vias].every((via) => genes.has(via))) return [...reach.vias];
+    }
+    return null;
+  };
+  const independent = genes.size ? shared.items.filter((item) => !throughGenes(item.id)) : shared.items;
+
+  // Every shared mechanism comes with the shared gene: no line of its own. The pathways of one gene
+  // cannot say whether its two diseases disrupt them the same way (the brief's "same gene, different
+  // mechanisms"), so the line is unknown and scores 0; the mechanisms stay listed for the reader.
+  if (!independent.length) {
+    const best = shared.items[0];
+    const info = mechanismWeight(ctx, best.id);
+    details.most_specific = best.id;
+    details.n = info.n;
+    details.through_shared_gene = true;
+    const geneNames = joinList(labelsOf(ctx, throughGenes(best.id) ?? [...genes]), 2);
+    const k = shared.items.length;
+    const what =
+      k === 1
+        ? `The mechanism they share, ${best.label} (${reachText(info.n, N, atlas)}), comes`
+        : `The ${k} mechanisms they share (${joinList(shared.items.map((item) => item.label))}) come`;
+    const summary = `${what} with their shared gene ${geneNames}, so ${k === 1 ? "it says" : "they say"} nothing the gene does not; whether both diseases disrupt ${k === 1 ? "it" : "them"} the same way is unknown.`;
+    return result("mechanism", { score: 0, status: "unknown", coverage, shared: shared.items, support: null, summary, flags, details });
+  }
+
+  const best = independent[0];
   const info = mechanismWeight(ctx, best.id);
   const score = best.weight;
   const status: DimensionStatus = score >= MECHANISM_STATUS.match ? "match" : "partial";
   details.most_specific = best.id;
   details.n = info.n;
+  // Both reach it through their genes (a pathway their genes are in), not by a direct link: the
+  // reasons then speak of the genes, not of the diseases.
+  const viaGenes = [A, B].every((side) => side.mechanism.get(best.id)?.direct === false);
+  if (viaGenes) details.via_genes = true;
+  // How many shared mechanisms count, when some only come with a shared gene.
+  if (independent.length !== shared.items.length) details.independent_mechanisms = independent.length;
   // Support follows the mechanisms that carry the score, not a family-wide one beside them.
-  const top = shared.items.filter((item) => item.weight === best.weight);
+  const top = independent.filter((item) => item.weight === best.weight);
   const support: Support = top.some((item) => shared.observed.has(item.id)) ? "observed" : "inferred";
   if (support === "inferred") flags.push("inferred_only");
 
+  const reach = reachText(info.n, N, atlas);
   let summary: string;
-  if (shared.items.every((item) => mechanismWeight(ctx, item.id).floored)) {
+  if (independent.every((item) => mechanismWeight(ctx, item.id).floored)) {
     flags.push("family_level_only");
     const kind = info.n === N ? "the family-wide process" : "the widely shared process";
-    summary = `They share only ${kind} ${best.label} (${reachText(info.n, N)}), which does not tell them apart.`;
+    summary = `They share only ${kind} ${best.label} (${reach}), which does not tell them apart.`;
   } else {
-    summary = `${sentence(mechanismPhrase(best.label))} (${reachText(info.n, N)}).`;
-    const others = shared.items.slice(1).map((item) => item.label);
-    if (others.length) summary += ` Also shared: ${joinList(others)}.`;
+    summary = `${sentence(sharedMechanismClause(best.label, independent.length, viaGenes, reach))}.`;
+    const others = shared.items.filter((item) => item.id !== best.id).map((item) => item.label);
+    if (others.length) summary += ` Also shared: ${joinList(others, 4)}.`;
   }
   return result("mechanism", { score, status, coverage, shared: shared.items, support, summary, flags, details });
+}
+
+// The shared mechanism in running text, without presenting a pathway as the diseases' own mechanism.
+// A pathway their genes are in reads as such, and when several are shared, the one that carries the
+// score is named as the most specific here, which is not necessarily the one the literature would
+// name: "their genes share 5 mechanisms, of which the most specific here is hyaluronan degradation
+// (2 of the 81 diseases with a mechanism on record)". A mechanism linked to the diseases themselves,
+// or a label that states what the gene product is ("Membrane protein missing"), reads as their own:
+// "both are missing a membrane protein". `reach` may be empty.
+export function sharedMechanismClause(label: string, count: number, viaGenes: boolean, reach: string): string {
+  const where = reach ? ` (${reach})` : "";
+  if (!viaGenes || describesProduct(label)) {
+    const others = count > 1 ? `, the most specific of ${count} shared mechanisms` : "";
+    return `${mechanismPhrase(label)}${where}${others}`;
+  }
+  return count > 1
+    ? `their genes share ${count} mechanisms, of which the most specific here is ${lowerFirst(label)}${where}`
+    : `their genes share one mechanism, ${lowerFirst(label)}${where}`;
+}
+
+// "Membrane protein missing", "Lysosomal membrane protein": a label about the gene product, not a
+// process the gene takes part in. Process names that end in such a noun ("Signaling by Insulin
+// receptor") carry a preposition; a product label does not.
+function describesProduct(label: string): boolean {
+  const text = label.trim();
+  if (/\S\s+missing$/i.test(text)) return true;
+  return /\b(protein|enzyme|channel|transporter|receptor)$/i.test(text) && !/\s(by|of|to|in|from|with|and|for|on|at)\s/i.test(text);
 }
 
 // ---- clinical: symptoms ------------------------------------------------------------------------
@@ -864,7 +1062,8 @@ function phenotypeDimension(ctx: GradingContext, A: DiseaseProfile, B: DiseasePr
 // ---- clinical: onset and inheritance (dimension "disease") -------------------------------------
 
 const DISAGREEMENT = "Sources disagree:";
-const ONSET_NEIGHBOUR = 0.5; // neighbouring steps on the ladder
+export const ONSET_NEIGHBOUR = 0.5; // neighbouring steps on the ladder
+export const CONTEXT_STATUS = { match: 0.75, partial: 0.5 };
 
 // The onset ladder steps a term stands for: the step itself, or the step it is a finer kind of
 // ("Late onset" counts as adult). Other clinical-course terms ("Progressive") are not an onset.
@@ -995,7 +1194,7 @@ function contextDimension(ctx: GradingContext, A: DiseaseProfile, B: DiseaseProf
     return result("disease", { score: 0, status: "unknown", coverage, shared: shared.items, support: null, summary, flags, details });
   }
   const score = round(weighted / weights);
-  const status: DimensionStatus = score >= 0.75 ? "match" : score >= 0.5 ? "partial" : "none";
+  const status: DimensionStatus = score >= CONTEXT_STATUS.match ? "match" : score >= CONTEXT_STATUS.partial ? "partial" : "none";
   let support = supportOf(shared);
   if (shared.items.length && support === "inferred") flags.push("inferred_only");
   // A neighbouring onset is a comparison the engine makes, not a shared fact a source states.
@@ -1036,7 +1235,8 @@ function collaborationDimension(
     const summary = missingText(ctx, A.id, B.id, a.length, b.length, plural);
     return result(dimension, { score: 0, status: "unknown", coverage, shared: [], support: null, summary, flags, details });
   }
-  const shared = sharedSet(ctx, ra, rb, () => 1);
+  // Items are weighed by how few diseases they are linked to, and listed most specific first.
+  const shared = sharedSet(ctx, ra, rb, (id) => collaborationWeight(ctx, dimension, id));
   const n = shared.items.length;
   const support = supportOf(shared);
   if (n && support === "inferred") flags.push("inferred_only");
@@ -1064,11 +1264,22 @@ function collaborationDimension(
     if (vias.length === 1) summary += ` Linked through ${itemLabel(ctx, vias[0])}.`;
     else if (vias.length > 1) summary += ` Linked through ${vias.length} shared genes, mechanisms or projects.`;
     if (umbrella.length) {
-      summary += umbrella.length === n ? ` ${n === 1 ? "It covers" : "They cover"} most diseases in this atlas.` : ` ${umbrella.length} of them cover most diseases in this atlas.`;
+      const atlas = ctx.diseases.length;
+      const linked = (id: string) => ctx.linkedDiseases[dimension].get(id) ?? 0;
+      summary +=
+        umbrella.length === 1 && n === 1
+          ? ` It is listed for ${linked(umbrella[0])} of the ${atlas} diseases here, so it says little about this pair.`
+          : umbrella.length === n
+            ? ` Each is listed for more than ${Math.floor(umbrellaCutoff(atlas))} of the ${atlas} diseases here, so they say little about this pair.`
+            : ` ${umbrella.length} of them ${umbrella.length === 1 ? "is" : "are"} listed for more than ${Math.floor(umbrellaCutoff(atlas))} of the ${atlas} diseases here.`;
     }
   }
-  const score = round(1 - COLLAB_BASE ** n);
-  return result(dimension, { score, status: n ? "match" : "none", coverage, shared: shared.items, support, summary, flags, details });
+  let untouched = 1;
+  for (const item of shared.items) untouched *= 1 - COLLAB_BASE * item.weight;
+  const score = round(1 - untouched);
+  // Sharing only umbrella resources is a partial overlap: something in common, nothing specific.
+  const status: DimensionStatus = !n ? "none" : umbrella.length === n ? "partial" : "match";
+  return result(dimension, { score, status, coverage, shared: shared.items, support, summary, flags, details });
 }
 
 // ---- entry points ------------------------------------------------------------------------------

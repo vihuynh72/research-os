@@ -14,7 +14,11 @@ export interface GraphIndex {
   edgesOf(id: string): GraphEdge[]; // every edge touching the node, contradicted ones included, sorted by id
   diseases: GraphNode[]; // sorted by label, numbers in reading order ("... 2" before "... 10")
   diseasesFor(id: string): string[]; // disease ids a node leads to, sorted, unique
-  search(query: string, limit?: number): SearchHit[];
+  // types narrows the search to those node types (the search box's "Only symptoms" and so on).
+  search(query: string, limit?: number, types?: readonly NodeType[]): SearchHit[];
+  // With an empty search box and a type filter: the nodes of those types that reach the most
+  // diseases, so "Symptoms" opens on the symptoms that tie the atlas together.
+  suggest(types: readonly NodeType[], limit?: number): SearchHit[];
 }
 
 // Equal matches list what a parent most likely means first.
@@ -182,7 +186,7 @@ export function buildGraphIndex(graph: AtlasGraph): GraphIndex {
     return [...found].sort(byCodeUnit);
   };
 
-  const search = (query: string, limit = DEFAULT_LIMIT): SearchHit[] => {
+  const search = (query: string, limit = DEFAULT_LIMIT, types?: readonly NodeType[]): SearchHit[] => {
     const q = fold(query);
     const max = Math.floor(limit);
     if (!q || !(max > 0)) return [];
@@ -191,6 +195,7 @@ export function buildGraphIndex(graph: AtlasGraph): GraphIndex {
     const withIds = /\p{N}/u.test(q);
     const scored: { entry: Entry; rank: number; matched: string }[] = [];
     for (const entry of entries) {
+      if (types && types.length && !types.includes(entry.node.type)) continue;
       let rank = -1;
       let matched = "";
       for (const [raw, folded] of entry.names) {
@@ -227,11 +232,30 @@ export function buildGraphIndex(graph: AtlasGraph): GraphIndex {
     return hits;
   };
 
+  const suggest = (types: readonly NodeType[], limit = DEFAULT_LIMIT): SearchHit[] => {
+    const max = Math.floor(limit);
+    if (!types.length || !(max > 0)) return [];
+    return entries
+      .filter((entry) => types.includes(entry.node.type))
+      .map((entry) => ({ entry, found: diseasesOf(entry.node.id) }))
+      .filter(({ found }) => found.length > 0)
+      .sort(
+        (a, b) =>
+          b.found.length - a.found.length ||
+          a.entry.typeRank - b.entry.typeRank ||
+          naturalCompare(a.entry.names[0][1], b.entry.names[0][1]) ||
+          byCodeUnit(a.entry.node.id, b.entry.node.id),
+      )
+      .slice(0, max)
+      .map(({ entry, found }) => ({ node: entry.node, matched: entry.node.label, diseases: [...found] }));
+  };
+
   return {
     byId,
     edgesOf: (id) => [...(edgesByNode.get(id) ?? [])],
     diseases,
     diseasesFor: (id) => [...diseasesOf(id)],
     search,
+    suggest,
   };
 }

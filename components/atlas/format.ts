@@ -2,7 +2,6 @@
 // components decide what to show, this file decides how it is said and where it comes from.
 import type { AtlasGraph, EdgeKind, GraphEdge, GraphNode, NodeType } from "../../lib/graph/types.ts";
 import type {
-  ClinicalTier,
   Dimension,
   DimensionResult,
   DimensionStatus,
@@ -13,21 +12,17 @@ import type {
   SharedItem,
   Tier,
 } from "../../lib/grading/types.ts";
-import { COLLABORATION_DIMENSIONS, pairKey } from "../../lib/grading/types.ts";
+import { TIER_ORDER, pairKey } from "../../lib/grading/types.ts";
 import { UMBRELLA_MIN, UMBRELLA_SHARE } from "../../lib/grading/config.ts";
 import { classifyVariant, type VariantEffect } from "../../lib/grading/variants.ts";
 import { buildGraphIndex, type GraphIndex } from "../../lib/graph/index.ts";
 import type { HoodEdge, HoodNode, Neighborhood } from "../../lib/graph/neighborhood.ts";
-import { shortLabel } from "../../lib/graph/labels.ts";
-import { countLabel, relationLabel } from "../../lib/graph/vocab.ts";
+import { relationLabel } from "../../lib/graph/vocab.ts";
+import { compactSynonym, displayName } from "./names.ts";
 
 export type Mode = "parent" | "researcher";
 export type View = "2d" | "3d";
 export type Kind = EdgeKind | "mixed";
-
-// The team's demo disease (CLN3). It only ever appears as a suggested search on the start screen;
-// the atlas opens blank and nothing is focused until the person picks something.
-export const EXAMPLE_DISEASE = "MONDO:0008767";
 
 export const TIER_WORD: Record<Tier, string> = {
   strong: "Strong",
@@ -36,16 +31,15 @@ export const TIER_WORD: Record<Tier, string> = {
   none: "No supported link",
 };
 
-// "How alike they look: very similar", for running text beside the biology tier.
-const LOOK_WORD: Record<ClinicalTier, string> = {
-  very_similar: "very similar",
-  similar: "similar",
-  somewhat: "somewhat similar",
-  different: "different",
-};
+export function isTier(tier: string): tier is Tier {
+  return Object.hasOwn(TIER_ORDER, tier);
+}
 
-export function lookAlikeText(tier: ClinicalTier): string {
-  return `How alike they look: ${LOOK_WORD[tier]}`;
+// The word for any tier in a grade file: the contract's word, else the file's own word
+// capitalized, so a tier this app does not know is still named instead of left blank.
+export function tierWord(tier: string): string {
+  if (isTier(tier)) return TIER_WORD[tier];
+  return tier ? tier.charAt(0).toUpperCase() + tier.slice(1).replace(/_/g, " ") : "Ungraded";
 }
 
 export const STATUS_WORD: Record<DimensionStatus, string> = {
@@ -128,10 +122,11 @@ export function formatScore(x: number): string {
   return x.toFixed(2);
 }
 
-// 0.9963 -> "99.6%": one decimal near the top of the scale, where the difference matters.
+// 0.9963 -> "99.6%": one decimal near the top of the scale, where the difference matters, rounded
+// down there so nothing short of a perfect match reads as 100%.
 export function formatPercent(p: number): string {
   const pct = p * 100;
-  return `${pct >= 99 && pct < 100 ? pct.toFixed(1) : Math.round(pct)}%`;
+  return `${pct >= 99 && pct < 100 ? (Math.floor(pct * 10) / 10).toFixed(1) : Math.round(pct)}%`;
 }
 
 export function kindOf(edges: GraphEdge[]): Kind {
@@ -184,16 +179,16 @@ export function diseaseColor(model: AtlasModel, diseaseId: string): string {
   return clusterColor(clusterOf(model, diseaseId)?.color_slot);
 }
 
-// Suggested first searches for the start screen, all taken from the data: the demo disease (or
-// the most central one), a gene that is not just the disease's own name (its own gene, else the
-// gene of its closest relative), and its most specific symptom. Nothing here is ever focused
-// until the person picks it.
+// Suggested first searches for the start screen, all taken from the data: a disease that shows
+// what the atlas is for (it shares biology through a pathway with diseases caused by other genes,
+// and has clinical look-alikes too), a gene that is not just the disease's own name (its own gene,
+// else the gene of its closest relative), and its most specific symptom. Nothing here is ever
+// focused until the person picks it.
 export function exampleNodes(model: AtlasModel): GraphNode[] {
   const { index, relevance } = model;
-  const graded = index.diseases.filter((d) => relevance.diseases[d.id]);
-  const demo = index.byId.get(EXAMPLE_DISEASE)?.type === "Disease" ? index.byId.get(EXAMPLE_DISEASE)! : mostCentralNode(model, graded);
+  const demo = demoDisease(model);
   if (!demo) return [];
-  const diseaseNames = new Set(index.diseases.map((d) => shortLabel(d).toLowerCase()));
+  const diseaseNames = new Set(index.diseases.map((d) => displayName(d, 200).toLowerCase()));
   const genesOf = (id: string) =>
     index
       .edgesOf(id)
@@ -213,6 +208,24 @@ export function exampleNodes(model: AtlasModel): GraphNode[] {
   return [demo, gene, symptom].filter((n): n is GraphNode => !!n);
 }
 
+// The disease that tells the atlas's story best: related to diseases of other genes through a
+// shared mechanism, with clinical look-alikes, then the most related and most connected.
+function demoDisease(model: AtlasModel): GraphNode | undefined {
+  const graded = model.index.diseases.filter((d) => model.relevance.diseases[d.id]);
+  const score = (d: GraphNode) => {
+    const entry = model.relevance.diseases[d.id];
+    const pairs = entry.neighbors.map((n) => pairOf(model, d.id, n.id)).filter((p): p is PairGrade => !!p);
+    const throughMechanism = pairs.filter((p) => p.lines_of_evidence.includes("mechanism")).length;
+    return [Number(throughMechanism > 0), Number(entry.clinical_neighbors.length > 0), Number(d.label.length <= 40), throughMechanism, pairs.length, entry.centrality];
+  };
+  const ranked = graded.map((d) => ({ d, s: score(d) }));
+  ranked.sort((x, y) => {
+    for (let i = 0; i < x.s.length; i++) if (x.s[i] !== y.s[i]) return y.s[i] - x.s[i];
+    return byLabel(x.d, y.d);
+  });
+  return ranked[0]?.d ?? mostCentralNode(model, graded);
+}
+
 function mostCentralNode(model: AtlasModel, nodes: GraphNode[]): GraphNode | undefined {
   const id = mostCentral(
     model,
@@ -221,10 +234,11 @@ function mostCentralNode(model: AtlasModel, nodes: GraphNode[]): GraphNode | und
   return id ? model.index.byId.get(id) : undefined;
 }
 
-// A short display name for any node: the compact synonym of a disease ("CLN3"), otherwise the
-// label cut to fit.
+// A display name for any node in `max` characters: a compact synonym ("CLN3") when there is one,
+// otherwise the label, cut in the middle so the end that tells similar names apart stays
+// ("oculocutaneous… type 1A"). See names.ts.
 export function nodeName(node: Pick<GraphNode, "label" | "synonyms" | "type">, max = 40): string {
-  return node.type === "Disease" ? shortLabel(node) : shortLabel({ label: node.label }, max);
+  return displayName(node, max);
 }
 
 export const OTHER_CLUSTER = "other";
@@ -310,11 +324,6 @@ export function resolveSelection(model: AtlasModel, hood: Neighborhood, focusId:
   return { kind: "node", id: selectedId, node, hoodNode };
 }
 
-export function clusterRowOf(model: AtlasModel, diseaseId: string): string {
-  const cluster = clusterOf(model, diseaseId);
-  return cluster && cluster.color_slot !== null ? cluster.id : OTHER_CLUSTER;
-}
-
 // A shared item linked to most diseases of the graph says little about one pair (same rule as
 // the engine's umbrella_resource flag).
 export function isUmbrella(model: AtlasModel, itemId: string): boolean {
@@ -333,86 +342,6 @@ export function umbrellaIds(model: AtlasModel, dim: DimensionResult | undefined)
   return new Set(dim.shared.filter((s) => isUmbrella(model, s.id)).map((s) => s.id));
 }
 
-export interface SharedResearch {
-  dimension: Dimension;
-  specific: SharedItem[];
-  umbrella: SharedItem[];
-}
-
-export function sharedResearch(model: AtlasModel, pair: PairGrade): SharedResearch[] {
-  return COLLABORATION_DIMENSIONS.map((dimension) => {
-    const dim = pair.dimensions[dimension];
-    const shared = dim?.shared ?? [];
-    const umbrella = umbrellaIds(model, dim);
-    return {
-      dimension,
-      specific: shared.filter((s) => !umbrella.has(s.id)),
-      umbrella: shared.filter((s) => umbrella.has(s.id)),
-    };
-  }).filter((r) => r.specific.length || r.umbrella.length);
-}
-
-const RESEARCH_TYPE: Record<string, NodeType> = {
-  patient_org: "PatientOrg",
-  paper: "Paper",
-  trial: "Trial",
-  grant: "Grant",
-  investigator: "Investigator",
-  asset: "Asset",
-};
-
-// "1 research grant, 1 researcher": shared work that is specific to the two diseases.
-// Umbrella items (covering most diseases here) are left out because they say little.
-export function researchSummary(model: AtlasModel, pair: PairGrade): string {
-  return sharedResearch(model, pair)
-    .filter((r) => r.specific.length)
-    .map((r) => countLabel(RESEARCH_TYPE[r.dimension], r.specific.length))
-    .join(", ");
-}
-
-export interface NeighborRow {
-  id: string;
-  node: GraphNode;
-  short: string;
-  color: string;
-  tier: Tier;
-  relevance: number;
-  reason: string;
-  clinicalTier: ClinicalTier | null; // how alike they look; null in grade files before engine 0.2.0
-  research: string; // shared work specific to the pair, e.g. "1 research grant, 1 researcher"
-  broadOnly: boolean; // nothing specific, but they share resources that cover most diseases here
-  pair: PairGrade;
-}
-
-// What the list says about shared work, in one phrase.
-export function researchText(row: Pick<NeighborRow, "research" | "broadOnly">): string {
-  return row.research || (row.broadOnly ? "Only resources shared by most diseases here" : "None on record");
-}
-
-export function neighborRows(model: AtlasModel, focusId: string): NeighborRow[] {
-  const entry = model.relevance.diseases[focusId];
-  if (!entry) return [];
-  return entry.neighbors.flatMap((n) => {
-    const node = nodeOf(model, n.id);
-    const pair = pairOf(model, focusId, n.id);
-    if (!node || !pair) return [];
-    return [
-      {
-        id: n.id,
-        node,
-        short: shortLabel(node),
-        color: diseaseColor(model, n.id),
-        tier: n.tier,
-        relevance: n.relevance,
-        reason: pair.tier_reason,
-        clinicalTier: pair.clinical_tier ?? null,
-        research: researchSummary(model, pair),
-        broadOnly: sharedResearch(model, pair).some((r) => r.umbrella.length > 0),
-        pair,
-      },
-    ];
-  });
-}
 
 // ---------- what the graph says about one disease ----------
 
@@ -673,8 +602,8 @@ export function variantRows(model: AtlasModel, diseaseId: string): VariantRow[] 
 export function evidenceName(node: GraphNode): string {
   if (node.type === "Gene") return `${node.label} gene`;
   if (node.type === "Disease") {
-    const short = shortLabel(node);
-    return short !== node.label && !short.endsWith("…") ? `${short} disease` : node.label;
+    const short = compactSynonym(node);
+    return short && short !== node.label ? `${short} disease` : node.label;
   }
   return node.label;
 }

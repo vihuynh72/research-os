@@ -8,8 +8,9 @@
     "start": "next start --hostname 0.0.0.0 --port 5000",
     "typecheck": "tsc --noEmit",
     "check:schema": "node scripts/check-schema.mjs",
-    "data:sample": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed-to-graph.ts",
+    "data:graph": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed-to-graph.ts",
     "data:hpo": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-hpo-reference.ts",
+    "data:reactome": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/fetch-reactome.ts",
     "grade": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/grade.ts",
     "grade:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/grade.ts --check",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.ts\" \"components/**/*.test.ts\""

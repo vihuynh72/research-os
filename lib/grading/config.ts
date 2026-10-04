@@ -1,6 +1,6 @@
 // Tunable constants for lib/grading. Every value is recorded in relevance.json meta so a
-// grade can always be traced to the settings that produced it. Recalibrate when real data lands,
-// and keep data/curated/answer_key.json passing (lib/grading/answer-key.test.ts).
+// grade can always be traced to the settings that produced it. Recalibrate against the answer key
+// (data/curated/answer_key.json, held by lib/grading/answer-key.test.ts), never to fix one pair.
 import type { Dimension } from "./types.ts";
 
 // Noisy-OR caps: how far one line of evidence can move its family's score on its own.
@@ -35,12 +35,12 @@ export const CLINICAL_THRESHOLDS = { very_similar: 0.65, similar: 0.4, somewhat:
 export const MAX_NEIGHBORS = 10;
 
 // Mechanism specificity within the atlas: a mechanism every disease shares cannot tell them apart.
-// weight = (1 - ln n / ln N) / (1 - ln 2 / ln N) for a mechanism reaching n of N diseases, so a
-// mechanism shared by exactly two diseases weighs 1 and one shared by all weighs 0, floored at
-// MECHANISM_FLOOR so the family's defining process still counts a little. The pair's mechanism score
-// is the weight of the most specific mechanism they share (Resnik's "most informative common
-// ancestor"), not an overlap ratio: two enzymes with different substrates still share "soluble
-// lysosomal enzyme", which is what decides whether a therapy can transfer.
+// weight = (1 - ln n / ln N) / (1 - ln 2 / ln N) for a mechanism reaching n of the N diseases that
+// have any mechanism on record, so a mechanism shared by exactly two diseases weighs 1 and one shared
+// by all weighs 0, floored at MECHANISM_FLOOR so a process most diseases share still counts a little.
+// The pair's mechanism score is the weight of the most specific mechanism they share (Resnik's "most
+// informative common ancestor"), not an overlap ratio: galactokinase deficiency and classic
+// galactosemia share Galactose catabolism however many other pathways their genes are in.
 export const MECHANISM_FLOOR = 0.15;
 export const MECHANISM_STATUS = { match: 0.6 }; // partial: any shared mechanism above the floor or at it
 export const MIN_ATLAS_FOR_SPECIFICITY = 3; // below this many diseases every mechanism weighs 1
@@ -63,12 +63,17 @@ export const SPECIFIC_IC = 0.5; // normalized IC at or above which a symptom cou
 export const GENERIC_IC = 0.3; // below this a shared symptom counts as generic
 export const MIN_ANNOTATIONS = 10; // fewer symptoms on record than this makes a comparison weak
 
-// Collaboration dimensions: score = 1 - 0.5^n for n shared items.
+// Collaboration dimensions: score = 1 - prod(1 - COLLAB_BASE * w) over the shared items, where w is
+// the item's specificity within the atlas, as for mechanisms: a group listed for two diseases weighs
+// 1, one listed for every disease 0. With every w = 1 this is 1 - 0.5^n.
 export const COLLAB_BASE = 0.5;
 
-// A shared collaboration item linked to at least this share of the graph's diseases is an
-// umbrella resource (flagged, and not drawn as a bridge) once the graph has UMBRELLA_MIN diseases.
-export const UMBRELLA_SHARE = 0.8;
+// A shared collaboration item linked to more than max(UMBRELLA_MIN, UMBRELLA_SHARE x N) of the
+// atlas's N diseases is an umbrella resource: flagged, and never drawn as a bridge. A directory
+// listing that covers a tenth of the atlas (a support group for "syndromes without a name") says
+// nothing about why two particular diseases belong together. UMBRELLA_MIN keeps a small atlas from
+// calling a group of a few diseases an umbrella.
+export const UMBRELLA_SHARE = 0.1;
 export const UMBRELLA_MIN = 4;
 
 export const ROUND = 4; // decimals kept in output, so files diff cleanly across machines

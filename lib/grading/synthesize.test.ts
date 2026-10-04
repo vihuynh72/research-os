@@ -10,6 +10,7 @@ import {
   countedClinical,
   noisyOr,
   synthesizePair,
+  thinClinicalEvidence,
   tierFor,
 } from "./synthesize.ts";
 import {
@@ -165,7 +166,10 @@ test("strong needs two full-match lines, one of them observed", () => {
   assert.equal(two.tier, "strong");
   assert.equal(two.support, "observed");
   assert.deepEqual(two.lines_of_evidence, ["variant", "mechanism"]);
-  assert.equal(two.tier_reason, "Strong: both are missing a soluble lysosomal enzyme, and both carry mostly loss-of-function variants.");
+  assert.equal(
+    two.tier_reason,
+    "Strong: both are missing a soluble lysosomal enzyme (2 of 5 diseases here), and both carry mostly loss-of-function variants.",
+  );
 
   // The same scores with nothing observed: capped.
   const inferred = synthesizePair("A", "B", dims({ mechanism: { ...enzyme, support: "inferred" }, variant: mostlyLof }));
@@ -181,8 +185,28 @@ test("strong needs two full-match lines, one of them observed", () => {
   assert.deepEqual(single.lines_of_evidence, ["mechanism"]);
   assert.equal(
     single.tier_reason,
-    "Capped at moderate: only one line of evidence is a full match. Both are missing a soluble lysosomal enzyme, and their variant types partly agree.",
+    "Capped at moderate: only one line of evidence is a full match. Both are missing a soluble lysosomal enzyme (2 of 5 diseases here), and their variant types partly agree.",
   );
+});
+
+test("variant type that disagrees never adds to biology; a conflict still caps the tier", () => {
+  // Status none (score 1/3, mixed against mostly loss-of-function): the pathway alone counts.
+  const disagree: Spec = { status: "none", score: 0.3333, support: "inferred", flags: ["derived_from_variant_notation"] };
+  const d = dims({ mechanism: mechanism("Keratan sulfate degradation", 0.5109, 6, 81, { details: { most_specific: "PW:6", n: 6, N: 81, atlas: 93, via_genes: true } }), variant: disagree });
+  assert.deepEqual(countedBiology(d), ["gene", "mechanism"]);
+  assert.equal(biologyScore(d), Number((0.8 * 0.5109).toFixed(4)));
+  const grade = synthesizePair("A", "B", d);
+  assert.equal(grade.tier, "exploratory");
+  assert.equal(
+    grade.tier_reason,
+    "Exploratory: their genes share one mechanism, keratan sulfate degradation (6 of the 81 diseases with a mechanism on record).",
+  );
+  // Partial agreement counts at its score.
+  const partly = dims({ mechanism: enzyme, variant: { status: "partial", score: 0.5, support: "inferred" } });
+  assert.deepEqual(countedBiology(partly), ["gene", "variant", "mechanism"]);
+  const conflict = synthesizePair("A", "B", dims({ mechanism: enzyme, variant: { status: "none", score: 0, flags: ["variant_type_conflict"] } }));
+  assert.equal(conflict.biology, 0.8);
+  assert.equal(conflict.tier, "moderate");
 });
 
 test("support: observed when an agreeing line rests on curated edges, even a partial one", () => {
@@ -211,6 +235,73 @@ test("a family-wide mechanism alone gives an exploratory link that says so", () 
     "Exploratory: they share only the family-wide process Lysosomal lipofuscin accumulation (all 5 diseases here), and both carry mostly loss-of-function variants.",
   );
   assert.ok(grade.flags.includes("family_level_only"));
+});
+
+test("one shared gene never counts as two lines: a mechanism that comes with it is not counted again", () => {
+  const gene: Spec = { ...observedMatch, shared: [{ id: "HGNC:1", label: "GENEA", type: "Gene", weight: 1, edges: ["e1"], kind: "observed" }] };
+  const viaGene = mechanism("Soluble lysosomal enzyme missing", 1, 2, 5, {
+    details: { most_specific: "PW:2", n: 2, N: 5, atlas: 5, through_shared_gene: true },
+  });
+  const unknownVariant: Spec = { status: "unknown", flags: ["variant_effect_unknown"], details: { gene_level_variants: 3 } };
+  const grade = synthesizePair("A", "B", dims({ gene, mechanism: viaGene, variant: unknownVariant }));
+  assert.deepEqual(countedBiology(dims({ gene, mechanism: viaGene, variant: unknownVariant })), ["gene"]);
+  assert.equal(grade.biology, 0.7);
+  assert.equal(grade.tier, "moderate");
+  assert.deepEqual(grade.lines_of_evidence, ["gene"]);
+  // The reason says what one gene cannot tell: whether both diseases break it the same way.
+  assert.equal(
+    grade.tier_reason,
+    "Moderate: both are caused by the same gene (GENEA); the variants on record belong to the gene, not to either disease, so whether both break it the same way is unknown.",
+  );
+  const noVariants = synthesizePair("A", "B", dims({ gene, variant: { status: "unknown", flags: ["variant_effect_unknown", "no_data"] } }));
+  assert.equal(
+    noVariants.tier_reason,
+    "Moderate: both are caused by the same gene (GENEA); no variants are on record to tell whether both break it the same way.",
+  );
+
+  // Variants of their own that agree are a second line: strong.
+  const own = synthesizePair("A", "B", dims({ gene, mechanism: viaGene, variant: mostlyLof }));
+  assert.equal(own.biology, 0.775);
+  assert.equal(own.tier, "strong");
+  assert.deepEqual(own.lines_of_evidence, ["gene", "variant"]);
+  assert.equal(own.tier_reason, "Strong: both are caused by the same gene (GENEA), and both carry mostly loss-of-function variants.");
+});
+
+test("the reason names the mechanism that carries the score, not a heavier one that comes with a gene", () => {
+  const heavy: SharedItem = { id: "PW:G", label: "Lysosomal membrane protein", type: "Mechanism", weight: 1, edges: ["e1"], kind: "observed" };
+  const scored: SharedItem = { id: "PW:M", label: "Membrane protein missing", type: "Mechanism", weight: 0.5575, edges: ["e2"], kind: "observed" };
+  // The heavier one comes with a shared gene, so one mechanism counts.
+  const result: Spec = {
+    status: "partial",
+    score: 0.5575,
+    support: "observed",
+    shared: [heavy, scored],
+    details: { most_specific: "PW:M", n: 3, N: 5, atlas: 5, independent_mechanisms: 1 },
+  };
+  const grade = synthesizePair("A", "B", dims({ mechanism: result }));
+  assert.equal(grade.tier_reason, "Exploratory: both are missing a membrane protein (3 of 5 diseases here).");
+  // When some diseases have no mechanism on record, the reach says what N counts.
+  const wider = synthesizePair("A", "B", dims({ mechanism: { ...result, details: { most_specific: "PW:M", n: 3, N: 5, atlas: 98, independent_mechanisms: 1 } } }));
+  assert.equal(wider.tier_reason, "Exploratory: both are missing a membrane protein (3 of the 5 diseases with a mechanism on record).");
+});
+
+test("a pathway their genes are in is named as one they share, the most specific here, not as the disease mechanism", () => {
+  const pathway = (id: string, label: string, weight: number): SharedItem => ({ id, label, type: "Mechanism", weight, edges: [`e-${id}`], kind: "observed" });
+  const shared = [
+    pathway("PW:H", "Hyaluronan degradation", 0.72),
+    pathway("PW:K", "Keratan sulfate degradation", 0.51),
+    pathway("PW:G", "Glycosphingolipid catabolism", 0.33),
+  ];
+  const result: Spec = { status: "match", score: 0.72, support: "observed", shared, details: { most_specific: "PW:H", n: 2, N: 81, atlas: 93, via_genes: true } };
+  assert.equal(
+    synthesizePair("A", "B", dims({ mechanism: result })).tier_reason,
+    "Moderate: their genes share 3 mechanisms, of which the most specific here is hyaluronan degradation (2 of the 81 diseases with a mechanism on record).",
+  );
+  const one: Spec = { ...result, shared: [shared[0]] };
+  assert.equal(
+    synthesizePair("A", "B", dims({ mechanism: one })).tier_reason,
+    "Moderate: their genes share one mechanism, hyaluronan degradation (2 of the 81 diseases with a mechanism on record).",
+  );
 });
 
 test("a variant type conflict caps at moderate", () => {
@@ -324,12 +415,12 @@ test("clinical reasons name the symptoms, then onset and inheritance when they c
     details: { shared_exact: 6, shared_rare: 3, terms_a: 14, terms_b: 8 },
   };
   const context: Spec = { status: "match", score: 1, support: "observed", summary: "Onset: both childhood. Both autosomal recessive." };
-  const grade = synthesizePair("A", "B", dims({ phenotype: symptoms, disease: context }), [], { a: "CLN2", b: "CLN6" });
+  const grade = synthesizePair("A", "B", dims({ phenotype: symptoms, disease: context }), [], { a: "Disease A", b: "Disease B" });
   assert.equal(grade.clinical, 0.85);
   assert.equal(grade.clinical_tier, "very_similar");
   assert.equal(
     grade.clinical_reason,
-    "Looks very similar: 6 shared symptoms (3 rare), about as much overlap as two records of the same disease. Few symptoms are on record for CLN6 (8), so this comparison is uncertain. Onset: both childhood. Both autosomal recessive.",
+    "Looks very similar: 6 shared symptoms (3 rare), about as much overlap as two records of the same disease. Few symptoms are on record for Disease B (8), so this comparison is uncertain. Onset: both childhood. Both autosomal recessive.",
   );
 
   // Symptoms at chance level: onset and inheritance do not count, and the reason says so.
@@ -341,6 +432,49 @@ test("clinical reasons name the symptoms, then onset and inheritance when they c
     "Looks different: 1 shared symptom, no more overlap than many unrelated diseases have. Onset and inheritance only count once the symptoms overlap.",
   );
 
-  const missing = synthesizePair("A", "B", dims({ phenotype: { status: "unknown", summary: "No symptoms on record for CLN9." } }));
-  assert.equal(missing.clinical_reason, "Looks different: no symptoms on record for CLN9.");
+  const missing = synthesizePair("A", "B", dims({ phenotype: { status: "unknown", summary: "No symptoms on record for Tay-Sachs disease." } }));
+  assert.equal(missing.clinical_reason, "Looks different: no symptoms on record for Tay-Sachs disease.");
+});
+
+test("a thin record caps the clinical tier at somewhat similar; the score stays what the symptoms give", () => {
+  const names = { a: "Disease A", b: "Disease B" };
+  const symptoms = (details: Record<string, number | null>): Spec => ({
+    status: "match",
+    score: 1,
+    percentile: 0.9999,
+    support: "observed",
+    flags: ["few_annotations"],
+    details,
+  });
+  // One shared symptom between records of 2 and 1: as much overlap as one disease described twice,
+  // from a single symptom.
+  const one = synthesizePair("A", "B", dims({ phenotype: symptoms({ shared_exact: 1, shared_rare: 0, terms_a: 2, terms_b: 1 }) }), [], names);
+  assert.equal(one.clinical, 0.75);
+  assert.equal(one.clinical_tier, "somewhat");
+  assert.equal(
+    one.clinical_reason,
+    "Capped at looks somewhat similar: few symptoms are on record for Disease A (2) and Disease B (1), and they share only one identical symptom. 1 shared symptom, about as much overlap as two records of the same disease.",
+  );
+  // A rare one changes nothing when it is the only one.
+  assert.equal(thinClinicalEvidence(dims({ phenotype: symptoms({ shared_exact: 1, shared_rare: 1, terms_a: 2, terms_b: 1 }) })), "they share only one identical symptom");
+  // Several shared, none rare, on a thin record: capped. Related symptoms only: capped.
+  const common = synthesizePair("A", "B", dims({ phenotype: symptoms({ shared_exact: 2, shared_rare: 0, terms_a: 4, terms_b: 6 }) }), [], names);
+  assert.equal(common.clinical_tier, "somewhat");
+  assert.match(common.clinical_reason, /^Capped at looks somewhat similar: few symptoms are on record for Disease A \(4\) and Disease B \(6\), and none of the 2 symptoms they share is rare\./);
+  assert.equal(thinClinicalEvidence(dims({ phenotype: symptoms({ shared_exact: 0, shared_rare: 0, terms_a: 9, terms_b: 8 }) })), "they share no identical symptom, only related ones");
+  // Not capped: a rare shared symptom among several, or full records on both sides, or rarity unknown
+  // (no reference) with several shared.
+  for (const details of [
+    { shared_exact: 6, shared_rare: 3, terms_a: 14, terms_b: 8 },
+    { shared_exact: 1, shared_rare: 0, terms_a: 12, terms_b: 10 },
+    { shared_exact: 3, shared_rare: null, terms_a: 3, terms_b: 3 },
+  ]) {
+    const grade = synthesizePair("A", "B", dims({ phenotype: symptoms(details) }), [], names);
+    assert.equal(grade.clinical_tier, "very_similar", JSON.stringify(details));
+    assert.ok(!grade.clinical_reason.startsWith("Capped"), JSON.stringify(details));
+  }
+  // The cap only lowers: a tier already below it is left alone.
+  const low = synthesizePair("A", "B", dims({ phenotype: { ...symptoms({ shared_exact: 1, shared_rare: 0, terms_a: 2, terms_b: 1 }), score: 0.3 } }), [], names);
+  assert.equal(low.clinical_tier, "somewhat");
+  assert.ok(low.clinical_reason.startsWith("Looks somewhat similar: "));
 });

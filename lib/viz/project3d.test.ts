@@ -14,6 +14,7 @@ import {
   placeLabels,
   project,
   rotate,
+  separate,
   sideAlign,
   wrapAngle,
   type HitTarget,
@@ -404,4 +405,28 @@ test("clamp, lerp and easeInOutCubic behave at their endpoints", () => {
     assert.ok(v >= previous);
     previous = v;
   }
+});
+
+test("separate spreads points that share a spot until none overlaps, deterministically", () => {
+  // 60 diseases with no shared biology all land on one spot; 3 more sit far apart already.
+  const pile = Array.from({ length: 60 }, () => [0, 0]);
+  const input = [...pile, [400, 0], [-400, 0], [0, 300]];
+  const out = separate(input, 20);
+  for (let i = 0; i < out.length; i++) {
+    for (let j = i + 1; j < out.length; j++) assert.ok(Math.hypot(out[i][0] - out[j][0], out[i][1] - out[j][1]) >= 20 * 0.97, `points ${i} and ${j} overlap`);
+  }
+  // The pile stays a compact cloud around its spot; points that did not overlap do not move.
+  assert.ok(out.slice(0, 60).every((p) => Math.hypot(p[0], p[1]) < 140));
+  assert.deepEqual(out.slice(60), [[400, 0], [-400, 0], [0, 300]]);
+  assert.deepEqual(out, separate(input, 20));
+  assert.deepEqual(input[0], [0, 0], "the input is not changed");
+});
+
+test("separate works in 3D and keeps points inside the bounds", () => {
+  const input = Array.from({ length: 40 }, (_, i) => [0.001 * (i % 3), 0, 0]);
+  const bounds = { min: [-0.3, -0.3, -0.3], max: [0.3, 0.3, 0.3] };
+  const out = separate(input, 0.1, bounds);
+  assert.ok(out.every((p) => p.length === 3 && p.every((v, k) => v >= bounds.min[k] && v <= bounds.max[k])));
+  const closest = Math.min(...out.flatMap((p, i) => out.slice(i + 1).map((q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]))));
+  assert.ok(closest >= 0.1 * 0.9, `closest pair ${closest}`);
 });

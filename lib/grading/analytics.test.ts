@@ -192,8 +192,8 @@ test("clusters are named by their shared mechanism, then symptoms, then number; 
 });
 
 test("a cluster is named by its most specific mechanism when several are shared by as many pairs", () => {
-  // The CLN seed's shape: every pair shares the family-wide process (weight 0.15); inside each
-  // cluster the pairs also share the process that sets the group apart.
+  // A disease family: every pair shares the family-wide process (weight 0.15); inside each cluster
+  // the pairs also share the process that sets the group apart.
   const item = (id: string, label: string, weight: number): SharedItem => ({ id, label, type: "Mechanism", weight, edges: [`e-${id}`], kind: "observed" });
   const fam = item("PW:FAM", "Lysosomal lipofuscin accumulation", 0.15);
   const enzyme = item("PW:ENZ", "Soluble lysosomal enzyme missing", 1);
@@ -214,6 +214,33 @@ test("a cluster is named by its most specific mechanism when several are shared 
     ],
   );
   assert.deepEqual(result.bridges.map((b) => [b.a, b.b, b.cross_cluster]), [["C1", "C3", true]]);
+});
+
+test("a cluster held together by one gene is named after the gene, not a symptom", () => {
+  // Three diseases of GENEA (the shape of the COL2A1 or MITF diseases in the merged atlas), with a
+  // rare symptom in common and a family-wide process at the floor; a mechanism that weighs as much
+  // as the gene wins the tie, because it says what the gene does.
+  const gene = shared("HGNC:1", "Gene", ["e-g"]);
+  const fam: SharedItem = { id: "PW:FAM", label: "Family process", type: "Mechanism", weight: 0.15, edges: ["e-f"], kind: "observed" };
+  const symptom = shared("HP:9", "Phenotype", ["e-s"], 0.9);
+  const genes = analyze({
+    diseases: ["G1", "G2", "G3"],
+    grades: [
+      grade("G1", "G2", "moderate", 0.7, { gene: [gene], mechanism: [fam], phenotype: [symptom] }),
+      grade("G1", "G3", "moderate", 0.7, { gene: [gene], mechanism: [fam], phenotype: [symptom] }),
+      grade("G2", "G3", "moderate", 0.7, { gene: [gene], mechanism: [fam], phenotype: [symptom] }),
+    ],
+    isUmbrella: () => false,
+  });
+  assert.deepEqual(genes.clusters.map((c) => [c.id, c.label, c.mechanisms]), [["c-HGNC_1", "Same gene: Label HGNC:1", []]]);
+
+  const specific: SharedItem = { id: "PW:SPEC", label: "Soluble lysosomal enzyme missing", type: "Mechanism", weight: 1, edges: ["e-m"], kind: "observed" };
+  const both = analyze({
+    diseases: ["G1", "G2"],
+    grades: [grade("G1", "G2", "moderate", 0.7, { gene: [gene], mechanism: [specific] })],
+    isUmbrella: () => false,
+  });
+  assert.deepEqual(both.clusters.map((c) => [c.id, c.label, c.mechanisms]), [["c-PW_SPEC", "Soluble lysosomal enzyme missing", ["PW:SPEC"]]]);
 });
 
 test("a strong or moderate link across clusters marks both diseases as bridges", () => {
