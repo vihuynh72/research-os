@@ -84,6 +84,8 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
   const [hidden, setHidden] = useState<ReadonlySet<NodeType>>(() => new Set(initial.hidden));
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set(initial.open));
   const [list, setList] = useState(initial.list);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNote, setRefreshNote] = useState<string | null>(null);
   const mapRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLElement>(null);
 
@@ -208,6 +210,19 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
   }, [view, list, hood, filtered, focusId, model, selected, threshold]);
 
   const diseaseCount = model.index.diseases.length;
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    setRefreshNote(null);
+    try {
+      const response = await fetch("/api/refresh", { method: "POST" });
+      const body = (await response.json()) as { ok: boolean; error?: string };
+      if (!response.ok || !body.ok) throw new Error(body.error ?? "The pipeline failed.");
+      window.location.reload();
+    } catch (error) {
+      setRefreshNote(error instanceof Error ? error.message : "The pipeline failed.");
+      setRefreshing(false);
+    }
+  }, []);
   // The team seed is the CLN slice; say so only while every disease in the sample is one.
   const allCln = diseaseCount > 0 && model.index.diseases.every((d) => /ceroid lipofuscinosis/i.test(d.label));
   const banner = sample
@@ -328,6 +343,9 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
               <ViewToggle value={display} onChange={changeDisplay} />
             </div>
             <div className="flex items-center gap-2">
+              <button type="button" onClick={refresh} disabled={refreshing} className="rounded-full bg-surface-2 px-3 py-1 text-[0.8125rem] font-medium text-ink-2 hover:text-ink disabled:opacity-50">
+                {refreshing ? "Refreshing…" : "Refresh data"}
+              </button>
               <span className="hidden text-sm whitespace-nowrap text-ink-2 xl:inline">Viewing as:</span>
               <Segmented<Mode> label="Viewing as" options={PERSONAS} value={mode} onChange={setMode} />
             </div>
@@ -336,6 +354,7 @@ export default function AtlasApp({ graph, relevance, sample, notes, initial }: P
         {(banner || notes.length > 0) && (
           <div className="border-t border-line bg-surface-2 px-4 py-1.5 text-xs text-ink-2 lg:px-5">
             {banner && <p className="text-pretty">{banner}</p>}
+            {refreshNote && <p className="text-pretty text-ink">{refreshNote}</p>}
             {notes.map((n) => (
               <p key={n} className="font-medium text-pretty text-ink">
                 {n}

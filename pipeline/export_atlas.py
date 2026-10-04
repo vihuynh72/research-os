@@ -7,10 +7,21 @@ Usage: python3 pipeline/export_atlas.py
 from __future__ import annotations
 
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from pipeline.clusters import build as build_clusters
+
+def phenotype_labels() -> dict[str, str]:
+    path = ROOT / "data" / "reference" / "hpo-reference.json"
+    if not path.exists():
+        return {}
+    terms = json.loads(path.read_text()).get("terms") or {}
+    return {term_id: term["label"] for term_id, term in terms.items() if term.get("label")}
+
 SEED = ROOT / "data" / "seed" / "rare_graph.json"
 GRAPH_OUT = ROOT / "public" / "graph.json"
 RELEVANCE_OUT = ROOT / "public" / "relevance.json"
@@ -90,6 +101,7 @@ def build_graph(seed: dict, generated: str) -> dict:
 
 
 def build_relevance(seed: dict, graph: dict, generated: str) -> dict:
+    labels = {**phenotype_labels(), **{node["id"]: node["label"] for node in graph["nodes"]}}
     empty = {
         "dimension": "gene",
         "family": "biology",
@@ -102,7 +114,7 @@ def build_relevance(seed: dict, graph: dict, generated: str) -> dict:
         "detail": "Not used. The pair percent is the SimGIC percentile.",
         "evidence_edge_ids": [],
     }
-    dimensions = (
+    dimension_names = (
         "gene", "variant", "mechanism", "phenotype", "disease", "patient_org",
         "paper", "trial", "grant", "investigator", "asset",
     )
@@ -111,16 +123,22 @@ def build_relevance(seed: dict, graph: dict, generated: str) -> dict:
     for pair in weights.get("pairs") or []:
         a, b = sorted((pair["a"], pair["b"]))
         percent = pair["percentile"]
+        shared = [
+            {"id": term, "label": labels.get(term, term), "type": "Phenotype", "weight": weights.get("phenotype", {}).get(term, 0), "edges": [], "kind": "observed"}
+            for term in pair.get("shared") or []
+        ]
+        dimensions = {
+            name: {**empty, "dimension": name, "family": "biology" if name in ("gene", "variant", "mechanism") else "clinical" if name in ("phenotype", "disease") else "collaboration"}
+            for name in dimension_names
+        }
+        dimensions["phenotype"] = {**dimensions["phenotype"], "shared": shared, "score": pair["simgic"], "status": "match" if shared else "none"}
         pair_rows.append({
             "a": a, "b": b, "biology": percent, "clinical": pair["simgic"],
             "collaboration": 0, "relevance": percent, "tier": tier_of(percent),
             "tier_reason": f"Closer than {round(percent * 100)}% of random disease pairs by SimGIC.",
             "clinical_tier": "similar", "clinical_reason": f"SimGIC {pair['simgic']}.",
             "support": None, "lines_of_evidence": [],
-            "dimensions": {
-                name: {**empty, "dimension": name, "family": "biology" if name in ("gene", "variant", "mechanism") else "clinical" if name in ("phenotype", "disease") else "collaboration"}
-                for name in dimensions
-            },
+            "dimensions": dimensions,
             "flags": [], "judgments": [],
         })
     diseases = [
@@ -133,6 +151,7 @@ def build_relevance(seed: dict, graph: dict, generated: str) -> dict:
             continue
         by_disease[pair["a"]].append(pair)
         by_disease[pair["b"]].append(pair)
+    cluster_rows, cluster_of, centrality = build_clusters(graph, pair_rows)
     entries = {}
     for disease in diseases:
         ranked = sorted(by_disease[disease], key=lambda row: -row["relevance"])
@@ -144,7 +163,7 @@ def build_relevance(seed: dict, graph: dict, generated: str) -> dict:
                 "clinical": row["clinical"], "collaboration": 0,
             })
         entries[disease] = {
-            "id": disease, "cluster": None, "centrality": 0, "bridge": False,
+            "id": disease, "cluster": cluster_of.get(disease), "centrality": centrality.get(disease, 0), "bridge": False,
             "coords3d": [0, 0, 0], "neighbors": neighbors,
             "hidden": max(0, len(ranked) - 8), "clinical_neighbors": neighbors,
         }
@@ -156,7 +175,7 @@ def build_relevance(seed: dict, graph: dict, generated: str) -> dict:
             "generated_at": generated,
             "method": "deterministic-baseline",
             "ic_source": "hpo-annotations",
-            "caps": {name: 0 for name in dimensions},
+            "caps": {name: 0 for name in dimension_names},
             "thresholds": {"strong": 0.99, "moderate": 0.95, "exploratory": 0.8},
             "clinical_thresholds": {"very_similar": 0.65, "similar": 0.4, "somewhat": 0.2},
             "max_neighbors": 8,
@@ -165,7 +184,7 @@ def build_relevance(seed: dict, graph: dict, generated: str) -> dict:
                 "Pair relevance is the SimGIC percentile against random disease pairs. Caps are recorded as 0 because they are not used.",
             ],
         },
-        "diseases": entries, "pairs": pair_rows, "clusters": [], "bridges": [],
+        "diseases": entries, "pairs": pair_rows, "clusters": cluster_rows, "bridges": [],
     }
 
 

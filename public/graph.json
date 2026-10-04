@@ -1,7 +1,7 @@
 {
   "meta": {
     "schema_version": "0.1.0",
-    "generated_at": "2026-10-04T00:30:45Z",
+    "generated_at": "2026-10-04T00:36:17Z",
     "notes": "Adapted from data/seed/rare_graph.json. Confidence is HPO information content or gene specificity where a source supports it."
   },
   "nodes": [
