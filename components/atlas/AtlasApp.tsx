@@ -167,6 +167,8 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
   // 3D view
   const [view, setView] = useState<View>(initial.view);
   // A shared link to something RareVerse does not have opens the start screen and says so.
+  // The side panel can be folded away on tablets and desktops; any new search or selection opens it again.
+  const [panelOpen, setPanelOpen] = useState(true);
   const [staleLink, setStaleLink] = useState(() => !!initial.focusId && !known(initial.focusId));
   const mapRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -209,6 +211,7 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
       if (!known(id)) return;
       setFocusId(id);
       setSelectedId(null);
+      setPanelOpen(true);
       setExpanded(new Set());
       // Each new center opens at its own default filter, so its related diseases are in view.
       setThreshold(null);
@@ -230,6 +233,7 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
 
   const select = useCallback((id: string | null) => {
     setSelectedId(id);
+    if (id) setPanelOpen(true);
     // On phones the evidence sits below the map: bring it into view after a tap.
     if (id && panelRef.current && isPhone()) panelRef.current.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   }, []);
@@ -548,7 +552,11 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
         )}
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-[minmax(0,1fr)_340px] lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]">
+      <div
+        className={`grid min-h-0 flex-1 grid-cols-1 ${
+          panelOpen ? "sm:grid-cols-[minmax(0,1fr)_340px] lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_440px]" : ""
+        }`}
+      >
         <main className="relative flex min-w-0 flex-col gap-3 px-3 pt-3 pb-4 sm:min-h-0 sm:overflow-y-auto sm:px-4 lg:gap-0 lg:overflow-hidden lg:bg-surface lg:p-0">
           {/* One search card: above the universe on small screens, floating over it on wide ones. */}
           {!focusId && (
@@ -557,12 +565,29 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
             </div>
           )}
 
+          {/* Fold or unfold the side panel (tablets and desktops; phones keep it under the map). */}
+          <button
+            type="button"
+            onClick={() => setPanelOpen((open) => !open)}
+            aria-expanded={panelOpen}
+            aria-controls="atlas-panel"
+            aria-label={panelOpen ? "Hide the side panel" : "Show the side panel"}
+            title={panelOpen ? "Hide the side panel" : "Show the side panel"}
+            className="absolute top-2.5 right-3 z-30 hidden size-9 place-items-center rounded-full border border-line bg-surface text-ink-2 shadow-sm hover:text-ink sm:grid"
+          >
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2.5" y="3.5" width="15" height="13" rx="2.5" />
+              <path d="M12.5 3.5v13" />
+              <path d={panelOpen ? "M6.5 8l2 2-2 2" : "M8.5 8l-2 2 2 2"} />
+            </svg>
+          </button>
+
           <div className="flex justify-center sm:hidden">
             <ViewToggle value={display} onChange={changeDisplay} />
           </div>
 
           {/* The map card's toolbar: one chip per kind (and, for researchers, the Links menu). */}
-          {focusId && chips("lg:border-b lg:border-line lg:px-4 lg:py-2.5")}
+          {focusId && chips("lg:border-b lg:border-line lg:py-2.5 lg:pr-16 lg:pl-4")}
 
           <section
             ref={mapRef}
@@ -621,8 +646,9 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
 
         <aside
           ref={panelRef}
+          id="atlas-panel"
           aria-label={focusId ? "Details" : "About RareVerse"}
-          className="panel-scroll scroll-mt-2 rounded-t-2xl border-t border-line bg-surface px-4 pt-2 pb-8 shadow-[0_-10px_30px_rgb(0_0_0/0.06)] sm:rounded-none sm:border-t-0 sm:border-l sm:pt-5 sm:shadow-none lg:px-6"
+          className={`${panelOpen ? "" : "sm:hidden"} panel-scroll scroll-mt-2 rounded-t-2xl border-t border-line bg-surface px-4 pt-2 pb-8 shadow-[0_-10px_30px_rgb(0_0_0/0.06)] sm:rounded-none sm:border-t-0 sm:border-l sm:pt-5 sm:shadow-none lg:px-6`}
         >
           <div className="sheet-grabber mx-auto mb-4 sm:hidden" aria-hidden="true" />
           {focusId && hood && filtered ? (
