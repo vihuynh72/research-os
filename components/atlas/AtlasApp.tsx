@@ -451,7 +451,7 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
   const startCard = (
     <div
       ref={cardRef}
-      className="w-full max-w-[36rem] rounded-2xl border border-line bg-surface/92 p-5 text-center shadow-[0_12px_40px_rgb(0_0_0/0.10)] backdrop-blur-md sm:px-7 sm:pt-6 sm:pb-5"
+      className="pointer-events-auto w-full max-w-[36rem] rounded-2xl border border-line bg-surface/92 p-5 text-center shadow-[0_12px_40px_rgb(0_0_0/0.10)] backdrop-blur-md sm:px-7 sm:pt-6 sm:pb-5"
     >
       <p className="text-[0.6875rem] font-semibold tracking-[0.14em] text-accent-ink uppercase">RareVerse</p>
       <h2 className="mt-1.5 text-[1.375rem] leading-tight font-semibold tracking-tight text-balance sm:text-[1.75rem]">Find the rare diseases that share your biology</h2>
@@ -563,7 +563,7 @@ export default function AtlasApp({ graph: sourceGraph, relevance, sample, notes,
           {/* One search card: above the universe on small screens, floating over it on wide ones. */}
           {!focusId && (
             <div className={`flex justify-center ${cardOverMap ? "lg:pointer-events-none lg:absolute lg:inset-x-0 lg:top-0 lg:z-10 lg:px-6 lg:pt-6" : "lg:px-5 lg:pt-5"}`}>
-              <div className="pointer-events-auto flex w-full justify-center">{startCard}</div>
+              <div className="flex w-full justify-center">{startCard}</div>
             </div>
           )}
 
