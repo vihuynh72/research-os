@@ -115,6 +115,7 @@ def main() -> None:
                 "b": right,
                 "simgic": round4(score),
                 "percentile": percentile(score, reference["meta"]["null"]["quantiles"]),
+                "shared": sorted(closed[left] & closed[right] - UNINFORMATIVE),
                 "method": "simgic_hpo_null",
             })
     pairs.sort(key=lambda row: (-row["percentile"], row["a"], row["b"]))
