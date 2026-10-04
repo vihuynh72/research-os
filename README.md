@@ -80,7 +80,7 @@ RareVerse joins seven of those databases into one map and answers three question
 </td>
 <td width="50%" valign="top">
 <img src="docs/images/search-synonym.webp" alt="Typing 'globoid' finds Krabbe disease, with the line 'matched: globoid cell leukodystrophy'." />
-<br/><b>🔎 Search the way people talk.</b> About 1,900 synonyms from Monarch (MONDO, HGNC) and HPO, typo tolerance and plurals: "globoid" finds Krabbe disease, "vision loss" finds Visual impairment, "gaushur" finds Gaucher.
+<br/><b>🔎 Search the way people talk.</b> About 1,900 synonyms from Monarch (MONDO, HGNC) and HPO, typo tolerance and plurals: "globoid" finds Krabbe disease, "vision loss" finds Visual impairment, and a misspelling like "gaushur" gets a "Did you mean Gaucher disease?" suggestion.
 </td>
 </tr>
 </table>
@@ -111,7 +111,7 @@ RareVerse joins seven of those databases into one map and answers three question
 A parent whose child has **Tay-Sachs disease** opens RareVerse. Everything below is real output from the current atlas:
 
 ```mermaid
-flowchart LR
+flowchart TB
     TS(["🔵 Tay-Sachs disease<br/>gene HEXA"])
     SD(["🔵 Sandhoff disease<br/>gene HEXB"])
     PW["🧬 Reactome pathway<br/>Hyaluronan degradation<br/>(only 2 of 81 diseases)"]
@@ -137,6 +137,7 @@ flowchart LR
 ```
 
 ```mermaid
+%%{init: {"journey": {"diagramMarginX": 20, "taskMargin": 20, "leftMargin": 80, "width": 140, "height": 70}}}%%
 journey
     title A parent's first five minutes
     section Search
@@ -158,36 +159,35 @@ journey
 RareVerse is three layers: a **pipeline** that pulls public records into one graph, a **deterministic grading engine** that scores every pair of diseases, and a **Next.js app** that turns both into a map a parent can read. One small server route adds the AI contact finder.
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph SRC["🌐 7 public sources"]
         direction TB
         MON["Monarch · MONDO<br/>disease ↔ gene"]
-        HPO["Human Phenotype Ontology<br/>symptoms"]
+        HPO["Human Phenotype<br/>Ontology<br/>symptoms"]
         REA["Reactome 97<br/>pathways"]
         CLV["ClinVar<br/>gene changes"]
         ORP["Orphanet<br/>patient groups"]
         PUB["PubMed<br/>papers"]
         NIH["NIH RePORTER<br/>grants"]
+        MON ~~~ ORP
+        HPO ~~~ PUB
+        REA ~~~ NIH
     end
     subgraph PIPE["🐍 Python pipeline"]
-        direction TB
-        BG["build_graph.py<br/>fetch and link"] --> WG["weight_graph.py<br/>information-content weights"]
+        direction LR
+        BG["build_graph.py<br/>fetch and link"] --> WG["weight_graph.py<br/>information-content<br/>weights"] --> SEED[("rare_graph.json<br/>seed")]
     end
     subgraph BUILD["🧱 Deterministic build"]
-        direction TB
-        REF["data:hpo · data:reactome<br/>reference files"] --> ADP["data:graph<br/>schema adapter"]
-        ADP --> GRD["grade<br/>11-dimension engine"]
+        direction LR
+        REF["data:hpo<br/>data:reactome<br/>reference files"] --> ADP["data:graph<br/>schema adapter"] --> GRD["grade<br/>11-dimension<br/>engine"] --> OUT[("graph.json<br/>relevance.json")]
     end
     subgraph APP["⚛️ Next.js app"]
-        direction TB
-        UI["Map · 3D · List<br/>Evidence panel · Search"]
-        API["/api/contacts<br/>server only"]
+        direction LR
+        UI["Map · 3D · List<br/>Evidence panel · Search"] --> API["/api/contacts<br/>server only"]
     end
-    SEED[("rare_graph.json<br/>seed")]
-    OUT[("graph.json<br/>relevance.json")]
     OAI["🤖 OpenAI<br/>gpt-6-luna + web search"]
-    SRC --> PIPE --> SEED --> BUILD --> OUT --> UI
-    UI --> API --> OAI
+    SRC --> PIPE --> BUILD --> APP
+    API --> OAI
     classDef src fill:#E8F1FF,stroke:#2A78D6,color:#0B2E59
     classDef py fill:#FFF4E5,stroke:#EDA100,color:#5A3B00
     classDef ts fill:#EEEBFA,stroke:#5B4BB7,color:#2B2266
@@ -205,8 +205,8 @@ flowchart LR
 ### Inside the app
 
 ```mermaid
-flowchart LR
-    URL["🔗 URL state<br/>d · sel · r · hide · view · mode"] <--> APP["AtlasApp"]
+flowchart TB
+    URL["🔗 URL state<br/>d · sel · r · hide · open · view · mode · list"] <--> APP["AtlasApp"]
     DATA[("graph.json · relevance.json<br/>search-aliases.json")] --> APP
     APP --> HOOD["buildNeighborhood<br/>relevance carried from the center"]
     HOOD --> LAY["radialLayout<br/>distance = relevance<br/>direction = kind"]
@@ -237,6 +237,11 @@ flowchart LR
 | ⬇️ Bottom | **Symptoms**, rarest first |
 | ⬅️ Left | **Genes and pathways** |
 
+<p align="center">
+<img src="docs/images/map-achondrogenesis.webp" alt="Achondrogenesis type II in the center of the map: its five closest relatives, all linked to the gene COL2A1, at the top; its gene and pathways on the left; symptoms below; the relevance slider on the right." width="92%" />
+<br/><sub>Achondrogenesis type II in the center: the five closest relatives (all linked to COL2A1) at the top, the gene and its pathways on the left, symptoms below.</sub>
+</p>
+
 ---
 
 <a id="knowledge-graph"></a>
@@ -255,10 +260,6 @@ erDiagram
     GRANT }o--o{ DISEASE : "funds (33)"
 ```
 
-<table>
-<tr>
-<td width="50%">
-
 ```mermaid
 pie showData
     title Nodes by type
@@ -272,9 +273,6 @@ pie showData
     "Research grants (NIH)" : 27
 ```
 
-</td>
-<td width="50%">
-
 ```mermaid
 pie showData
     title Edges by source
@@ -286,10 +284,6 @@ pie showData
     "Monarch" : 93
     "NIH RePORTER" : 33
 ```
-
-</td>
-</tr>
-</table>
 
 **Every edge carries its provenance.** The contract is [`schema.json`](schema.json) (JSON Schema 2020-12), checked in CI:
 
@@ -393,7 +387,9 @@ flowchart TD
 
 Within a family, independent lines of evidence combine as a **noisy-OR with caps**, so agreement is what makes a link strong and no combination ever reaches 1. Two different diseases are never the same disease:
 
-$$\text{biology} = 1-(1-0.7\,g)\,(1-0.8\,m)\,(1-0.25\,v^{\ast}) \qquad \text{clinical} = 1-(1-0.75\,s)\,(1-0.4\,d^{\ast})$$
+```math
+\text{biology} = 1-(1-0.7\,g)\,(1-0.8\,m)\,(1-0.25\,v^{\ast}) \qquad \text{clinical} = 1-(1-0.75\,s)\,(1-0.4\,d^{\ast})
+```
 
 <sup>∗ modifiers count only when the pair already shares a gene or a pathway (for <i>v</i>) or some symptoms (for <i>d</i>).</sup>
 
@@ -404,7 +400,9 @@ $$\text{biology} = 1-(1-0.7\,g)\,(1-0.8\,m)\,(1-0.25\,v^{\ast}) \qquad \text{cli
 
 **A pathway is only as telling as it is rare.** A pathway shared by every disease cannot tell any two apart. For a Reactome pathway reached by *n* of the *N* diseases with pathway data (*N* = 81 here), the engine uses information content normalized so that a pathway shared by exactly two diseases weighs 1. Big pathways are discounted by their size in proteins:
 
-$$w(p)=\max\!\left(0.15,\ \operatorname{clamp}\!\left(\frac{1-\ln n/\ln N}{1-\ln 2/\ln N},0,1\right)\right)\times\operatorname{clamp}\!\left(1-\frac{\ln(\text{proteins})}{\ln 20000},\,0.1,\,1\right)$$
+```math
+w(p)=\max\!\left(0.15,\ \operatorname{clamp}\!\left(\frac{1-\ln n/\ln N}{1-\ln 2/\ln N},0,1\right)\right)\times\operatorname{clamp}\!\left(1-\frac{\ln(\text{proteins})}{\ln 20000},\,0.1,\,1\right)
+```
 
 The pair scores the weight of the **most specific** pathway both diseases reach (Resnik's most informative common ancestor), so a gene that sits in many pathways cannot dilute the one it really shares.
 
@@ -417,11 +415,13 @@ The pair scores the weight of the **most specific** pathway both diseases reach 
 
 **A symptom is only as telling as it is rare.** "Seizure" is shared by hundreds of unrelated diseases, while "large clumps of pigment along the hair shaft" points at a handful. Each HPO term gets an information content over all 12,880 annotated diseases, symptom sets are closed upward through the ontology, and two diseases are compared with SimGIC (Pesquita et al., 2008):
 
-$$\mathrm{ic}(t)=-\frac{\ln(n_t/N)}{\ln N}\qquad \mathrm{SimGIC}(A,B)=\frac{\sum_{t\in A^{\uparrow}\cap B^{\uparrow}}\mathrm{ic}(t)}{\sum_{t\in A^{\uparrow}\cup B^{\uparrow}}\mathrm{ic}(t)}$$
+```math
+\mathrm{ic}(t)=-\frac{\ln(n_t/N)}{\ln N}\qquad \mathrm{SimGIC}(A,B)=\frac{\sum_{t\in A^{\uparrow}\cap B^{\uparrow}}\mathrm{ic}(t)}{\sum_{t\in A^{\uparrow}\cup B^{\uparrow}}\mathrm{ic}(t)}
+```
 
 A raw score means nothing on its own, so it is **calibrated against two anchors measured on HPO's whole corpus**: 0 at the 99th percentile of **20,000 random disease pairs** (SimGIC 0.1636), and 1 at the median of **497 pairs of OMIM and Orphanet records of the same disease** (SimGIC 0.3173). That is how the panel can honestly say "about as much overlap as two records of the same disease".
 
-**A shared gene is one line of evidence, never three.** Gene changes and pathways hang off the gene, so a gene shared by two diseases would otherwise count three times. The engine sets them aside for allelic pairs (`same_gene_allelic`). One shared gene alone is therefore *moderate*, never strong, because the same gene can be broken in opposite ways (NOTCH2: Hajdu-Cheney syndrome versus Alagille syndrome 2).
+**A shared gene is one line of evidence, never three.** Gene changes and pathways hang off the gene, so a gene shared by two diseases would otherwise count three times. The engine sets them aside for allelic pairs (`same_gene_allelic`). One shared gene alone is therefore *moderate*, never strong, because the same gene can be broken in opposite ways (NOTCH2: Hajdu-Cheney syndrome, listed here as "acroosteolysis dominant type", versus Alagille syndrome 2).
 
 </details>
 
@@ -460,26 +460,27 @@ Clinical resemblance has its own words: *looks very similar* (≥ 0.65), *simila
 The moment that matters is when a family decides to write to someone. RareVerse makes that one click. It is also built so that the AI **cannot invent a person, a page or an email**.
 
 ```mermaid
+%%{init: {"sequence": {"actorMargin": 30, "width": 120, "diagramMarginX": 10}}}%%
 sequenceDiagram
     autonumber
     actor F as Family
-    participant UI as RareVerse in the browser
-    participant API as /api/contacts on the server
-    participant REC as PubMed and NIH RePORTER
-    participant AI as OpenAI gpt-6-luna with web search
+    participant UI as RareVerse<br/>in the browser
+    participant API as /api/contacts<br/>on the server
+    participant REC as PubMed and<br/>NIH RePORTER
+    participant AI as OpenAI<br/>gpt-6-luna<br/>with web search
     participant V as Verifier
     F->>UI: Who can I contact?
-    UI->>API: POST the disease ids
-    API->>REC: papers and grants linked to the disease
-    REC-->>API: authors, affiliations, grant leads
-    Note over API: Candidate list c1, c2, ... built WITHOUT AI
-    API->>AI: pick only from the candidates, at most 4 web searches, strict JSON schema
-    AI-->>API: chosen people, the pages it opened
-    API->>V: keep or drop every person, link and email
-    Note over V: name match, page allow-list, SSRF guard,<br/>name on the page, email printed on an official page
-    V-->>API: verified cards, each with its check lines
-    API-->>UI: contacts, cached for 24 hours
-    UI-->>F: who, why, and checked ways to reach them
+    UI->>API: POST the<br/>disease ids
+    API->>REC: papers and grants<br/>linked to the disease
+    REC-->>API: authors, affiliations,<br/>grant leads
+    Note over API: Candidate list c1, c2, ...<br/>built WITHOUT AI
+    API->>AI: pick only from the candidates,<br/>at most 4 web searches,<br/>strict JSON schema
+    AI-->>API: chosen people,<br/>the pages it opened
+    API->>V: keep or drop every person,<br/>link and email
+    Note over V: name match, page allow-list,<br/>SSRF guard, name on the page,<br/>email printed on<br/>an official page
+    V-->>API: verified cards,<br/>each with its check lines
+    API-->>UI: contacts,<br/>cached for 24 hours
+    UI-->>F: who, why, and<br/>checked ways<br/>to reach them
 ```
 
 | Guarantee | How it is enforced |
@@ -490,7 +491,7 @@ sequenceDiagram
 | ✉️ No guessed emails | An email is shown only if it is printed on the official page or in the PubMed record, and it must belong to that person. |
 | 🧾 No unchecked prose | The model's free-text notes are never shown. Each "why" is checked against the PubMed or NIH record, and replaced by one written from the record when it claims more. |
 | 🔐 Key never leaves the server | `OPENAI_API_KEY` is read only in a `server-only` module, is never sent to the browser and is never logged. |
-| 💸 Cost control | A 24-hour cache, 6 new searches per visitor per 10 minutes, at most 2 OpenAI calls at once, and a server-wide hourly cap (30 by default). |
+| 💸 Cost control | A 24-hour cache, 6 new searches per visitor per 10 minutes (shared by everyone while `CONTACTS_TRUSTED_PROXY_HOPS` is 0, the default), at most 2 OpenAI calls at once, and a server-wide hourly cap (30 by default). |
 
 ---
 
@@ -514,23 +515,23 @@ git clone https://github.com/vihuynh72/research-os.git
 cd research-os
 
 # 2. Point the lockfile at the public npm registry.
-#    It was generated on Replit, whose package mirror is private; CI does exactly this.
+#    It was generated on Replit, whose package mirror is private; CI makes the same change.
 node -e "const f='package-lock.json',fs=require('fs');fs.writeFileSync(f,fs.readFileSync(f,'utf8').replaceAll('http://package-firewall.replit.internal/npm/','https://registry.npmjs.org/'))"
 
 # 3. Install the exact locked versions
 npm ci
 
 # 4. (Optional) turn on the AI contact finder
-cp .env.example .env.local   # then put your key in .env.local
+cp .env.example .env.local   # then set OPENAI_API_KEY=sk-... in .env.local (restart the server after changing it)
 
 # 5. Start the app
 npx next dev --port 3000
 ```
 
-Open **http://localhost:3000**. The graph and the grades are committed, so the app runs right away with no API calls. Only the contact finder needs a key.
+Open **http://localhost:3000**, or jump straight to a disease: **http://localhost:3000/?d=MONDO:0010100** (Tay-Sachs). The graph and the grades are committed, so the app runs right away with no API calls. Only the contact finder needs a key.
 
 > [!WARNING]
-> `npm run dev` binds to `0.0.0.0:5000` (that is what Replit expects). On macOS, port 5000 belongs to the **AirPlay Receiver**, so use `npx next dev --port 3000` as above, or turn off AirPlay Receiver in System Settings.
+> `npm run dev` and `npm start` bind to `0.0.0.0:5000` (that is what Replit expects). On macOS, port 5000 belongs to the **AirPlay Receiver**, so use `npx next dev --port 3000` and `npx next start --port 3000` as shown, or turn off AirPlay Receiver in System Settings.
 
 > [!TIP]
 > Step 2 edits `package-lock.json`. Don't commit that change: `git checkout -- package-lock.json` restores it after installing.
@@ -549,6 +550,7 @@ npm run check:schema           # schema.json and public/graph.json
 npm run data:graph -- --check  # the graph rebuilds byte for byte from its committed inputs
 npm test                       # 321 tests, including the literature answer key
 npm run grade:check            # the committed grades match the engine
+npm run build                  # the production build CI makes before the type check
 npm run typecheck              # TypeScript, no emit
 ```
 
@@ -560,7 +562,7 @@ npm run typecheck              # TypeScript, no emit
 | `npm ci` fails with `ENOTFOUND package-firewall.replit.internal` | Run step 2 (the lockfile still points at Replit's private mirror). |
 | `EADDRINUSE :5000`, or a 403 page from AirPlay | Use `npx next dev --port 3000`, or turn off AirPlay Receiver. |
 | `Unknown file extension ".ts"` when running a script | Use Node 24 (or 22.18+): the scripts are TypeScript run natively by Node. |
-| "Who can I contact?" says the AI search is not set up | Put `OPENAI_API_KEY` in `.env.local` and restart the server. |
+| "Who can I contact?" says *Not switched on here yet* (the API answers 503 `no_key`) | Put `OPENAI_API_KEY=sk-...` in `.env.local` and restart the server: Next.js reads `.env.local` at startup. |
 | A hydration warning that mentions extension attributes | A browser extension (such as Grammarly) edited the page before React loaded. It is harmless, and RareVerse already ignores it on `<html>` and `<body>`. |
 
 </details>
@@ -576,10 +578,11 @@ Copy [`.env.example`](.env.example) to **`.env.local`**. Git ignores every `.env
 |---|---|---|
 | `OPENAI_API_KEY` | (none) | Turns on the AI contact finder. **Server-side only.** |
 | `OPENAI_MODEL` | `gpt-6-luna` | The model the contact finder uses (it needs the Responses API web-search tool). |
-| `CONTACTS_MAX_SEARCHES_PER_HOUR` | `30` | New OpenAI searches per hour for the whole server. Repeated questions come from the cache for free. |
-| `CONTACTS_TRUSTED_PROXY_HOPS` | `0` | How many proxies in front of the server append the visitor's address to `X-Forwarded-For` (often `1` on a hosting platform). `0` trusts none, so every visitor shares one rate limit. |
+| `CONTACTS_MAX_SEARCHES_PER_HOUR` | `30` | New OpenAI searches per hour for the whole server, a whole number from 1 to 1000. Repeated questions come from the cache for free. |
+| `CONTACTS_TRUSTED_PROXY_HOPS` | `0` | How many proxies (0 to 5) in front of the server append the visitor's address to `X-Forwarded-For` (often `1` on a hosting platform). `0` trusts none, so every visitor shares one rate limit. |
 | `NCBI_TOOL` · `NCBI_EMAIL` | (unset) | Optional: identify your deployment to NCBI when reading PubMed. |
 | `ATLAS_DATA_DIR` | `./public` | Load `graph.json` and `relevance.json` from another folder. |
+| `REPLIT_DEV_DOMAIN` | (unset) | Set by Replit; added to Next.js `allowedDevOrigins`. Not needed locally. |
 
 > [!CAUTION]
 > Never commit a real key, never prefix it with `NEXT_PUBLIC_`, and set a monthly budget on your OpenAI project. On a hosted deployment (Replit, Vercel, …) put the key in the platform's **Secrets** panel, not in a file.
@@ -592,15 +595,20 @@ Copy [`.env.example`](.env.example) to **`.env.local`**. Git ignores every `.env
 The committed files are enough to run and grade the atlas. To regenerate them from the public APIs, run the steps in this order:
 
 ```mermaid
-flowchart LR
-    C[["candidates.json<br/>diseases to include"]] --> BG["🐍 build_graph.py<br/>Monarch · ClinVar · PubMed<br/>NIH RePORTER · Orphanet"]
-    BG --> SEED[("data/seed/rare_graph.json")]
-    SEED --> HPO["npm run data:hpo<br/>HPO release → IC, null model, anchors"]
-    HPO --> WG["🐍 weight_graph.py<br/>weights on the seed"]
-    WG --> REA["npm run data:reactome<br/>Reactome Analysis Service"]
-    REA --> G["npm run data:graph<br/>→ public/graph.json"]
-    G --> GR["npm run grade<br/>→ public/relevance.json"]
-    GR --> AL["node scripts/build-search-aliases.ts<br/>→ public/search-aliases.json"]
+flowchart TB
+    subgraph S1["① Fetch public records"]
+        direction LR
+        C[["candidates.json<br/>diseases to include"]] --> BG["🐍 build_graph.py<br/>Monarch · ClinVar · PubMed<br/>NIH RePORTER · Orphanet"] --> SEED[("data/seed/rare_graph.json")]
+    end
+    subgraph S2["② Reference data and weights"]
+        direction LR
+        HPO["npm run data:hpo<br/>HPO release →<br/>IC, null model, anchors"] --> WG["🐍 weight_graph.py<br/>weights on the seed"] --> REA["npm run data:reactome<br/>Reactome Analysis Service"]
+    end
+    subgraph S3["③ Build, grade and index"]
+        direction LR
+        G["npm run data:graph<br/>→ public/graph.json"] --> GR["npm run grade<br/>→ public/relevance.json"] --> AL["node scripts/<br/>build-search-aliases.ts<br/>→ public/search-aliases.json"]
+    end
+    S1 --> S2 --> S3
     classDef py fill:#FFF4E5,stroke:#EDA100,color:#5A3B00
     classDef ts fill:#EEEBFA,stroke:#5B4BB7,color:#2B2266
     classDef data fill:#E6F4EC,stroke:#2B7A4B,color:#0F3D22
@@ -619,8 +627,16 @@ npm run grade                                              # → public/relevanc
 node scripts/build-search-aliases.ts                       # optional: synonyms for search (about a minute)
 ```
 
-- **The candidate list is yours to choose.** `pipeline/build_graph.py` reads a JSON file whose `kept` array lists the diseases to include (MONDO id, name, gene symbol and HGNC id, Orphanet code). It lives in the git-ignored `data/raw/`, so bring your own to grow or change the atlas.
-- **Downloads are cached** in `data/raw/` (git-ignored). `--refresh` fetches again; otherwise a rebuild is offline.
+- **The candidate list is yours to choose, and it is not in the repository.** Create `data/raw/candidates.json` before the first step. Its `kept` array lists the diseases to include:
+
+  ```json
+  { "kept": [
+    { "id": "MONDO:0010100", "name": "Tay-Sachs disease", "gene": "HEXA", "gene_id": "HGNC:4878", "orpha": "845" }
+  ] }
+  ```
+
+  `pipeline/build_graph.py` queries Monarch, ClinVar, PubMed, NIH RePORTER and Orphanet live for every disease, so it needs network access and takes a while.
+- **HPO and Reactome downloads are cached** in `data/raw/` (git-ignored): `npm run data:hpo -- --refresh` or `npm run data:reactome -- --refresh` fetches them again. Every step after `build_graph.py` can then run offline.
 - **Determinism is enforced.** `npm run data:graph -- --check` and `npm run grade:check` exit 1 on any byte that differs, and CI runs both.
 - `pipeline/export_atlas.py` is an alternative Python exporter. The app's canonical files come from `data:graph` and `grade`, the same scripts CI checks.
 
@@ -655,7 +671,23 @@ node scripts/build-search-aliases.ts                       # optional: synonyms 
 
 ```mermaid
 flowchart LR
-    P(["push or pull request"]) --> I["npm ci"] --> S["check:schema<br/>graph contract"] --> D["data:graph --check<br/>byte-identical rebuild"] --> T["npm test<br/>321 tests + answer key"] --> G["grade:check<br/>grades match the engine"] --> B["next build"] --> TC["typecheck"] --> OK(["✅ green"])
+    subgraph IN["Install"]
+        direction TB
+        P(["push or<br/>pull request"]) --> I["npm ci"]
+    end
+    subgraph DAT["Data"]
+        direction TB
+        S["check:schema<br/>graph contract"] --> D["data:graph --check<br/>byte-identical<br/>rebuild"]
+    end
+    subgraph ENG["Engine"]
+        direction TB
+        T["npm test<br/>321 tests +<br/>answer key"] --> G["grade:check<br/>grades match<br/>the engine"]
+    end
+    subgraph WEB["App"]
+        direction TB
+        B["next build"] --> TC["typecheck"] --> OK(["✅ green"])
+    end
+    IN --> DAT --> ENG --> WEB
     classDef step fill:#EEEBFA,stroke:#5B4BB7,color:#2B2266
     classDef ok fill:#E7F8F2,stroke:#1BAF7A,color:#0B4A33
     class I,S,D,T,G,B,TC step
